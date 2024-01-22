@@ -15,6 +15,7 @@ export const SUMMARY_AD_ATTRACT =
 
 export type Options = {
   disableMobile: boolean;
+  prefLinkInToolbar: boolean;
   mi: {
     enabled: boolean;
     enableMobile: boolean;
@@ -47,6 +48,7 @@ export type Options = {
 
 export const DEFAULT_OPTIONS = {
   disableMobile: false,
+  prefLinkInToolbar: true,
   mi: {
     enabled: true,
     enableMobile: true,

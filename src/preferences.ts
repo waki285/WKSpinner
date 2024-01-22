@@ -19,6 +19,16 @@ export async function showConfigPage() {
   });
   configArea.append(disableMobileField.$element);
 
+  const prefLinkInToolbar = new OO.ui.CheckboxInputWidget({
+    value: "pref-link-in-toolbar",
+    selected: getOptionProperty("prefLinkInToolbar"),
+  });
+  const prefLinkInToolbarField = new OO.ui.FieldLayout(prefLinkInToolbar, {
+    label: "この設定ページへのリンクをツールバーに配置する",
+    align: "inline",
+  });
+  configArea.append(prefLinkInToolbarField.$element);
+
   const miFieldset = new OO.ui.FieldsetLayout({
     label: "問題テンプレート貼り付け",
     classes: ["container", "wks-pref-container"],
@@ -288,6 +298,7 @@ export async function showConfigPage() {
 
     const newOptions = {
       disableMobile: disableMobile.isSelected(),
+      prefLinkInToolbar: prefLinkInToolbar.isSelected(),
       mi: {
         enabled: miEnabled.isSelected(),
         enableMobile: miEnableMobile.isSelected(),

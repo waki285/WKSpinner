@@ -148,7 +148,7 @@ export function getOptionProperty(option: string) {
   const optionParts = option.split(".");
   let current = options;
   // if option is undefined, return default option prop
-  let steps = 0;
+  let steps = 1;
   for (const part of optionParts) {
     if (current[part] === undefined) {
       current = DEFAULT_OPTIONS;

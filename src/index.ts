@@ -21,6 +21,20 @@ async function init() {
     mw.notify(`${SCRIPT_NAME}: 自動承認されたユーザーのみが使用できます。`);
   }
 
+  const isMobile = mw.config.get("skin") === "minerva";
+
+  if (getOptionProperty("prefLinkInToolbar")) {
+    const el = mw.util.addPortletLink(
+      isMobile ? "pt-preferences" : "p-tb",
+      `/wiki/${CONFIG_PAGE_NAME}`,
+      `${SCRIPT_NAME}の設定`,
+      "pt-wks-pref",
+    );
+    if (isMobile && el) {
+      $("#pt-wks-pref").find(".minerva-icon").addClass("minerva-icon--settings");
+    }
+  }
+
   // 特別ページ
   if (Math.sign(namespaceNumber) === -1) {
     return;
@@ -36,7 +50,6 @@ async function init() {
   }
 
   // モバイル無効設定
-  const isMobile = mw.config.get("skin") === "minerva";
   if (getOptionProperty("disableMobile") === true && isMobile) {
     return;
   }
