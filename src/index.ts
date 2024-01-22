@@ -5,7 +5,13 @@ import { initSkj } from "./modules/skj";
 import { showConfigPage } from "./preferences";
 import { getOptionProperty, loadLibrary } from "./util";
 
-mw.loader.load(mw.config.get("wgServer") + mw.config.get("wgScript") + "?action=raw&ctype=text/css&title=" + mw.util.wikiUrlencode("利用者:鈴音雨/WKSpinner.css"), "text/css");
+mw.loader.load(
+  mw.config.get("wgServer") +
+    mw.config.get("wgScript") +
+    "?action=raw&ctype=text/css&title=" +
+    mw.util.wikiUrlencode("利用者:鈴音雨/WKSpinner.css"),
+  "text/css",
+);
 
 async function init() {
   const groups = mw.config.get("wgUserGroups", []);
@@ -22,7 +28,10 @@ async function init() {
 
   await loadLibrary();
 
-  if (mw.config.get("wgAction") === "view" && mw.config.get("wgPageName") === CONFIG_PAGE_NAME) {
+  if (
+    mw.config.get("wgAction") === "view" &&
+    mw.config.get("wgPageName") === CONFIG_PAGE_NAME
+  ) {
     await showConfigPage();
   }
 

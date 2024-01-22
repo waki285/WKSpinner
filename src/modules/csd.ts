@@ -1,5 +1,17 @@
-import { ERRORS, NAMESPACE_MAP, SCRIPT_NAME, SD_REASON, SUMMARY_AD, SUMMARY_AD_ATTRACT } from "@/constants";
-import { createPortletLink, createRowFunc, getImage, getOptionProperty } from "@/util";
+import {
+  ERRORS,
+  NAMESPACE_MAP,
+  SCRIPT_NAME,
+  SD_REASON,
+  SUMMARY_AD,
+  SUMMARY_AD_ATTRACT,
+} from "@/constants";
+import {
+  createPortletLink,
+  createRowFunc,
+  getImage,
+  getOptionProperty,
+} from "@/util";
 
 export async function initCsd() {
   const namespaceNumber = mw.config.get("wgNamespaceNumber");
@@ -9,7 +21,7 @@ export async function initCsd() {
   const csdPortlet = createPortletLink(
     "即時削除",
     "wks-csd",
-    "即時削除テンプレートを貼り付ける"
+    "即時削除テンプレートを貼り付ける",
   );
   if (!csdPortlet) {
     console.warn(`${SCRIPT_NAME}: メニューの作成に失敗しました。`);
@@ -38,17 +50,18 @@ export async function initCsd() {
       .append(getImage("load", "margin-left: 0.5em;"));
     csdDialog.append(dialogContent);
     const pageRes = await new mw.Api().post({
-      "action": "query",
-      "format": "json",
-      "prop": "revisions",
-      "list": "",
-      "titles": mw.config.get("wgPageName"),
-      "formatversion": "2",
-      "rvprop": "content",
-      "rvslots": "main"
+      action: "query",
+      format: "json",
+      prop: "revisions",
+      list: "",
+      titles: mw.config.get("wgPageName"),
+      formatversion: "2",
+      rvprop: "content",
+      rvslots: "main",
     });
     const pageContent = pageRes.query.pages[0].revisions[0].slots.main.content;
-    dialogContent.empty(); 7
+    dialogContent.empty();
+    7;
     const dialogFieldset = $("<fieldset>");
     dialogFieldset.prop({
       id: "wks-csd-dialog-optionfield",
@@ -60,7 +73,7 @@ export async function initCsd() {
     dialogTypeSelect.prop("id", "wks-csd-dialog-type-select");
 
     const generalCsdReasons = SD_REASON.filter(
-      (reason) => reason.type === "全般"
+      (reason) => reason.type === "全般",
     );
 
     for (const reason of generalCsdReasons) {
@@ -68,12 +81,12 @@ export async function initCsd() {
         $("<option>").prop({
           value: reason.name,
           text: `${reason.name}: ${reason.shortDesc}`,
-        })
+        }),
       );
     }
 
     const namespaceCsdReasons = SD_REASON.filter(
-      (reason) => reason.type === namespaceName
+      (reason) => reason.type === namespaceName,
     );
     if (namespaceCsdReasons.length > 0) {
       for (const reason of namespaceCsdReasons) {
@@ -81,7 +94,7 @@ export async function initCsd() {
           $("<option>").prop({
             value: reason.name,
             text: `${reason.name}: ${reason.shortDesc}`,
-          })
+          }),
         );
       }
     }
@@ -90,33 +103,48 @@ export async function initCsd() {
 
     if (isRedirect) {
       const redirectCsdReasons = SD_REASON.filter(
-        (reason) => reason.type === "リダイレクト"
+        (reason) => reason.type === "リダイレクト",
       );
       for (const reason of redirectCsdReasons) {
         dialogTypeSelect.append(
           $("<option>").prop({
             value: reason.name,
             text: `${reason.name}: ${reason.shortDesc}`,
-          })
+          }),
         );
       }
     }
 
     const dialogTypeParams = createRow("params");
     const dialogBlank = createRow("blank");
-    const dialogBlankInput = $("<input>").prop({ id: "wks-csd-dialog-blank-checkbox", type: "checkbox" });
+    const dialogBlankInput = $("<input>").prop({
+      id: "wks-csd-dialog-blank-checkbox",
+      type: "checkbox",
+    });
     dialogBlank.append(dialogBlankInput);
-    dialogBlank.append($("<label>").html("ページを即時削除で置き換える(元ページの内容を削除する)").prop("for", "wks-csd-dialog-blank-checkbox"));
+    dialogBlank.append(
+      $("<label>")
+        .html("ページを即時削除で置き換える(元ページの内容を削除する)")
+        .prop("for", "wks-csd-dialog-blank-checkbox"),
+    );
 
     const handleSelect = () => {
       const selected = dialogTypeSelect.val();
-      const selectedReason = SD_REASON.find((reason) => reason.name === selected);
+      const selectedReason = SD_REASON.find(
+        (reason) => reason.name === selected,
+      );
       dialogTypeParams.empty();
       if (!selectedReason) {
         return;
       }
       for (const param of selectedReason.params) {
-        dialogTypeParams.append($("<label>").html(`${param.name}${param.required ? ' <span class="wks-red">*</span>' : ""}`).prop("for", `wks-csd-dialog-type-params-${param.id}`));
+        dialogTypeParams.append(
+          $("<label>")
+            .html(
+              `${param.name}${param.required ? ' <span class="wks-red">*</span>' : ""}`,
+            )
+            .prop("for", `wks-csd-dialog-type-params-${param.id}`),
+        );
         dialogTypeParams.append(
           $("<input>").prop({
             id: `wks-csd-dialog-type-params-${param.id}`,
@@ -124,7 +152,7 @@ export async function initCsd() {
             placeholder: param.placeholder,
             required: param.required,
             style: "width: 100%;",
-          })
+          }),
         );
       }
 
@@ -138,13 +166,34 @@ export async function initCsd() {
     dialogTypeSelect.on("change", handleSelect);
 
     const dialogComment = createRow("comment");
-    dialogComment.append($("<label>").html("コメント").prop("for", "wks-csd-dialog-comment"));
-    const dialogCommentInput = $("<input>").prop({ id: "wks-csd-dialog-comment", type: "text", placeholder: "コメント", style: "width: 100%;" });
+    dialogComment.append(
+      $("<label>").html("コメント").prop("for", "wks-csd-dialog-comment"),
+    );
+    const dialogCommentInput = $("<input>").prop({
+      id: "wks-csd-dialog-comment",
+      type: "text",
+      placeholder: "コメント",
+      style: "width: 100%;",
+    });
     dialogComment.append(dialogCommentInput);
 
     const dialogSummary = createRow("summary");
-    dialogSummary.append($("<label>").html(`編集の要約 (指定しない場合 "+sd") "${SUMMARY_AD_ATTRACT}" が自動付加されます`).prop("for", "wks-csd-dialog-summary-input"));
-    dialogSummary.append($("<input>").prop({ id: "wks-csd-dialog-summary-input", type: "text", placeholder: "+sd", style: "width: 100%;", value: getOptionProperty("csd.default.summary") }));
+    dialogSummary.append(
+      $("<label>")
+        .html(
+          `編集の要約 (指定しない場合 "+sd") "${SUMMARY_AD_ATTRACT}" が自動付加されます`,
+        )
+        .prop("for", "wks-csd-dialog-summary-input"),
+    );
+    dialogSummary.append(
+      $("<input>").prop({
+        id: "wks-csd-dialog-summary-input",
+        type: "text",
+        placeholder: "+sd",
+        style: "width: 100%;",
+        value: getOptionProperty("csd.default.summary"),
+      }),
+    );
 
     dialogTypeRow.append(dialogTypeSelect);
     dialogFieldset.append(dialogTypeRow);
@@ -154,18 +203,31 @@ export async function initCsd() {
     dialogFieldset.append(dialogSummary);
 
     const getFinalContent = () => {
-      return `{{即時削除|${dialogTypeSelect.val()}${dialogTypeParams.children().toArray().filter((param) => (param as HTMLInputElement).type === "text").map((param) => `|${param.id.replace("wks-csd-dialog-type-params-", "") !== "null" ? `${param.id.replace("wks-csd-dialog-type-params-", "")}=` : ""}${$(param).val()}`).join("")}${dialogCommentInput.val() ? `|コメント=${dialogCommentInput.val()}` : ""}}}` + (dialogBlankInput.prop("checked") ? "" : pageContent);
-    }
+      return (
+        `{{即時削除|${dialogTypeSelect.val()}${dialogTypeParams
+          .children()
+          .toArray()
+          .filter((param) => (param as HTMLInputElement).type === "text")
+          .map(
+            (param) =>
+              `|${param.id.replace("wks-csd-dialog-type-params-", "") !== "null" ? `${param.id.replace("wks-csd-dialog-type-params-", "")}=` : ""}${$(param).val()}`,
+          )
+          .join(
+            "",
+          )}${dialogCommentInput.val() ? `|コメント=${dialogCommentInput.val()}` : ""}}}` +
+        (dialogBlankInput.prop("checked") ? "" : pageContent)
+      );
+    };
 
     const getFinalSummary = () => {
       return ($("#wks-csd-dialog-summary-input").val() || "+sd") + SUMMARY_AD;
-    }
+    };
 
     const preview = async () => {
       const previewDialog = $("<div>")
         .css({
           maxHeight: "70vh",
-          maxWidth: "80vw"
+          maxWidth: "80vw",
         })
         .dialog({
           dialogClass: "wks-csd-dialog wks-csd-dialog-preview",
@@ -175,7 +237,7 @@ export async function initCsd() {
           modal: true,
           close: function () {
             $(this).empty().dialog("destroy");
-          }
+          },
         });
       const previewContent = $("<div>")
         .prop("id", "anr-dialog-preview-content")
@@ -193,7 +255,7 @@ export async function initCsd() {
         disableeditsection: true,
         disabletoc: true,
         contentmodel: "wikitext",
-        formatversion: "2"
+        formatversion: "2",
       });
       previewContent.empty();
       if (parseRes.parse.modules.length) {
@@ -202,9 +264,14 @@ export async function initCsd() {
       if (parseRes.parse.modulestyles.length) {
         mw.loader.load(parseRes.parse.modulestyles);
       }
-      const summaryPreview = $("<div>").html(parseRes.parse.parsedsummary).prop("id", "wks-csd-dialog-preview-summary");
+      const summaryPreview = $("<div>")
+        .html(parseRes.parse.parsedsummary)
+        .prop("id", "wks-csd-dialog-preview-summary");
       const hr = $("<hr>").addClass("wks-hr");
-      const previewDiv = $("<div>").html(parseRes.parse.text).prop("id", "wks-csd-dialog-preview-div").addClass("wks-dialog-preview-div")
+      const previewDiv = $("<div>")
+        .html(parseRes.parse.text)
+        .prop("id", "wks-csd-dialog-preview-div")
+        .addClass("wks-dialog-preview-div");
       previewContent.append(summaryPreview);
       previewContent.append(hr);
       previewContent.append(previewDiv);
@@ -212,59 +279,69 @@ export async function initCsd() {
         position: {
           my: "center",
           at: "center",
-          of: window
-        }
+          of: window,
+        },
       });
-    }
+    };
 
     const execute = async () => {
       try {
         const editRes = await new mw.Api().postWithEditToken({
-        action: "edit",
-        title: mw.config.get("wgPageName"),
-        nocreate: 1,
-        text: getFinalContent(),
-        summary: getFinalSummary(),
-        formatversion: '2',
-        baserevid: revisionId
-      })
+          action: "edit",
+          title: mw.config.get("wgPageName"),
+          nocreate: 1,
+          text: getFinalContent(),
+          summary: getFinalSummary(),
+          formatversion: "2",
+          baserevid: revisionId,
+        });
         if (editRes.edit.result === "Success") {
           mw.notify("ページの編集に成功しました。");
           csdDialog.dialog("close");
           window.location.reload();
         } else {
           // @ts-expect-error index get
-          mw.notify("エラー: " + ERRORS[editRes.error?.code] || editRes.error?.info || e);
+          mw.notify(
+            "エラー: " + ERRORS[editRes.error?.code] ||
+              editRes.error?.info ||
+              e,
+          );
         }
       } catch (e) {
-          // @ts-expect-error index get
-          mw.notify("エラー: " + ERRORS[e] || e);
+        // @ts-expect-error index get
+        mw.notify("エラー: " + ERRORS[e] || e);
       }
-    }
+    };
 
     csdDialog.dialog({
       buttons: [
         {
           text: "実行",
-          click: function () { return execute(); }
+          click: function () {
+            return execute();
+          },
         },
         {
           text: "プレビュー",
-          click: function () { return preview(); }
+          click: function () {
+            return preview();
+          },
         },
         {
           text: "閉じる",
-          click: function () { return csdDialog.dialog("close"); }
-        }
-      ]
+          click: function () {
+            return csdDialog.dialog("close");
+          },
+        },
+      ],
     });
 
     csdDialog.dialog({
       position: {
         my: "top",
         at: "top+5%",
-        of: window
-      }
+        of: window,
+      },
     });
   });
 }

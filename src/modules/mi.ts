@@ -3,7 +3,7 @@ import {
   SCRIPT_NAME,
   SUMMARY_AD,
   SUMMARY_AD_ATTRACT,
-  ERRORS
+  ERRORS,
 } from "@/constants";
 import {
   createPortletLink,

@@ -564,7 +564,7 @@ export const MI_CHOICES = [
           { name: "組織", id: "organization" },
           { name: "フィクション", id: "fiction" },
         ],
-        required: true
+        required: true,
       },
     ],
   },

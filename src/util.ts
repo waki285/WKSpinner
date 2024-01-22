@@ -129,10 +129,15 @@ export function createRowFunc(content: string) {
 
 export function getSavedOptions() {
   try {
-    const options = JSON.parse(mw.user?.options?.get(OPTIONS_KEY) as unknown as string | undefined || JSON.stringify(DEFAULT_OPTIONS));
+    const options = JSON.parse(
+      (mw.user?.options?.get(OPTIONS_KEY) as unknown as string | undefined) ||
+        JSON.stringify(DEFAULT_OPTIONS),
+    );
     return options;
   } catch {
-    console.warn(`${SCRIPT_NAME}: 保存されているオプションの値が不正です。デフォルトにフォールバックします。`)
+    console.warn(
+      `${SCRIPT_NAME}: 保存されているオプションの値が不正です。デフォルトにフォールバックします。`,
+    );
     return DEFAULT_OPTIONS;
   }
 }

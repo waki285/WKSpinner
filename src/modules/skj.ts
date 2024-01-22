@@ -1,5 +1,16 @@
-import { SCRIPT_NAME, SKJ_REQUEST_PAGE_NAME, SUMMARY_AD, SUMMARY_AD_ATTRACT } from "@/constants";
-import { createPortletLink, createRowFunc, getImage, getOptionProperty, sleep } from "@/util";
+import {
+  SCRIPT_NAME,
+  SKJ_REQUEST_PAGE_NAME,
+  SUMMARY_AD,
+  SUMMARY_AD_ATTRACT,
+} from "@/constants";
+import {
+  createPortletLink,
+  createRowFunc,
+  getImage,
+  getOptionProperty,
+  sleep,
+} from "@/util";
 
 export async function initSkj() {
   const revisionId = mw.config.get("wgRevisionId");
@@ -178,7 +189,10 @@ export async function initSkj() {
     const preset = $("<div>").addClass("wks-inline");
     preset.html(
       `プリセット: ${getOptionProperty("skj.opvPresets")
-        .map((x: { name: string, value: string }, i: number) => `<button id="wks-skj-preset-id${i}">${x.name}</button>`)
+        .map(
+          (x: { name: string; value: string }, i: number) =>
+            `<button id="wks-skj-preset-id${i}">${x.name}</button>`,
+        )
         .join(" ")}`,
     );
     dialogOPVRow.append(preset);
@@ -187,7 +201,9 @@ export async function initSkj() {
     const dialogSummaries = createRow("summaries");
     dialogSummaries.append(
       $("<span>")
-        .html("編集の要約 「" + SUMMARY_AD_ATTRACT + "」 が自動付加されます 任意")
+        .html(
+          "編集の要約 「" + SUMMARY_AD_ATTRACT + "」 が自動付加されます 任意",
+        )
         .addClass("wks-shrink-0"),
     );
     const summaryTemplate = $("<div>").addClass("wks-inline");
@@ -244,11 +260,13 @@ export async function initSkj() {
     dialogSummaries.append(summaryNote);
     dialogFieldset.append(dialogSummaries);
 
-    getOptionProperty("skj.opvPresets").forEach((x: { name: string, value: string }, i: number) => {
-      $(`#wks-skj-preset-id${i}`).on("click", () => {
-        $("#wks-skj-dialog-opv-input").val(x.value);
-      });
-    });
+    getOptionProperty("skj.opvPresets").forEach(
+      (x: { name: string; value: string }, i: number) => {
+        $(`#wks-skj-preset-id${i}`).on("click", () => {
+          $("#wks-skj-dialog-opv-input").val(x.value);
+        });
+      },
+    );
 
     const getFinalContentPrepend = () =>
       `${
