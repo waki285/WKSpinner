@@ -1,0 +1,24 @@
+{
+  "name": "wkspinner",
+  "version": "0.4.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "node build.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^20.11.4",
+    "@types/oojs-ui": "^0.47.6",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "esbuild": "^0.19.11",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.2",
+    "types-mediawiki-renovate": "^2.4.0",
+    "typescript": "^5.3.3"
+  }
+}
