@@ -169,6 +169,17 @@ export async function showConfigPage() {
     align: "inline",
   });
 
+  const skjSignReason = new OO.ui.CheckboxInputWidget({
+    value: "skj-sign-reason",
+    selected: getOptionProperty("skj.signReason"),
+  });
+  const skjSignReasonField = new OO.ui.FieldLayout(skjSignReason, {
+    label: "削除依頼理由にも署名する",
+    align: "inline",
+    help: "削除依頼で、理由部分にも署名をします。この設定をした場合でも、依頼者票部分に署名します。",
+    helpInline: true,
+  });
+
   skjFieldset.addItems([
     skjEnabledField,
     skjEnableMobileField,
@@ -176,6 +187,7 @@ export async function showConfigPage() {
     skjSummaryTemplateField,
     skjSummarySubmitField,
     skjSummaryNoteField,
+    skjSignReasonField,
   ]);
 
   // プリセット
@@ -329,6 +341,7 @@ export async function showConfigPage() {
             // @ts-expect-error なんか型が合わない
             return { name: item.items[0].value, value: item.items[1].value };
           }),
+        signReason: skjSignReason.isSelected(),
       },
     };
     console.log(newOptions);

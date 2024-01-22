@@ -43,6 +43,7 @@ export type Options = {
       name: string;
       value: string;
     }[];
+    signReason: boolean;
   };
 };
 
@@ -77,6 +78,7 @@ export const DEFAULT_OPTIONS = {
       { name: "版指定削除", value: "{{AFD|版指定削除}} 依頼者票。" },
       { name: "なし", value: "依頼者票はありません。" },
     ],
+    signReason: false,
   },
 } as const satisfies Options;
 

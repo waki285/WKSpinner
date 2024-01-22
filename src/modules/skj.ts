@@ -290,7 +290,7 @@ export async function initSkj() {
 |ページ名=${$("#wks-skj-dialog-use-id-cb").prop("checked") ? "" : mw.config.get("wgPageName")}
 |ID=${$("#wks-skj-dialog-use-id-cb").prop("checked") ? mw.config.get("wgArticleId") : ""}
 |特記号=${$("#wks-skj-dialog-mark-rights-cb").prop("checked") ? "*" : ""}${$("#wks-skj-dialog-mark-emer-cb").prop("checked") ? "緊" : ""}${$("#wks-skj-dialog-mark-rev-cb").prop("checked") ? "特" : ""}
-|理由=${$("#wks-skj-dialog-desc-input").val()}
+|理由=${$("#wks-skj-dialog-desc-input").val()} ${getOptionProperty("skj.signReason") ? "--~~~~" : ""}
 |依頼者票=${$("#wks-skj-dialog-opv-input").val()} --~~~~
 }}`;
 
