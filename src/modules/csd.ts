@@ -300,8 +300,8 @@ export async function initCsd() {
           csdDialog.dialog("close");
           window.location.reload();
         } else {
-          // @ts-expect-error index get
           mw.notify(
+            // @ts-expect-error index get
             "エラー: " + ERRORS[editRes.error?.code] ||
               editRes.error?.info ||
               e,
