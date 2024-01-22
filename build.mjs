@@ -20,7 +20,7 @@ const ctx = await context({
   format: "iife",
   allowOverwrite: true,
   banner: {
-    js: `// *************************\n// @name WKSpinner\n// @namespace 鈴音雨\n// @author [[利用者:鈴音雨]]\n// @version ${version}\n// *************************\n// このスクリプトはDragoniez氏のAN Reporterを参考にして作られています\n// 解説ページ: [[利用者:鈴音雨/WKSpinner]]\n// このコードは圧縮されています！本来のコード: https://github.com/waki285/WKSpinner\n//<nowiki>\n/* global mw, $, OO */\n`
+    js: `// *************************\n// @name WKSpinner\n// @namespace 鈴音雨\n// @author [[利用者:鈴音雨]]\n// @version ${version}\n// *************************\n// このスクリプトはDragoniez氏のAN Reporterを参考にして作られています\n// 解説ページ: [[利用者:鈴音雨/WKSpinner]]\n// このコードは圧縮されています！本来のコード: https://github.com/waki285/WKSpinner\n//<nowiki>\n/* global mw, $, OO */\n/* jshint esnext: false */\n/* jshint esversion: 11 */\n`
   },
   footer: {
     js: "//</nowiki>"
