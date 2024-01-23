@@ -277,6 +277,40 @@ export async function showConfigPage() {
     skjPresetFieldset.addItems([item]);
   });
 
+  const ecFieldset = new OO.ui.FieldsetLayout({
+    label: "編集回数表示",
+    classes: ["container", "wks-pref-container"],
+  });
+
+  const ecEnabled = new OO.ui.CheckboxInputWidget({
+    value: "ec-enabled",
+    selected: getOptionProperty("editCount.enabled"),
+  });
+
+  const ecEnabledField = new OO.ui.FieldLayout(ecEnabled, {
+    label: "有効にする",
+    align: "inline",
+    help: "有効にすると、最近の更新、新しいページでユーザー名の右に編集回数が表示されます。",
+    helpInline: true,
+  });
+
+  const ecEnableMobile = new OO.ui.CheckboxInputWidget({
+    value: "ec-enable-mobile",
+    selected: getOptionProperty("editCount.enableMobile"),
+  });
+
+  const ecEnableMobileField = new OO.ui.FieldLayout(ecEnableMobile, {
+    label: "モバイルでも有効にする",
+    align: "inline",
+  });
+
+  ecFieldset.addItems([
+    ecEnabledField,
+    ecEnableMobileField,
+  ]);
+
+  configArea.append(ecFieldset.$element);
+
   const saveButton = new OO.ui.ButtonWidget({
     label: "保存",
     flags: ["progressive"],
@@ -343,6 +377,10 @@ export async function showConfigPage() {
           }),
         signReason: skjSignReason.isSelected(),
       },
+      editCount: {
+        enabled: ecEnabled.isSelected(),
+        enableMobile: ecEnableMobile.isSelected(),
+      }
     };
     console.log(newOptions);
 

@@ -45,6 +45,10 @@ export type Options = {
     }[];
     signReason: boolean;
   };
+  editCount: {
+    enabled: boolean;
+    enableMobile: boolean;
+  };
 };
 
 export const DEFAULT_OPTIONS = {
@@ -79,6 +83,10 @@ export const DEFAULT_OPTIONS = {
       { name: "なし", value: "依頼者票はありません。" },
     ],
     signReason: false,
+  },
+  editCount: {
+    enabled: false,
+    enableMobile: false,
   },
 } as const satisfies Options;
 
@@ -609,3 +617,5 @@ export const NAMESPACE_MAP: ReadonlyMap<number, string> = new Map([
   [6, "ファイル"],
   [14, "カテゴリ"],
 ]);
+
+export const REDLINK_REGEX = /w\/index\.php\?title=(.+?)&action=edit&redlink=1/;

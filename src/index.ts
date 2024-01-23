@@ -1,5 +1,6 @@
 import { CONFIG_PAGE_NAME, SCRIPT_NAME } from "./constants";
 import { initCsd } from "./modules/csd";
+import { initEditCount } from "./modules/editCount";
 import { initMi } from "./modules/mi";
 import { initSkj } from "./modules/skj";
 import { showConfigPage } from "./preferences";
@@ -37,6 +38,15 @@ async function init() {
 
   // 特別ページ
   if (Math.sign(namespaceNumber) === -1) {
+    if (getOptionProperty("editCount.enabled") === true) {
+      if (
+        !(isMobile && getOptionProperty("editCount.enableMobile") === false)
+      ) {
+        if (mw.config.get("wgCanonicalSpecialPageName") === "Recentchanges" || mw.config.get("wgCanonicalSpecialPageName") === "Watchlist" || mw.config.get("wgCanonicalSpecialPageName") === "Newpages") {
+          initEditCount();
+        }
+      }
+    }
     return;
   }
 
