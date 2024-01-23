@@ -52,6 +52,8 @@ function appendEditCount(content: JQuery<HTMLElement>) {
 
     if (!username) continue;
 
+    if (username.includes("/")) continue;
+
     if (mw.util.isIPAddress(username)) continue;
 
     if (savedCounts.has(username)) {
