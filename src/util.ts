@@ -141,25 +141,51 @@ export function getSavedOptions() {
     return DEFAULT_OPTIONS;
   }
 }
-
+/*
 export function getOptionProperty(option: string) {
   // option example: "mi.default.summary"
   const options = getSavedOptions();
   const optionParts = option.split(".");
   let current = options;
   // if option is undefined, return default option prop
-  let steps = 1;
+  let steps = optionParts.length;
   for (const part of optionParts) {
+    console.log("a: ", part);
+    console.log("b: ", current[part]);
     if (current[part] === undefined) {
       current = DEFAULT_OPTIONS;
+      console.log("c: ", current);
       for (let i = 0; i < optionParts.length - steps; i++) {
+        console.log("d: ", optionParts[i]);
         current = current[optionParts[i] as string];
       }
     }
+    console.log("e: ", current);
     current = current[part];
     steps++;
   }
   return current;
+}*/
+export function getOptionProperty(propertyPath: string) {
+  const properties = propertyPath.split('.');
+  let currentObject = getSavedOptions();
+
+  for (const prop of properties) {
+      if (prop in currentObject) {
+          currentObject = currentObject[prop];
+      } else {
+          currentObject = DEFAULT_OPTIONS;
+          for (const defaultProp of properties) {
+              if (defaultProp in currentObject) {
+                  currentObject = currentObject[defaultProp];
+              } else {
+                  return undefined;
+              }
+          }
+          return currentObject;
+      }
+  }
+  return currentObject;
 }
 
 export function errorMessage(message: string) {
