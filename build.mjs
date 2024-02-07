@@ -20,10 +20,10 @@ const ctx = await context({
   format: "iife",
   allowOverwrite: true,
   banner: {
-    js: `// *************************\n// @name WKSpinner\n// @namespace 鈴音雨\n// @author [[利用者:鈴音雨]]\n// @version ${version}\n// *************************\n// このスクリプトはDragoniez氏のAN Reporterを参考にして作られています\n// 解説ページ: [[利用者:鈴音雨/WKSpinner]]\n// スクリプトの設定: [[利用者:鈴音雨/WKSpinner/Preferences]]\n// このコードは圧縮されています！本来のコード: https://github.com/waki285/WKSpinner\n//<nowiki>\n/* global mw, $, OO */\n/* jshint esnext: false */\n/* jshint esversion: 11 */\n`,
+    js: `// *************************\n// @name WKSpinner\n// @namespace 鈴音雨\n// @author [[利用者:鈴音雨]]\n// @version ${version}\n// *************************\n// このスクリプトはDragoniez氏のAN Reporterを参考にして作られています\n// 解説ページ: [[利用者:鈴音雨/WKSpinner]]\n// スクリプトの設定: [[利用者:鈴音雨/WKSpinner/Preferences]]\n// このコードは圧縮されています！本来のコード: https://github.com/waki285/WKSpinner\n//<nowiki>\n/* global mw, $, OO */\n/* jshint ignore:start */\n`,
   },
   footer: {
-    js: "//</nowiki>",
+    js: "/* jshint ignore:end */\n//</nowiki>",
   },
   charset: "utf8",
 });

@@ -292,7 +292,7 @@ export const SD_REASON = [
     type: "リダイレクト",
     name: "リダイレクト2-2",
     num: 2.2,
-    shortDesc: "全角と半角の使い分けに反するリダイレクト",
+    shortDesc: "作品名を鍵括弧等でくくったもの",
     params: [],
     blank: false,
   },
@@ -618,4 +618,4 @@ export const NAMESPACE_MAP: ReadonlyMap<number, string> = new Map([
   [14, "カテゴリ"],
 ]);
 
-export const REDLINK_REGEX = /w\/index\.php\?title=(.+?)&action=edit&redlink=1/;
+export const REDLINK_REGEX = /w\/index\.php\?title=(.+?)(&action=edit)?&redlink=1/;
