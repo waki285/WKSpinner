@@ -204,7 +204,13 @@ export async function initCsd() {
 
     const getFinalContent = () => {
       return (
-        `{{即時削除|${dialogTypeSelect.val()}${dialogTypeParams
+        `${
+          namespaceNumber === 10
+          ? "<noinclude>"
+          : mw.config.get("wgPageName").endsWith(".css") || mw.config.get("wgPageName").endsWith(".js")
+          ? "/* "
+          : ""
+        }{{即時削除|${dialogTypeSelect.val()}${dialogTypeParams
           .children()
           .toArray()
           .filter((param) => (param as HTMLInputElement).type === "text")
@@ -214,7 +220,13 @@ export async function initCsd() {
           )
           .join(
             "",
-          )}${dialogCommentInput.val() ? `|コメント=${dialogCommentInput.val()}` : ""}}}` +
+          )}${dialogCommentInput.val() ? `|コメント=${dialogCommentInput.val()}` : ""}}}${
+          namespaceNumber === 10
+          ? "</noinclude>"
+          : mw.config.get("wgPageName").endsWith(".css") || mw.config.get("wgPageName").endsWith(".js")
+          ? " */\n"
+          : "\n"
+          }` +
         (dialogBlankInput.prop("checked") ? "" : pageContent)
       );
     };
