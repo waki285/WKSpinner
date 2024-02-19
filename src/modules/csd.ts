@@ -266,7 +266,7 @@ export async function initCsd() {
         disablelimitreport: true,
         disableeditsection: true,
         disabletoc: true,
-        contentmodel: "wikitext",
+        //contentmodel: "wikitext",
         formatversion: "2",
       });
       previewContent.empty();
