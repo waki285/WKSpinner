@@ -43,16 +43,24 @@ export async function initSkj() {
       .text("読み込み中")
       .append(getImage("load", "margin-left: 0.5em;"));
     skjDialog.append(dialogContent);
-    const pageRes = await new mw.Api().post({
-      action: "query",
-      format: "json",
-      prop: "revisions",
-      list: "",
-      titles: mw.config.get("wgPageName"),
-      formatversion: "2",
-      rvprop: "content",
-      rvslots: "main",
-    });
+    const [pageRes, existRFDPage] = await Promise.all([
+      new mw.Api().post({
+        action: "query",
+        format: "json",
+        prop: "revisions",
+        list: "",
+        titles: mw.config.get("wgPageName"),
+        formatversion: "2",
+        rvprop: "content",
+        rvslots: "main",
+      }),
+      new mw.Api().post({
+        action: "query",
+        format: "json",
+        titles: SKJ_REQUEST_PAGE_NAME + mw.config.get("wgPageName"),
+        formatversion: "2",
+      })
+    ]);
     const pageContent = pageRes.query.pages[0].revisions[0].slots.main.content;
     dialogContent.empty();
     const dialogFieldset = $("<fieldset>");
@@ -71,15 +79,19 @@ export async function initSkj() {
     dialogPageNameDiv.append(
       $("<span>").text(SKJ_REQUEST_PAGE_NAME).addClass("wks-shrink-0"),
     );
+    const yyyymmdd = new Date().toISOString().split("T")[0]!.replace(/-/g, "");
     dialogPageNameDiv.append(
       $("<input>").prop({
         id: "wks-skj-dialog-page-name-input",
         type: "text",
         placeholder: "ページ名",
         style: "width: 100%;",
-        value: mw.config.get("wgPageName"),
+        value: existRFDPage.query.pages[0].missing ? mw.config.get("wgPageName"):`${mw.config.get("wgPageName")} ${yyyymmdd}`,
       }),
     );
+    if (!existRFDPage.query.pages[0].missing) {
+      mw.notify("すでに削除依頼ページが存在していたので、サブページ名に日付を追加しました。");
+    }
     dialogPageNameRow.append(dialogPageNameDiv);
     dialogFieldset.append(dialogPageNameRow);
     const dialogCRRow = createRow("cr").addClass("wks-inline");
