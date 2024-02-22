@@ -1,10 +1,19 @@
-import { CONFIG_PAGE_NAME, SCRIPT_NAME } from "./constants";
+import {
+  CONFIG_PAGE_NAME,
+  ORIG_PORTLET_ID,
+  PORTLET_LABEL,
+  RELEASE_NOTES,
+  SCRIPT_NAME,
+  VERSION,
+  VERSION_OPTIONS_KEY,
+} from "./constants";
 import { initCsd } from "./modules/csd";
 import { initEditCount } from "./modules/editCount";
 import { initMi } from "./modules/mi";
 import { initSkj } from "./modules/skj";
 import { showConfigPage } from "./preferences";
 import { getOptionProperty, loadLibrary } from "./util";
+import cmp from "semver-compare";
 
 mw.loader.load(
   mw.config.get("wgServer") +
@@ -32,22 +41,10 @@ async function init() {
       "pt-wks-pref",
     );
     if (isMobile && el) {
-      $("#pt-wks-pref").find(".minerva-icon").addClass("minerva-icon--settings");
+      $("#pt-wks-pref")
+        .find(".minerva-icon")
+        .addClass("minerva-icon--settings");
     }
-  }
-
-  // 特別ページ
-  if (Math.sign(namespaceNumber) === -1) {
-    if (getOptionProperty("editCount.enabled") === true) {
-      if (
-        !(isMobile && getOptionProperty("editCount.enableMobile") === false)
-      ) {
-        if (mw.config.get("wgCanonicalSpecialPageName") === "Recentchanges" || mw.config.get("wgCanonicalSpecialPageName") === "Watchlist" || mw.config.get("wgCanonicalSpecialPageName") === "Newpages") {
-          initEditCount();
-        }
-      }
-    }
-    return;
   }
 
   await loadLibrary();
@@ -63,6 +60,38 @@ async function init() {
   if (getOptionProperty("disableMobile") === true && isMobile) {
     return;
   }
+
+  // 特別ページ
+  if (Math.sign(namespaceNumber) === -1) {
+    if (getOptionProperty("editCount.enabled") === true) {
+      if (
+        !(isMobile && getOptionProperty("editCount.enableMobile") === false)
+      ) {
+        if (
+          mw.config.get("wgCanonicalSpecialPageName") === "Recentchanges" ||
+          mw.config.get("wgCanonicalSpecialPageName") === "Watchlist" ||
+          mw.config.get("wgCanonicalSpecialPageName") === "Newpages"
+        ) {
+          initEditCount();
+        }
+      }
+    }
+    return;
+  }
+  if (mw.config.get("wgAction") === "history") {
+    if (
+      getOptionProperty("editCount.enabled") === true &&
+      !(isMobile && getOptionProperty("editCount.enableMobile") === false)
+    ) {
+      initEditCount();
+    }
+  }
+
+  if (getOptionProperty("useIndividualPortlet") === true) {
+    mw.util.addPortlet(ORIG_PORTLET_ID, PORTLET_LABEL, "#p-search");
+  }
+
+  versionNotify();
 
   // 即時削除
   if (
@@ -86,6 +115,20 @@ async function init() {
     !(isMobile && getOptionProperty("skj.enableMobile") === false)
   ) {
     await initSkj();
+  }
+}
+
+async function versionNotify() {
+  const currentVersion = VERSION;
+  const lastVersion = mw.user.options.get(VERSION_OPTIONS_KEY) || "0.0.0";
+
+  if (cmp(currentVersion, lastVersion) === 1) {
+    await new mw.Api().saveOption(VERSION_OPTIONS_KEY, currentVersion);
+    mw.notify(
+      $(
+        `<span>${SCRIPT_NAME}: 新しいバージョン ${currentVersion} にアップデートされました。詳細は<a href="${RELEASE_NOTES}" target="_blank">リリースノート</a>を参照。</span>`,
+      ),
+    );
   }
 }
 

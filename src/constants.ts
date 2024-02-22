@@ -1,11 +1,15 @@
 export const DEV = false;
 
+// 変更必須
+export const VERSION = "0.6.0";
+
 export const SCRIPT_NAME = "WKSpinner";
 export const SKJ_REQUEST_PAGE_NAME = DEV
   ? "利用者:鈴音雨/削除依頼テスト/"
   : "Wikipedia:削除依頼/";
 export const CONFIG_PAGE_NAME = "利用者:鈴音雨/WKSpinner/Preferences";
 export const OPTIONS_KEY = "userjs-wkspinner";
+export const VERSION_OPTIONS_KEY = "userjs-wkspinner-version";
 export const SUMMARY_AD =
   " ([[利用者:鈴音雨/WKSpinner|" + SCRIPT_NAME + "]]使用)";
 export const SUMMARY_AD_ATTRACT =
