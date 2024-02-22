@@ -12,14 +12,18 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/node": "^20.11.4",
+    "@types/node": "^20.11.19",
     "@types/oojs-ui": "^0.47.6",
-    "@typescript-eslint/eslint-plugin": "^6.19.0",
-    "@typescript-eslint/parser": "^6.19.0",
-    "esbuild": "^0.19.11",
+    "@types/semver-compare": "^1.0.3",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "esbuild": "^0.19.12",
     "eslint": "^8.56.0",
-    "prettier": "^3.2.2",
-    "types-mediawiki-renovate": "^2.4.0",
+    "prettier": "^3.2.5",
+    "types-mediawiki-renovate": "^2.10.0",
     "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "semver-compare": "^1.0.0"
   }
 }
