@@ -61,7 +61,6 @@ export async function initCsd() {
     });
     const pageContent = pageRes.query.pages[0].revisions[0].slots.main.content;
     dialogContent.empty();
-    7;
     const dialogFieldset = $("<fieldset>");
     dialogFieldset.prop({
       id: "wks-csd-dialog-optionfield",
