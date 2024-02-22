@@ -105,12 +105,20 @@ export type SDReason = {
   name: string;
   num: number;
   shortDesc: string;
-  params: {
+  params: ({
     id: number | null;
     name: string;
-    placeholder: string;
     required: boolean;
-  }[];
+  } & (
+    | { type: "input"; placeholder: string }
+    | {
+        type: "select";
+        choices: {
+          name: string;
+          id: string;
+        }[];
+      }
+  ))[];
   blank: boolean;
 };
 
@@ -147,6 +155,7 @@ export const SD_REASON = [
     params: [
       {
         id: 2,
+        type: "input",
         name: "「露骨な宣伝・広告のみが目的」と判断される根拠",
         placeholder:
           "特売情報を前面に出しており、 出典も当該店の広告チラシへのリンクとなっている。",
@@ -163,6 +172,7 @@ export const SD_REASON = [
     params: [
       {
         id: 2,
+        type: "input",
         name: "過去の削除依頼",
         placeholder: "ほげほげ",
         required: true,
@@ -178,12 +188,14 @@ export const SD_REASON = [
     params: [
       {
         id: 2,
+        type: "input",
         name: "コピペ元のページ",
         placeholder: "ほげほげ",
         required: true,
       },
       {
         id: 3,
+        type: "input",
         name: "言語コード(JAWPの場合不要)",
         placeholder: "en",
         required: false,
@@ -208,6 +220,7 @@ export const SD_REASON = [
       {
         id: 2,
         name: "侵害元のページ",
+        type: "input",
         placeholder: "https://example.com/hogehoge",
         required: true,
       },
@@ -221,9 +234,15 @@ export const SD_REASON = [
     shortDesc: "特定の荒らし利用者が作成したページ",
     params: [
       {
-        id: null,
+        id: 2,
         name: "荒らし利用者",
-        placeholder: "利用者名",
+        type: "select",
+        choices: [
+          { name: "未指定", id: "null" },
+          { name: "Ellsiemall系 (LTA:ELLS) (カテゴリのみ)", id: "ellsiemall" },
+          { name: "ヒースロー系 (LTA:HEATHROW)", id: "heathrow" },
+          { name: "Hightechodap系 (LTA:HGTCHDP)", id: "hightechodap" },
+        ],
         required: true,
       },
     ],
@@ -238,6 +257,7 @@ export const SD_REASON = [
       {
         id: 2,
         name: "定義なしと判断される理由",
+        type: "input",
         placeholder: "数値データ表のみの記載で、定義となる説明文が一切ない",
         required: true,
       },
@@ -261,6 +281,7 @@ export const SD_REASON = [
       {
         id: 2,
         name: "書き誤り箇所",
+        type: "input",
         placeholder: "ニが漢字の二",
         required: true,
       },
@@ -292,6 +313,7 @@ export const SD_REASON = [
       {
         id: 2,
         name: "全角と半角の使い分けに反する箇所",
+        type: "input",
         placeholder: "全角数字８",
         required: true,
       },
@@ -323,6 +345,7 @@ export const SD_REASON = [
       {
         id: 2,
         name: "曖昧さ回避の括弧の付け方に反する箇所",
+        type: "input",
         placeholder: "括弧が全角丸括弧になっている",
         required: true,
       },
@@ -354,6 +377,7 @@ export const SD_REASON = [
       {
         id: 2,
         name: "コモンズのファイル名",
+        type: "input",
         placeholder: "commons-file.png",
         required: true,
       },
@@ -369,6 +393,7 @@ export const SD_REASON = [
       {
         id: 2,
         name: "コモンズのファイル名",
+        type: "input",
         placeholder: "commons-file.png",
         required: true,
       },
@@ -384,6 +409,7 @@ export const SD_REASON = [
       {
         id: 2,
         name: "コモンズのファイル名",
+        type: "input",
         placeholder: "commons-file.png",
         required: true,
       },
@@ -399,6 +425,7 @@ export const SD_REASON = [
       {
         id: 2,
         name: "コモンズのファイル名",
+        type: "input",
         placeholder: "commons-file.png",
         required: true,
       },
@@ -414,6 +441,7 @@ export const SD_REASON = [
       {
         id: 2,
         name: "重複ファイル名",
+        type: "input",
         placeholder: "file.png",
         required: true,
       },
@@ -429,6 +457,7 @@ export const SD_REASON = [
       {
         id: 2,
         name: "投稿者への通知場所",
+        type: "input",
         placeholder: "利用者―会話:Example",
         required: true,
       },
@@ -444,6 +473,7 @@ export const SD_REASON = [
       {
         id: 2,
         name: "自由利用ができない根拠",
+        type: "input",
         placeholder: "画像に著作権保護のマークが入っている",
         required: true,
       },
@@ -499,6 +529,7 @@ export const SD_REASON = [
       {
         id: 2,
         name: "合意の場所",
+        type: "input",
         placeholder:
           "プロジェクト:カテゴリ関連/議論/20xx年/x月x日#議論セクション",
         required: true,
@@ -586,7 +617,7 @@ export const MI_CHOICES = [
           { name: "組織", id: "organization" },
           { name: "フィクション", id: "fiction" },
         ],
-        required: true,
+        required: false,
       },
     ],
   },
@@ -628,4 +659,5 @@ export const NAMESPACE_MAP: ReadonlyMap<number, string> = new Map([
   [14, "カテゴリ"],
 ]);
 
-export const REDLINK_REGEX = /w\/index\.php\?title=(.+?)(&action=edit)?&redlink=1/;
+export const REDLINK_REGEX =
+  /w\/index\.php\?title=(.+?)(&action=edit)?&redlink=1/;

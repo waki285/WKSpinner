@@ -145,15 +145,31 @@ export async function initCsd() {
             )
             .prop("for", `wks-csd-dialog-type-params-${param.id}`),
         );
-        dialogTypeParams.append(
-          $("<input>").prop({
+        if (param.type === "input") {
+          dialogTypeParams.append(
+            $("<input>").prop({
+              id: `wks-csd-dialog-type-params-${param.id}`,
+              type: "text",
+              placeholder: param.placeholder,
+              required: param.required,
+              style: "width: 100%;",
+            }),
+          );
+        } else if (param.type === "select") {
+          const select = $("<select>").prop({
             id: `wks-csd-dialog-type-params-${param.id}`,
-            type: "text",
-            placeholder: param.placeholder,
             required: param.required,
-            style: "width: 100%;",
-          }),
-        );
+          });
+          for (const option of param.choices) {
+            select.append(
+              $("<option>").prop({
+                value: option.id,
+                text: option.name,
+              }),
+            );
+          }
+          dialogTypeParams.append(select);
+        }
       }
 
       if (selectedReason.blank) {
@@ -213,14 +229,28 @@ export async function initCsd() {
         }{{即時削除|${dialogTypeSelect.val()}${dialogTypeParams
           .children()
           .toArray()
-          .filter((param) => (param as HTMLInputElement).type === "text")
-          .map(
-            (param) =>
-              `|${param.id.replace("wks-csd-dialog-type-params-", "") !== "null" ? `${param.id.replace("wks-csd-dialog-type-params-", "")}=` : ""}${$(param).val()}`,
-          )
-          .join(
-            "",
-          )}${dialogCommentInput.val() ? `|コメント=${dialogCommentInput.val()}` : ""}}}${
+          .filter((param) => param.tagName === "INPUT" || param.tagName === "SELECT")
+          .map((param) => {
+            const input = $(param).first();
+            let fi = input.val();
+            if (dialogTypeSelect.val() === "全般10") {
+              switch (fi) {
+                case "ellsiemall":
+                  fi = "[[LTA:ELLS]]";
+                  break;
+                case "heathrow":
+                  fi = "[[LTA:HEATHROW]]";
+                  break;
+                case "hightechodap":
+                  fi = "[[LTA:HGTCHDP]]";
+                  break;
+                default:
+                  break;
+              }
+            }
+            return `|${input.prop("id").replace("wks-csd-dialog-type-params-", "")}=${fi}`;
+          }).join("")
+          }${dialogCommentInput.val() ? `|コメント=${dialogCommentInput.val()}` : ""}}}${
           namespaceNumber === 10
           ? "</noinclude>"
           : mw.config.get("wgPageName").endsWith(".css") || mw.config.get("wgPageName").endsWith(".js")
