@@ -11,6 +11,7 @@ import { initCsd } from "./modules/csd";
 import { initEditCount } from "./modules/editCount";
 import { initMi } from "./modules/mi";
 import { initSkj } from "./modules/skj";
+import { initWarn } from "./modules/warn";
 import { showConfigPage } from "./preferences";
 import { getOptionProperty, loadLibrary } from "./util";
 import cmp from "semver-compare";
@@ -115,6 +116,15 @@ async function init() {
     !(isMobile && getOptionProperty("skj.enableMobile") === false)
   ) {
     await initSkj();
+  }
+
+  // ユーザーへの警告
+  if (
+    getOptionProperty("warn.enabled") === true && // 無効でない
+    !(isMobile && getOptionProperty("warn.enableMobile") === false) &&
+    (namespaceNumber === 2 || namespaceNumber === 3)
+  ) {
+    await initWarn();
   }
 }
 

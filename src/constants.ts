@@ -1,7 +1,7 @@
 export const DEV = false;
 
 // 変更必須
-export const VERSION = "0.6.0";
+export const VERSION = "0.7.0";
 
 export const SCRIPT_NAME = "WKSpinner";
 export const SKJ_REQUEST_PAGE_NAME = DEV
@@ -58,6 +58,10 @@ export type Options = {
     enabled: boolean;
     enableMobile: boolean;
   };
+  warn: {
+    enabled: boolean;
+    enableMobile: boolean;
+  };
 };
 
 export const DEFAULT_OPTIONS = {
@@ -97,6 +101,10 @@ export const DEFAULT_OPTIONS = {
   editCount: {
     enabled: false,
     enableMobile: false,
+  },
+  warn: {
+    enabled: true,
+    enableMobile: true,
   },
 } as const satisfies Options;
 
@@ -634,6 +642,133 @@ export const MI_CHOICES = [
   { name: "画像過剰", id: "image", params: [] },
   { name: "物語世界内の観点", id: "fictional", params: [] },
 ] as const satisfies MIChoice[];
+
+export type WarnTemplate = {
+  name: string;
+  description: string;
+  params: {
+    type: "input",
+    name: string;
+    id: string;
+    required: boolean;
+    placeholder: string;
+  }[],
+  category: string;
+} & ({ hasTitle: true } | { hasTitle: false, defaultTitle: string });
+
+export const WARN_TEMPLATES = [
+  {
+    name: "Test0",
+    description: "テキストを消してしまった場合の案内",
+    hasTitle: false,
+    defaultTitle: "ご案内",
+    params: [
+      {
+        type: "input",
+        name: "項目名",
+        id: "1",
+        required: false,
+        placeholder: "ほげほげ",
+      },
+      {
+        type: "input",
+        name: "追加メッセージ",
+        id: "2",
+        required: false,
+        placeholder: "「ご参照ください。」の後ろのメッセージ",
+      }
+    ],
+    category: "Test (一般的なテストもしくは荒らし)"
+  },
+  {
+    name: "Selftest",
+    description: "テスト投稿を自分で差し戻した人に対しての案内",
+    hasTitle: false,
+    defaultTitle: "ご案内",
+    params: [],
+    category: "Test (一般的なテストもしくは荒らし)"
+  },
+  {
+    name: "Test1",
+    description: "テスト投稿の案内",
+    hasTitle: false,
+    defaultTitle: "ご案内",
+    params: [
+      {
+        type: "input",
+        name: "項目名",
+        id: "1",
+        required: false,
+        placeholder: "ほげほげ",
+      }
+    ],
+    category: "Test (一般的なテストもしくは荒らし)"
+  },
+  {
+    name: "Test2",
+    description: "荒らしの注意 (もしくはTestで注意後)",
+    hasTitle: false,
+    defaultTitle: "注意",
+    params: [
+      {
+        type: "input",
+        name: "項目名",
+        id: "1",
+        required: false,
+        placeholder: "ほげほげ",
+      }
+    ],
+    category: "Test (一般的なテストもしくは荒らし)"
+  },
+  {
+    name: "Test2a",
+    description: "白紙化や記述除去荒らしの注意",
+    hasTitle: false,
+    defaultTitle: "注意",
+    params: [
+      {
+        type: "input",
+        name: "項目名",
+        id: "1",
+        required: false,
+        placeholder: "ほげほげ",
+      }
+    ],
+    category: "Test (一般的なテストもしくは荒らし)"
+  },
+  {
+    name: "Test3",
+    description: "荒らしの警告",
+    hasTitle: false,
+    defaultTitle: "警告",
+    params: [
+      {
+        type: "input",
+        name: "項目名",
+        id: "1",
+        required: false,
+        placeholder: "ほげほげ",
+      }
+    ],
+    category: "Test (一般的なテストもしくは荒らし)"
+  },
+  {
+    name: "Test4",
+    description: "荒らし行為への最後の警告",
+    hasTitle: false,
+    defaultTitle: "最終警告",
+    params: [
+      {
+        type: "input",
+        name: "項目名",
+        id: "1",
+        required: false,
+        placeholder: "ほげほげ",
+      }
+    ],
+    category: "Test (一般的なテストもしくは荒らし)"
+  }
+] as const satisfies WarnTemplate[];
 
 export const ERRORS = {
   unknownerror: "不明なエラーが発生しました。",

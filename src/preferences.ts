@@ -323,6 +323,38 @@ export async function showConfigPage() {
 
   configArea.append(ecFieldset.$element);
 
+  const warnFieldset = new OO.ui.FieldsetLayout({
+    label: "ユーザーへの警告",
+    classes: ["container", "wks-pref-container"],
+  });
+
+  const warnEnabled = new OO.ui.CheckboxInputWidget({
+    value: "warn-enabled",
+    selected: getOptionProperty("warn.enabled"),
+  });
+
+  const warnEnabledField = new OO.ui.FieldLayout(warnEnabled, {
+    label: "有効にする",
+    align: "inline",
+  });
+
+  const warnEnableMobile = new OO.ui.CheckboxInputWidget({
+    value: "warn-enable-mobile",
+    selected: getOptionProperty("warn.enableMobile"),
+  });
+
+  const warnEnableMobileField = new OO.ui.FieldLayout(warnEnableMobile, {
+    label: "モバイルでも有効にする",
+    align: "inline",
+  });
+
+  warnFieldset.addItems([
+    warnEnabledField,
+    warnEnableMobileField,
+  ]);
+
+  configArea.append(warnFieldset.$element);
+
   const saveButton = new OO.ui.ButtonWidget({
     label: "保存",
     flags: ["progressive"],
@@ -393,7 +425,11 @@ export async function showConfigPage() {
       editCount: {
         enabled: ecEnabled.isSelected(),
         enableMobile: ecEnableMobile.isSelected(),
-      }
+      },
+      warn: {
+        enabled: warnEnabled.isSelected(),
+        enableMobile: warnEnableMobile.isSelected(),
+      },
     };
     console.log(newOptions);
 
