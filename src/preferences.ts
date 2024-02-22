@@ -1,4 +1,4 @@
-import { DEFAULT_OPTIONS, OPTIONS_KEY, SCRIPT_NAME } from "./constants";
+import { DEFAULT_OPTIONS, OPTIONS_KEY, Options, SCRIPT_NAME } from "./constants";
 import { getOptionProperty } from "./util";
 
 export async function showConfigPage() {
@@ -28,6 +28,18 @@ export async function showConfigPage() {
     align: "inline",
   });
   configArea.append(prefLinkInToolbarField.$element);
+
+  const useIndividualPortlet = new OO.ui.CheckboxInputWidget({
+    value: "use-individual-portlet",
+    selected: getOptionProperty("useIndividualPortlet"),
+  });
+  const useIndividualPortletField = new OO.ui.FieldLayout(useIndividualPortlet, {
+    label: "「その他」タブではなく、新たに「WK」というタブを作りそこに機能を配置",
+    align: "inline",
+    help: "これはモバイルには効果がありません。",
+    helpInline: true,
+  });
+  configArea.append(useIndividualPortletField.$element);
 
   const miFieldset = new OO.ui.FieldsetLayout({
     label: "問題テンプレート貼り付け",
@@ -342,9 +354,10 @@ export async function showConfigPage() {
     saveButton.setDisabled(true);
     discardButton.setDisabled(true);
 
-    const newOptions = {
+    const newOptions: Options = {
       disableMobile: disableMobile.isSelected(),
       prefLinkInToolbar: prefLinkInToolbar.isSelected(),
+      useIndividualPortlet: useIndividualPortlet.isSelected(),
       mi: {
         enabled: miEnabled.isSelected(),
         enableMobile: miEnableMobile.isSelected(),

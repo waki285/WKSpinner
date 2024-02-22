@@ -1,4 +1,4 @@
-import { DEFAULT_OPTIONS, OPTIONS_KEY, SCRIPT_NAME } from "./constants";
+import { DEFAULT_OPTIONS, OPTIONS_KEY, ORIG_PORTLET_ID, SCRIPT_NAME } from "./constants";
 
 export const sleep = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -110,7 +110,8 @@ export function createPortletLink(
 ): HTMLLIElement | null {
   const theme = mw.config.get("skin");
   const portlet = mw.util.addPortletLink(
-    theme === "minerva" ? "p-tb" : "p-cactions",
+    theme === "minerva" ? "p-tb" :
+    getOptionProperty("useIndividualPortlet") === true ? ORIG_PORTLET_ID:"p-cactions",
     "#",
     title,
     id,

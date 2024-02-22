@@ -16,10 +16,15 @@ export const SUMMARY_AD_ATTRACT =
   '(<a href="/wiki/利用者:鈴音雨/WKSpinner" target="_blank">' +
   SCRIPT_NAME +
   "</a>使用)";
+export const RELEASE_NOTES = "/wiki/利用者:鈴音雨/WKSpinner#リリースノート";
+
+export const ORIG_PORTLET_ID = "p-wks";
+export const PORTLET_LABEL = "WK";
 
 export type Options = {
   disableMobile: boolean;
   prefLinkInToolbar: boolean;
+  useIndividualPortlet: boolean;
   mi: {
     enabled: boolean;
     enableMobile: boolean;
@@ -58,6 +63,7 @@ export type Options = {
 export const DEFAULT_OPTIONS = {
   disableMobile: false,
   prefLinkInToolbar: true,
+  useIndividualPortlet: false,
   mi: {
     enabled: true,
     enableMobile: true,
