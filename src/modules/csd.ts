@@ -265,7 +265,41 @@ export async function initCsd() {
       return ($("#wks-csd-dialog-summary-input").val() || "+sd") + SUMMARY_AD;
     };
 
+    const checkParams = () => {
+      const errList = $("<ul>");
+      const selected = dialogTypeSelect.val();
+      const selectedReason = SD_REASON.find(
+        (reason) => reason.name === selected,
+      );
+      if (!selectedReason) {
+        errList.append($("<li>").text("理由が選択されていません"));
+        return errList;
+      }
+      const params = selectedReason.params;
+      for (const param of params) {
+        const input = $(`#wks-csd-dialog-type-params-${param.id}`);
+        if (param.type === "input" && param.required && !input.val()) {
+          errList.append($("<li>").text(`${param.name}が入力されていません`));
+        }
+        if (param.type === "select" && param.required && (!input.val() || input.val() === "null")) {
+          errList.append($("<li>").text(`${param.name}が選択されていません`));
+        }
+      }
+      if (errList.children().length) {
+        return $("<div>").append($("<p>").text("入力にエラーがあります。")).append(errList);
+      } else {
+        return null;
+      }
+    }
+
     const preview = async () => {
+      const errList = checkParams();
+      if (errList) {
+        mw.notify(errList, {
+          type: "error",
+        });
+        return;
+      }
       const previewDialog = $("<div>")
         .css({
           maxHeight: "70vh",
@@ -327,6 +361,13 @@ export async function initCsd() {
     };
 
     const execute = async () => {
+      const errList = checkParams();
+      if (errList) {
+        mw.notify(errList, {
+          type: "error",
+        });
+        return;
+      }
       try {
         const editRes = await new mw.Api().postWithEditToken({
           action: "edit",

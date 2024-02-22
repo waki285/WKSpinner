@@ -59,7 +59,7 @@ export async function initSkj() {
         format: "json",
         titles: SKJ_REQUEST_PAGE_NAME + mw.config.get("wgPageName"),
         formatversion: "2",
-      })
+      }),
     ]);
     const pageContent = pageRes.query.pages[0].revisions[0].slots.main.content;
     dialogContent.empty();
@@ -86,11 +86,15 @@ export async function initSkj() {
         type: "text",
         placeholder: "ページ名",
         style: "width: 100%;",
-        value: existRFDPage.query.pages[0].missing ? mw.config.get("wgPageName"):`${mw.config.get("wgPageName")} ${yyyymmdd}`,
+        value: existRFDPage.query.pages[0].missing
+          ? mw.config.get("wgPageName")
+          : `${mw.config.get("wgPageName")} ${yyyymmdd}`,
       }),
     );
     if (!existRFDPage.query.pages[0].missing) {
-      mw.notify("すでに削除依頼ページが存在していたので、サブページ名に日付を追加しました。");
+      mw.notify(
+        "すでに削除依頼ページが存在していたので、サブページ名に日付を追加しました。",
+      );
     }
     dialogPageNameRow.append(dialogPageNameDiv);
     dialogFieldset.append(dialogPageNameRow);
@@ -306,7 +310,37 @@ export async function initSkj() {
 |依頼者票=${$("#wks-skj-dialog-opv-input").val()} --~~~~
 }}`;
 
+    const checkParams = () => {
+      const errList = $("<ul>");
+
+      if (!$("#wks-skj-dialog-page-name-input").val()) {
+        errList.append($("<li>").text("ページ名を入力してください。"));
+      }
+
+      if (!$("#wks-skj-dialog-desc-input").val()) {
+        errList.append($("<li>").text("理由を入力してください。"));
+      }
+
+      if (!$("#wks-skj-dialog-opv-input").val()) {
+        errList.append($("<li>").text("依頼者票を入力してください。"));
+      }
+
+      if (errList.children().length) {
+        return $("<div>")
+          .append($("<p>").text("入力にエラーがあります。"))
+          .append(errList);
+      } else {
+        return true;
+      }
+    };
+
     const execute = async () => {
+      const err = checkParams();
+      if (err !== true) {
+        mw.notify(err, { type: "error" });
+        return;
+      }
+
       const progressDialog = $("<div>")
         .css({
           maxHeight: "70vh",
@@ -645,6 +679,11 @@ export async function initSkj() {
     };
 
     const preview = async () => {
+      const err = checkParams();
+      if (err !== true) {
+        mw.notify(err, { type: "error" });
+        return;
+      }
       const previewDialog = $("<div>")
         .css({
           maxHeight: "70vh",
@@ -671,21 +710,39 @@ export async function initSkj() {
       previewDialog.append(previewContent);
       previewDialog.append($("<hr>").addClass("wks-hr"));
       previewDialog.append(previewContent2);
-      const parseRes = await new mw.Api().post({
-        action: "parse",
-        title: mw.config.get("wgPageName"),
-        text: getFinalContentPrepend(),
-        summary:
-          ($("#wks-skj-dialog-summary-template").val() || "+Sakujo") +
-          SUMMARY_AD,
-        prop: "text|modules|jsconfigvars",
-        pst: true,
-        disablelimitreport: true,
-        disableeditsection: true,
-        disabletoc: true,
-        contentmodel: "wikitext",
-        formatversion: "2",
-      });
+      const [parseRes, parseRes2] = await Promise.all([
+        new mw.Api().post({
+          action: "parse",
+          title: mw.config.get("wgPageName"),
+          text: getFinalContentPrepend(),
+          summary:
+            ($("#wks-skj-dialog-summary-template").val() || "+Sakujo") +
+            SUMMARY_AD,
+          prop: "text|modules|jsconfigvars",
+          pst: true,
+          disablelimitreport: true,
+          disableeditsection: true,
+          disabletoc: true,
+          contentmodel: "wikitext",
+          formatversion: "2",
+        }),
+        new mw.Api().post({
+          action: "parse",
+          title:
+            SKJ_REQUEST_PAGE_NAME + $("#wks-skj-dialog-page-name-input").val(),
+          text: getFinalContentRequest(),
+          summary:
+            ($("#wks-skj-dialog-summary-submit").val() || "削除依頼") +
+            SUMMARY_AD,
+          prop: "text|modules|jsconfigvars",
+          pst: true,
+          disablelimitreport: true,
+          disableeditsection: true,
+          disabletoc: true,
+          contentmodel: "wikitext",
+          formatversion: "2",
+        }),
+      ]);
       previewContent.empty();
       if (parseRes.parse.modules.length) {
         mw.loader.load(parseRes.parse.modules);
@@ -708,23 +765,6 @@ export async function initSkj() {
       previewContent.append(hr);
       previewContent.append(previewDiv);
 
-      const parseRes2 = await new mw.Api().post({
-        action: "parse",
-        title:
-          SKJ_REQUEST_PAGE_NAME + $("#wks-skj-dialog-page-name-input").val(),
-        text: getFinalContentRequest(),
-        summary:
-          ($("#wks-skj-dialog-summary-submit").val() || "削除依頼") +
-          SUMMARY_AD,
-        prop: "text|modules|jsconfigvars",
-        pst: true,
-        disablelimitreport: true,
-        disableeditsection: true,
-        disabletoc: true,
-        contentmodel: "wikitext",
-        formatversion: "2",
-      });
-
       previewContent2.empty();
       if (parseRes2.parse.modules.length) {
         mw.loader.load(parseRes2.parse.modules);
@@ -745,8 +785,8 @@ export async function initSkj() {
 
       previewDialog.dialog({
         position: {
-          my: "center",
-          at: "center",
+          my: "top",
+          at: "top+5%",
           of: window,
         },
       });

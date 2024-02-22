@@ -218,7 +218,44 @@ export async function initMi() {
       );
     };
 
+    const checkParams = () => {
+      const errList = $("<ul>");
+      let selected = false;
+      
+      for (const choice of MI_CHOICES) {
+        if ($(`#wks-mi-dialog-type-${choice.id}`).prop("checked")) {
+          selected = true;
+          const params = choice.params;
+          for (const param of params) {
+            if (param.required) {
+              const val = $(`#wks-mi-dialog-type-params-${param.id}`).val();
+              if (param.type === "select" && val === "null") {
+                errList.append($("<li>").text(`${choice.name}の${param.name}が選択されていません。`));
+              } else if (param.type === "input" && val === "") {
+                errList.append($("<li>").text(`${choice.name}の${param.name}が入力されていません。`));
+              }
+            }
+          }
+        }
+      }
+
+      if (!selected) {
+        errList.append($("<li>").text("何も選択されていません。"));
+      }
+
+      if (errList.children().length) {
+        return $("<div>").append($("<p>").text("入力にエラーがあります。")).append(errList);
+      } else {
+        return false;
+      }
+    }
+
     const preview = async () => {
+      const err = checkParams();
+      if (err) {
+        mw.notify(err, { type: "error" });
+        return;
+      }
       const previewDialog = $("<div>")
         .css({
           maxHeight: "70vh",
@@ -249,7 +286,6 @@ export async function initMi() {
         disablelimitreport: true,
         disableeditsection: true,
         disabletoc: true,
-        contentmodel: "wikitext",
         formatversion: "2",
       });
       previewContent.empty();
