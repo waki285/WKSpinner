@@ -31,6 +31,10 @@ export async function initWarn() {
   warnPortlet.addEventListener("click", async (e) => {
     e.preventDefault();
 
+    if (talkPageName.includes("/")) {
+      mw.notify(`${SCRIPT_NAME}: 警告: ノートページのサブページに警告を行おうとしています！`, { type: "warn" });
+    }
+  
     const createRow = createRowFunc("warn");
     const warnDialog = $("<div>");
     warnDialog.css("max-height", "70vh").dialog({
