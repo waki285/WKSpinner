@@ -61,6 +61,9 @@ export type Options = {
   warn: {
     enabled: boolean;
     enableMobile: boolean;
+    default: {
+      summary: string;
+    };
   };
 };
 
@@ -105,6 +108,9 @@ export const DEFAULT_OPTIONS = {
   warn: {
     enabled: true,
     enableMobile: true,
+    default: {
+      summary: "$t",
+    }
   },
 } as const satisfies Options;
 
@@ -652,11 +658,29 @@ export type WarnTemplate = {
     id: string;
     required: boolean;
     placeholder: string;
+    defaultValue?: string;
   }[],
   category: string;
 } & ({ hasTitle: true } | { hasTitle: false, defaultTitle: string });
 
 export const WARN_TEMPLATES = [
+  {
+    name: "Welcome",
+    description: "新規利用者への歓迎",
+    hasTitle: false,
+    defaultTitle: "ウィキペディアへようこそ！",
+    params: [
+      {
+        type: "input",
+        name: "署名",
+        id: "1",
+        required: true,
+        placeholder: "--~~~~",
+        defaultValue: "--~~~~",
+      }
+    ],
+    category: "ようこそ"
+  },
   {
     name: "Test0",
     description: "テキストを消してしまった場合の案内",
@@ -767,6 +791,370 @@ export const WARN_TEMPLATES = [
       }
     ],
     category: "Test (一般的なテストもしくは荒らし)"
+  },
+  {
+    name: "Preview",
+    description: "プレビューの案内",
+    hasTitle: true,
+    params: [
+      {
+        type: "input",
+        name: "何回目？",
+        id: "1",
+        required: false,
+        placeholder: "3回目",
+      }
+    ],
+    category: "一括投稿・プレビュー"
+  },
+  {
+    name: "PreviewMobile",
+    description: "プレビューの案内 (モバイル)",
+    hasTitle: true,
+    params: [
+      {
+        type: "input",
+        name: "何回目？",
+        id: "1",
+        required: false,
+        placeholder: "3回目",
+      }
+    ],
+    category: "一括投稿・プレビュー"
+  },
+  {
+    name: "一括",
+    description: "一括投稿の案内",
+    hasTitle: true,
+    params: [
+      {
+        type: "input",
+        name: "何回目？",
+        id: "1",
+        required: false,
+        placeholder: "3回目",
+      }
+    ],
+    category: "一括投稿・プレビュー"
+  },
+  {
+    name: "一括Preview",
+    description: "一括投稿とプレビュー案内の組み合わせ",
+    hasTitle: true,
+    params: [
+      {
+        type: "input",
+        name: "何回目？",
+        id: "1",
+        required: false,
+        placeholder: "3回目",
+      }
+    ],
+    category: "一括投稿・プレビュー"
+  },
+  {
+    name: "個人攻撃",
+    description: "利用者に対する個人攻撃の警告",
+    hasTitle: true,
+    params: [],
+    category: "コミュニケーション関係"
+  },
+  {
+    name: "編集合戦",
+    description: "編集合戦への警告",
+    hasTitle: false,
+    defaultTitle: "編集合戦はおやめください",
+    params: [],
+    category: "コミュニケーション関係"
+  },
+  {
+    name: "Notchat",
+    description: "ノートページで私的な会話を続ける利用者に対する注意",
+    hasTitle: true,
+    params: [
+      {
+        type: "input",
+        name: "ページ名",
+        id: "1",
+        required: false,
+        placeholder: "利用者‐会話:ウィキ助",
+      }
+    ],
+    category: "コミュニケーション関係"
+  },
+  {
+    name: "Spam",
+    description: "宣伝投稿への注意",
+    hasTitle: true,
+    params: [
+      {
+        type: "input",
+        name: "冒頭文",
+        id: "1",
+        required: false,
+        placeholder: "あなたの[[記事]]における編集を拝見致しました。",
+      }
+    ],
+    category: "投稿内容関係"
+  },
+  {
+    name: "対話拒否",
+    description: "対話を拒否する利用者への警告",
+    hasTitle: false,
+    defaultTitle: "対話拒否はおやめください",
+    params: [
+      {
+        type: "input",
+        name: "対話拒否を行ったページ",
+        id: "1",
+        required: false,
+        placeholder: "ノート:ほげほげ",
+      }
+    ],
+    category: "コミュニケーション関係"
+  },
+  {
+    name: "荒らしの差し戻し",
+    description: "過剰な荒らしの差し戻しに対する警告",
+    hasTitle: true,
+    params: [
+      {
+        type: "input",
+        name: "差し戻しを繰り返したページ",
+        id: "1",
+        required: false,
+        placeholder: "ほげほげ",
+      },
+      {
+        type: "input",
+        name: "何回目?",
+        id: "nth",
+        required: false,
+        placeholder: "3",
+      }
+    ],
+    category: "投稿内容関係"
+  },
+  {
+    name: "ご自身の記事",
+    description: "利用者自身の記事の作成・編集に対する注意 (確信がない場合)",
+    hasTitle: true,
+    params: [
+      {
+        type: "input",
+        name: "編集したページ",
+        id: "1",
+        required: true,
+        placeholder: "ほげほげ",
+      }
+    ],
+    category: "投稿内容関係"
+  },
+  {
+    name: "ご自身の記事2",
+    description: "利用者自身の記事の作成に対する注意 (明白な場合)",
+    hasTitle: true,
+    params: [
+      {
+        type: "input",
+        name: "作成したページ",
+        id: "1",
+        required: true,
+        placeholder: "ほげほげ",
+      }
+    ],
+    category: "投稿内容関係"
+  },
+  {
+    name: "機械翻訳の濫用",
+    description: "機械翻訳の濫用に対する注意",
+    hasTitle: true,
+    params: [
+      {
+        type: "input",
+        name: "翻訳されたページ",
+        id: "1",
+        required: true,
+        placeholder: "ほげほげ",
+      },
+      {
+        type: "input",
+        name: "使用された機械翻訳 (推定)",
+        id: "2",
+        required: true,
+        placeholder: "Google翻訳",
+        defaultValue: "Google翻訳",
+      },
+      {
+        type: "input",
+        name: "不自然な表現の例",
+        id: "3",
+        required: true,
+        placeholder: "「アルコール使用は主に男の人口の間で高かった」「急いで混雑していました」",
+      },
+      {
+        type: "input",
+        name: "全般8 (初版投稿者依頼 )が適用可能→1、削除依頼提出済み→2を入力",
+        id: "4",
+        required: false,
+        placeholder: "2",
+      },
+      {
+        type: "input",
+        name: "削除依頼ページ",
+        id: "5",
+        required: false,
+        placeholder: "[[Wikipedia:削除依頼/記事名]]",
+      }
+    ],
+    category: "投稿内容関係"
+  },
+  {
+    name: "発言改竄",
+    description: "発言改竄に対する注意",
+    hasTitle: true,
+    params: [
+      {
+        type: "input",
+        name: "改竄されたページ",
+        id: "1",
+        required: true,
+        placeholder: "ほげほげ",
+      }
+    ],
+    category: "コミュニケーション関係"
+  },
+  {
+    name: "丸写し",
+    description: "主に外部サイトからの丸写しの注意",
+    hasTitle: true,
+    params: [
+      {
+        type: "input",
+        name: "丸写しされた記事名",
+        id: "1",
+        required: true,
+        placeholder: "ほげほげ",
+      },
+      {
+        type: "input",
+        name: "コピー元",
+        id: "2",
+        required: true,
+        placeholder: "[URL ページ名]",
+      },
+      {
+        type: "input",
+        name: "削除依頼提出済み→削除依頼サブページ名、全般9→「即時削除」を入力",
+        id: "3",
+        required: false,
+        placeholder: "ほげほげ",
+      }
+    ],
+    category: "投稿内容関係"
+  },
+  {
+    name: "スタブ未満作成停止のお願い",
+    description: "短すぎる記事作成の繰り返しの注意",
+    hasTitle: true,
+    params: [
+      {
+        type: "input",
+        name: "何回目?",
+        id: "1",
+        required: false,
+        placeholder: "3回目",
+      }
+    ],
+    category: "投稿内容関係"
+  },
+  {
+    name: "削除依頼タグ除去",
+    description: "削除依頼タグの除去に対する注意",
+    hasTitle: true,
+    params: [
+      {
+        type: "input",
+        name: "削除依頼タグが除去されたページ",
+        id: "1",
+        required: true,
+        placeholder: "ほげほげ",
+      }
+    ],
+    category: "削除関係"
+  },
+  {
+    name: "記述除去",
+    description: "記述の無断除去に対する注意",
+    hasTitle: true,
+    params: [
+      {
+        type: "input",
+        name: "除去されたページ",
+        id: "1",
+        required: false,
+        placeholder: "ほげほげ",
+      }
+    ],
+    category: "投稿内容関係"
+  },
+  {
+    name: "翻訳継承",
+    description: "翻訳継承ができていない場合の案内",
+    hasTitle: true,
+    params: [
+      {
+        type: "input",
+        name: "翻訳されたページ",
+        id: "1",
+        required: true,
+        placeholder: "ほげほげ",
+      },
+      {
+        type: "input",
+        name: "翻訳元",
+        id: "2",
+        required: true,
+        placeholder: "[[:en:Main_Page]]",
+      },
+      {
+        type: "input",
+        name: "削除依頼提出済み→1、削除依頼提出をお願い→2を入力",
+        id: "3",
+        required: false,
+        placeholder: "1",
+      },
+      {
+        type: "input",
+        name: "削除依頼ページ",
+        id: "4",
+        required: false,
+        placeholder: "[[Wikipedia:削除依頼/記事名]]",
+      }
+    ],
+    category: "投稿内容関係"
+  },
+  {
+    name: "不当な即時削除タグ除去",
+    description: "即時削除タグの不当な除去の繰り返しに対する注意",
+    hasTitle: true,
+    params: [
+      {
+        type: "input",
+        name: "ページ名",
+        id: "1",
+        required: true,
+        placeholder: "ほげほげ",
+      }
+    ],
+    category: "削除関係"
+  },
+  {
+    name: "即時削除の乱用",
+    description: "即時削除の乱用に対する注意",
+    hasTitle: true,
+    params: [],
+    category: "削除関係"
   }
 ] as const satisfies WarnTemplate[];
 
