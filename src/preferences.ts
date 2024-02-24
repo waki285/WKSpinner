@@ -348,9 +348,21 @@ export async function showConfigPage() {
     align: "inline",
   });
 
+  const warnSummary = new OO.ui.TextInputWidget({
+    value: getOptionProperty("warn.default.summary"),
+    placeholder: "+$t",
+  });
+  const warnSummaryField = new OO.ui.FieldLayout(warnSummary, {
+    label: "編集の要約デフォルト値",
+    align: "top",
+    help: "$t にはテンプレート名 (Test, ご自身の記事 etc.) が入ります",
+    helpInline: true,
+  });
+
   warnFieldset.addItems([
     warnEnabledField,
     warnEnableMobileField,
+    warnSummaryField,
   ]);
 
   configArea.append(warnFieldset.$element);
@@ -429,6 +441,9 @@ export async function showConfigPage() {
       warn: {
         enabled: warnEnabled.isSelected(),
         enableMobile: warnEnableMobile.isSelected(),
+        default: {
+          summary: warnSummary.getValue() || "",
+        }
       },
     };
     console.log(newOptions);

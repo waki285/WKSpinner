@@ -9,6 +9,7 @@ import {
   createPortletLink,
   createRowFunc,
   getImage,
+  getOptionProperty,
 } from "@/util";
 
 export async function initWarn() {
@@ -109,6 +110,7 @@ export async function initWarn() {
               placeholder: param.placeholder,
               required: param.required,
               style: "width: 100%;",
+              value: ("defaultValue" in param ? param.defaultValue : "")
             }),
           );
         }/* else if (param.type === "select") {
@@ -152,11 +154,11 @@ export async function initWarn() {
     dialogComment.append(
       $("<label>").html("追加コメント").prop("for", "wks-warn-dialog-comment"),
     );
-    const dialogCommentInput = $("<input>").prop({
+    const dialogCommentInput = $("<textarea>").prop({
       id: "wks-warn-dialog-comment",
-      type: "text",
       placeholder: "コメント",
       style: "width: 100%;",
+      rows: 3,
     });
     
     dialogComment.append(dialogCommentInput);
@@ -165,7 +167,7 @@ export async function initWarn() {
     dialogSummary.append(
       $("<label>")
         .html(
-          `編集の要約 (指定しない場合 "注意") "${SUMMARY_AD_ATTRACT}" が自動付加されます`,
+          `編集の要約 (指定しない場合 "$t") ($tにはテンプレート名) "${SUMMARY_AD_ATTRACT}" が自動付加されます`,
         )
         .prop("for", "wks-warn-dialog-summary-input"),
     );
@@ -173,9 +175,9 @@ export async function initWarn() {
       $("<input>").prop({
         id: "wks-warn-dialog-summary-input",
         type: "text",
-        placeholder: "注意",
+        placeholder: "$t",
         style: "width: 100%;",
-        value: "注意",
+        value: getOptionProperty("warn.default.summary") || "$t",
       }),
     );
 
@@ -203,7 +205,10 @@ export async function initWarn() {
     };
 
     const getFinalSummary = () => {
-      return ($("#wks-warn-dialog-summary-input").val() || "注意") + SUMMARY_AD;
+      return ($("#wks-warn-dialog-summary-input").val() || "$t").toString().replace(
+        "$t",
+        dialogTypeSelect.val()?.toString() || "",
+      ) + SUMMARY_AD;
     };
 
     const checkParams = () => {
