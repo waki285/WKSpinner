@@ -855,6 +855,13 @@ export const WARN_TEMPLATES = [
     category: "一括投稿・プレビュー"
   },
   {
+    name: "Sign",
+    description: "署名の案内",
+    hasTitle: true,
+    params: [],
+    category: "コミュニケーション関係"
+  },
+  {
     name: "個人攻撃",
     description: "利用者に対する個人攻撃の警告",
     hasTitle: true,
@@ -1157,6 +1164,36 @@ export const WARN_TEMPLATES = [
     hasTitle: true,
     params: [],
     category: "削除関係"
+  },
+  {
+    name: "出典提示のお願い",
+    description: "出典を明記しない利用者に対する注意",
+    hasTitle: true,
+    params: [
+      {
+        type: "input",
+        name: "ページ名",
+        id: "1",
+        required: false,
+        placeholder: "ほげほげ",
+      }
+    ],
+    category: "投稿内容関係"
+  },
+  {
+    name: "特筆性のない記事の作成停止のお願い",
+    description: "特筆性のない記事の作成の繰り返しの注意",
+    hasTitle: true,
+    params: [
+      {
+        type: "input",
+        name: "何回目?",
+        id: "1",
+        required: false,
+        placeholder: "3回目",
+      }
+    ],
+    category: "投稿内容関係"
   }
 ] as const satisfies WarnTemplate[];
 
