@@ -301,10 +301,11 @@ export async function showConfigPage() {
         new OO.ui.TextInputWidget({
           value: "",
           placeholder: "依頼者票",
+          classes: ["wks-grow"]
         }),
         button,
       ],
-      classes: ["wks-pref-preset-horizontal"],
+      classes: ["wks-pref-preset-horizontal", "wks-w-full"],
     });
     button.on("click", () => {
       item.$element.remove();
