@@ -41,6 +41,32 @@ export async function showConfigPage() {
   });
   configArea.append(useIndividualPortletField.$element);
 
+  const versionNotifyOptionAll = new OO.ui.RadioOptionWidget({
+    data: "all",
+    label: "すべて",
+  });
+  const versionNotifyOptionMinor = new OO.ui.RadioOptionWidget({
+    data: "minor",
+    label: "メジャー・マイナーバージョンのみ",
+  });
+  const versionNotifyOptionNone = new OO.ui.RadioOptionWidget({
+    data: "none",
+    label: "通知しない",
+  });
+
+  const versionNotifySelect = new OO.ui.RadioSelectWidget({
+    items: [versionNotifyOptionAll, versionNotifyOptionMinor, versionNotifyOptionNone],
+  });
+
+  const versionNotifyField = new OO.ui.FieldLayout(versionNotifySelect, {
+    label: "バージョンアップ通知",
+    align: "inline",
+  });
+
+  configArea.append(versionNotifyField.$element);
+
+  versionNotifySelect.selectItemByData(getOptionProperty("versionNotify"));
+
   const miFieldset = new OO.ui.FieldsetLayout({
     label: "問題テンプレート貼り付け",
     classes: ["container", "wks-pref-container"],
@@ -402,6 +428,7 @@ export async function showConfigPage() {
       disableMobile: disableMobile.isSelected(),
       prefLinkInToolbar: prefLinkInToolbar.isSelected(),
       useIndividualPortlet: useIndividualPortlet.isSelected(),
+      versionNotify: (versionNotifySelect.findSelectedItem() as OO.ui.OptionWidget).getData() as string,
       mi: {
         enabled: miEnabled.isSelected(),
         enableMobile: miEnableMobile.isSelected(),

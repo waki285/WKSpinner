@@ -88,7 +88,7 @@ async function init() {
     }
   }
 
-  if (getOptionProperty("useIndividualPortlet") === true) {
+  if (getOptionProperty("useIndividualPortlet") === true && !isMobile) {
     mw.util.addPortlet(ORIG_PORTLET_ID, PORTLET_LABEL, "#p-search");
   }
 
@@ -134,11 +134,24 @@ async function versionNotify() {
 
   if (cmp(currentVersion, lastVersion) === 1) {
     await new mw.Api().saveOption(VERSION_OPTIONS_KEY, currentVersion);
-    mw.notify(
-      $(
-        `<span>${SCRIPT_NAME}: 新しいバージョン ${currentVersion} にアップデートされました。詳細は<a href="${RELEASE_NOTES}" target="_blank">リリースノート</a>を参照。</span>`,
-      ),
-    );
+
+    const setting = getOptionProperty("versionNotify");
+    const notify = () =>
+      mw.notify(
+        $(
+          `<span>${SCRIPT_NAME}: 新しいバージョン ${currentVersion} にアップデートされました。詳細は<a href="${RELEASE_NOTES}" target="_blank">リリースノート</a>を参照。</span>`,
+        ),
+      );
+
+    if (setting === "all") {
+      notify();
+    } else if (setting === "minor") {
+      const current = currentVersion.split(".");
+      const last = lastVersion.split(".");
+      if (current[0] !== last[0] || current[1] !== last[1]) {
+        notify();
+      }
+    }
   }
 }
 

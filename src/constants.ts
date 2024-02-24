@@ -25,6 +25,7 @@ export type Options = {
   disableMobile: boolean;
   prefLinkInToolbar: boolean;
   useIndividualPortlet: boolean;
+  versionNotify: string;
   mi: {
     enabled: boolean;
     enableMobile: boolean;
@@ -71,6 +72,7 @@ export const DEFAULT_OPTIONS = {
   disableMobile: false,
   prefLinkInToolbar: true,
   useIndividualPortlet: false,
+  versionNotify: "all",
   mi: {
     enabled: true,
     enableMobile: true,
