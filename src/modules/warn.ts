@@ -204,7 +204,7 @@ export async function initWarn() {
             return input.val() ? `|${param.id}=${input.val()}` : "";
           })
           .join("") + 
-        "}}\n" + dialogCommentInput.val() + "--~~~~"
+        "}}\n" + dialogCommentInput.val() + (dialogTypeSelect.val() === "Welcome" ? "":"--~~~~")
       );
     };
 
