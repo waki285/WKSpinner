@@ -582,6 +582,7 @@ export const SD_REASON = [
 export type MIChoice = {
   name: string;
   id: string;
+  aliases?: string[];
   params: (
     | {
         name: string;
@@ -599,7 +600,7 @@ export type MIChoice = {
 };
 
 export const MI_CHOICES = [
-  { name: "出典の明記", id: "cite", params: [] },
+  { name: "出典の明記", id: "cite", params: [], aliases: ["references"] },
   { name: "存命人物の出典明記", id: "cite-living", params: [] },
   { name: "存命人物の出典皆無", id: "cite-living-no", params: [] },
   { name: "参照方法", id: "ref", params: [] },
@@ -1194,6 +1195,66 @@ export const WARN_TEMPLATES = [
       }
     ],
     category: "投稿内容関係"
+  },
+  {
+    name: "Image copyright",
+    description: "著作権の状態が不明な画像のアップロードに対する注意",
+    hasTitle: true,
+    params: [
+      {
+        type: "input",
+        name: "画像名",
+        id: "1",
+        required: true,
+        placeholder: "ほげほげ.png",
+      }
+    ],
+    category: "画像の著作権"
+  },
+  {
+    name: "Image pubart",
+    description: "屋外美術画像のアップロード方針違反に対する注意",
+    hasTitle: true,
+    params: [
+      {
+        type: "input",
+        name: "画像名",
+        id: "1",
+        required: true,
+        placeholder: "ほげほげ.png",
+      }
+    ],
+    category: "画像の著作権"
+  },
+  {
+    name: "Image source",
+    description: "画像の出典・ライセンス明記を求める注意",
+    hasTitle: true,
+    params: [
+      {
+        type: "input",
+        name: "画像名",
+        id: "1",
+        required: true,
+        placeholder: "ほげほげ.png",
+      }
+    ],
+    category: "画像の著作権"
+  },
+  {
+    name: "Image URAA",
+    description: "日本で著作権が消滅し米国で著作権がある画像方針違反に対する注意",
+    hasTitle: true,
+    params: [
+      {
+        type: "input",
+        name: "画像名",
+        id: "1",
+        required: true,
+        placeholder: "ほげほげ.png",
+      }
+    ],
+    category: "画像の著作権"
   }
 ] as const satisfies WarnTemplate[];
 
