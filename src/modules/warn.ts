@@ -17,9 +17,9 @@ export async function initWarn() {
   const revisionId = mw.config.get("wgRevisionId");
 
   const warnPortlet = createPortletLink(
-    "警告",
+    "通知",
     "wks-warn",
-    "ユーザーへ警告を行う",
+    "ユーザーへ通知・警告を行う",
   );
   if (!warnPortlet) {
     console.warn(`${SCRIPT_NAME}: メニューの作成に失敗しました。`);
@@ -39,7 +39,7 @@ export async function initWarn() {
     const warnDialog = $("<div>");
     warnDialog.css("max-height", "70vh").dialog({
       dialogClass: "wks-warn-dialog",
-      title: `${SCRIPT_NAME} - ユーザーへ警告`,
+      title: `${SCRIPT_NAME} - ユーザーへ通知・警告`,
       resizable: false,
       height: "auto",
       width: "auto",
@@ -57,7 +57,7 @@ export async function initWarn() {
     const dialogFieldset = $("<fieldset>");
     dialogFieldset.prop({
       id: "wks-warn-dialog-optionfield",
-      innerHTML: "<legend>警告テンプレートの貼付</legend>",
+      innerHTML: "<legend>通知・警告テンプレートの貼付</legend>",
     });
     dialogContent.append(dialogFieldset);
     const dialogTypeRow = createRow("type");
@@ -263,7 +263,7 @@ export async function initWarn() {
         })
         .dialog({
           dialogClass: "wks-warn-dialog wks-warn-dialog-preview",
-          title: `${SCRIPT_NAME} - 警告プレビュー`,
+          title: `${SCRIPT_NAME} - 通知プレビュー`,
           height: "auto",
           width: "auto",
           modal: true,

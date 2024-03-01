@@ -351,7 +351,7 @@ export async function showConfigPage() {
   configArea.append(ecFieldset.$element);
 
   const warnFieldset = new OO.ui.FieldsetLayout({
-    label: "ユーザーへの警告",
+    label: "ユーザーへの通知 (旧名称: 警告)",
     classes: ["container", "wks-pref-container"],
   });
 
