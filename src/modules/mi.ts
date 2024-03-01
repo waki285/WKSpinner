@@ -8,8 +8,10 @@ import {
 import {
   createPortletLink,
   createRowFunc,
+  extractIssueTemplates,
   getImage,
   getOptionProperty,
+  removeIssueTemplates,
 } from "@/util";
 
 export async function initMi() {
@@ -58,11 +60,14 @@ export async function initMi() {
       rvslots: "main",
     });
     const pageContent = pageRes.query.pages[0].revisions[0].slots.main.content;
+    
+    const extracted = extractIssueTemplates(pageContent);
+
     dialogContent.empty();
     const dialogFieldset = $("<fieldset>");
     dialogFieldset.prop({
       id: "wks-mi-dialog-optionfield",
-      innerHTML: "<legend>問題テンプレートの貼付</legend>",
+      innerHTML: "<legend>問題テンプレートの貼付・除去</legend>",
     });
     dialogContent.append(dialogFieldset);
     const dialogTypeRow = createRow("type");
@@ -72,11 +77,12 @@ export async function initMi() {
         $("<input>").prop({
           id: `wks-mi-dialog-type-${choice.id}`,
           type: "checkbox",
-        }),
+          checked: extracted.some((t) => t.name === choice.id),
+        }).attr("data-date", extracted.some((t) => t.name === choice.id) ? extracted.find((t) => t.name === choice.id)!.date : ""),
       );
       div.append(
         $("<label>")
-          .html(choice.name)
+          .html(extracted.some((t) => t.name === choice.id) ? `${choice.name} (${extracted.find((t) => t.name === choice.id)!.date})` : choice.name)
           .prop("for", `wks-mi-dialog-type-${choice.id}`),
       );
       if (choice.params.length) {
@@ -150,9 +156,11 @@ export async function initMi() {
             const checked = $(`#wks-mi-dialog-type-${choice.id}`).prop(
               "checked",
             );
+            const isOriginal = extracted.some((t) => t.name === choice.id);
+            const originalDate = $(`#wks-mi-dialog-type-${choice.id}`).attr("data-date")!;
             if (checked) {
               const params = MI_CHOICES.find((c) => c.id === choice.id)!.params;
-              return `|${choice.name}=${date}${
+              return `|${choice.name}=${isOriginal ? originalDate:date}${
                 params.length
                   ? `${params
                       .map((param) => {
@@ -170,18 +178,20 @@ export async function initMi() {
             } else {
               return "";
             }
-          }).join("")}}}\n` + pageContent
+          }).join("")}}}\n` + removeIssueTemplates(pageContent)
         );
       } else {
         const choice = MI_CHOICES.find((choice) =>
           $(`#wks-mi-dialog-type-${choice.id}`).prop("checked"),
         );
         if (!choice) {
-          return `{{Error|何も選択されていません。}}`;
+          return removeIssueTemplates(pageContent);
         }
         const params = choice.params;
+        const isOriginal = extracted.some((t) => t.name === choice.id);
+        const originalDate = $(`#wks-mi-dialog-type-${choice.id}`).attr("data-date")!;
         return (
-          `{{${choice.name}|date=${date}${
+          `{{${choice.name}|date=${isOriginal ? originalDate:date}${
             params.length
               ? `|${params
                   .map((param) => {
@@ -195,7 +205,7 @@ export async function initMi() {
                   })
                   .join("|")}`
               : ""
-          }}}\n` + pageContent
+          }}}\n` + removeIssueTemplates(pageContent)
         );
       }
     };
@@ -207,6 +217,8 @@ export async function initMi() {
       const tlName =
         count >= 2
           ? "複数の問題"
+          : count == 0
+          ? "問題テンプレートを除去"
           : MI_CHOICES.find((choice) =>
               $(`#wks-mi-dialog-type-${choice.id}`).prop("checked"),
             )!.name;
@@ -220,11 +232,9 @@ export async function initMi() {
 
     const checkParams = () => {
       const errList = $("<ul>");
-      let selected = false;
       
       for (const choice of MI_CHOICES) {
         if ($(`#wks-mi-dialog-type-${choice.id}`).prop("checked")) {
-          selected = true;
           const params = choice.params;
           for (const param of params) {
             if (param.required) {
@@ -237,10 +247,6 @@ export async function initMi() {
             }
           }
         }
-      }
-
-      if (!selected) {
-        errList.append($("<li>").text("何も選択されていません。"));
       }
 
       if (errList.children().length) {

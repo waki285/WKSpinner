@@ -1,4 +1,4 @@
-import { DEFAULT_OPTIONS, OPTIONS_KEY, ORIG_PORTLET_ID, SCRIPT_NAME } from "./constants";
+import { DEFAULT_OPTIONS, MI_CHOICES, OPTIONS_KEY, ORIG_PORTLET_ID, SCRIPT_NAME } from "./constants";
 
 export const sleep = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -191,4 +191,78 @@ export function getOptionProperty(propertyPath: string) {
 
 export function errorMessage(message: string) {
   return mw.notify(`${SCRIPT_NAME}: ${message}`, { type: "error" });
+}
+
+const issueTemplateMaps: ReadonlyMap<string, (typeof MI_CHOICES)[number]["id"]> = new Map(
+  // @ts-expect-error 検証済み
+  MI_CHOICES.flatMap(choice => 
+    [[choice.name.toLowerCase(), choice.id], ...(("aliases" in choice) ? choice.aliases?.map(alias => [alias, choice.id]) ?? [] : [])]
+  )
+);
+
+type IssueTemplateType = (typeof MI_CHOICES)[number]["id"];
+
+export function extractIssueTemplates(inputString: string): { name: IssueTemplateType, date: string }[] {
+  const pattern = /\{\{([^}]+)\}\}/g;
+  let match;
+  const output: { name: IssueTemplateType, date: string }[] = [];
+
+  while ((match = pattern.exec(inputString)) !== null) {
+    const parts = match[1]!.split("|").map(part => part.trim());
+    const namePart = parts[0]!.toLowerCase().replaceAll("_", " ");
+
+    if (["multiple", "複数の問題", "multiple issues", "article issues"].includes(namePart)) {
+      // section 除外
+      const hasSection = parts.some(part => part.startsWith('section='));
+      if (!hasSection) {
+        parts.slice(1).forEach(part => {
+          const [paramName, paramValue] = part.split("=").map(p => p.trim());
+          if (issueTemplateMaps.has(paramName!.toLowerCase())) {
+            const templateObj: { name: IssueTemplateType, date: string } = { name: issueTemplateMaps.get(paramName!.toLowerCase()) as IssueTemplateType, date: paramValue! };
+            output.push(templateObj);
+          }
+        });
+      }
+    } else {
+      // section 除外
+      const hasSection = parts.some(part => part.startsWith('section='));
+      if (!hasSection && issueTemplateMaps.has(namePart.toLowerCase())) {
+        const templateObj = { name: issueTemplateMaps.get(namePart.toLowerCase())!, date: "" };
+        // date 引数を探す
+        const datePart = parts.find(part => part.replaceAll(" ", "").startsWith('date='));
+        if (datePart) {
+          templateObj.date = datePart.split('=')[1]!.trim();
+        }
+        output.push(templateObj);
+      }
+    }
+  }
+
+  return output;
+}
+
+export function removeIssueTemplates(inputString: string): string {
+  const pattern = /\{\{([^}]+)\}\}/g;
+  let match;
+  let outputString = inputString;
+
+  while ((match = pattern.exec(inputString)) !== null) {
+    const block = match[0];
+    const parts = match[1]!.split('|').map(part => part.trim());
+    const namePart = parts[0]!.toLowerCase();
+
+    if (["multiple", "複数の問題", "multiple issues", "article issues"].includes(namePart)) {
+      const hasSection = parts.some(part => part.startsWith('section='));
+      if (!hasSection) {
+        outputString = outputString.replace(block, '');
+      }
+    } else if ([...issueTemplateMaps.keys()].map(value => value.toLowerCase()).includes(namePart)) {
+      const hasSection = parts.some(part => part.startsWith('section='));
+      if (!hasSection) {
+        outputString = outputString.replace(block, '');
+      }
+    }
+  }
+
+  return outputString;
 }
