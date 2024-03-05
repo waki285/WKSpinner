@@ -664,6 +664,7 @@ export type WarnTemplate = {
     defaultValue?: string;
   }[],
   category: string;
+  nosubst?: boolean;
 } & ({ hasTitle: true } | { hasTitle: false, defaultTitle: string });
 
 export const WARN_TEMPLATES = [
@@ -672,17 +673,17 @@ export const WARN_TEMPLATES = [
     description: "新規利用者への歓迎",
     hasTitle: false,
     defaultTitle: "ウィキペディアへようこそ！",
-    params: [
-      {
-        type: "input",
-        name: "署名",
-        id: "1",
-        required: true,
-        placeholder: "--~~~~",
-        defaultValue: "--~~~~",
-      }
-    ],
+    params: [],
     category: "ようこそ"
+  },
+  {
+    name: "アカウント作成のお願い",
+    description: "よく活動してるIPユーザーにアカウント作成を促す案内",
+    hasTitle: false,
+    defaultTitle: "アカウント作成のお願い",
+    params: [],
+    category: "ようこそ",
+    nosubst: true,
   },
   {
     name: "Test0",
@@ -1255,6 +1256,23 @@ export const WARN_TEMPLATES = [
       }
     ],
     category: "画像の著作権"
+  },
+  {
+    name: "メールを送りました",
+    description: "ウィキメール送信の通知",
+    hasTitle: false,
+    defaultTitle: "ウィキメールを送りました",
+    params: [
+      {
+        type: "input",
+        name: "件名",
+        id: "subject",
+        required: false,
+        placeholder: "ほげほげ",
+      }
+    ],
+    category: "その他",
+    nosubst: true,
   }
 ] as const satisfies WarnTemplate[];
 
