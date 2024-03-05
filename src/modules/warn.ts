@@ -193,18 +193,19 @@ export async function initWarn() {
     dialogFieldset.append(dialogSummary);
 
     const getFinalContent = () => {
+      const tl = WARN_TEMPLATES.find(
+        (template) => template.name === dialogTypeSelect.val(),
+      )!;
       return (
-        "{{subst:" +
+        `{{${"nosubst" in tl && tl.nosubst ? "":"subst:"}` +
         dialogTypeSelect.val() +
-        WARN_TEMPLATES.find(
-          (template) => template.name === dialogTypeSelect.val(),
-        )!.params
+        tl.params
           .map((param) => {
             const input = $(`#wks-warn-dialog-type-params-${param.id}`);
             return input.val() ? `|${param.id}=${input.val()}` : "";
           })
           .join("") + 
-        "}}\n" + dialogCommentInput.val() + (dialogTypeSelect.val() === "Welcome" ? "":"--~~~~")
+        "}}\n" + dialogCommentInput.val() + "--~~~~"
       );
     };
 
