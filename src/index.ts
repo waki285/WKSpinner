@@ -105,7 +105,8 @@ async function init() {
   // 問題
   if (
     getOptionProperty("mi.enabled") === true && // 無効でない
-    !(isMobile && getOptionProperty("mi.enableMobile") === false)
+    !(isMobile && getOptionProperty("mi.enableMobile") === false) &&
+    (namespaceNumber === 0 || namespaceNumber === 2) // メインまたはユーザー
   ) {
     await initMi();
   }
