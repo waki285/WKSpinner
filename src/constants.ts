@@ -8,6 +8,7 @@ export const SKJ_REQUEST_PAGE_NAME = DEV
   ? "利用者:鈴音雨/削除依頼テスト/"
   : "Wikipedia:削除依頼/";
 export const CONFIG_PAGE_NAME = "利用者:鈴音雨/WKSpinner/Preferences";
+export const DEBUG_PAGE_NAME = "利用者:鈴音雨/WKSpinner/Debug";
 export const OPTIONS_KEY = "userjs-wkspinner";
 export const VERSION_OPTIONS_KEY = "userjs-wkspinner-version";
 export const SUMMARY_AD =

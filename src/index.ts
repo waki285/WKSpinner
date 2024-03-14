@@ -1,5 +1,6 @@
 import {
   CONFIG_PAGE_NAME,
+  DEBUG_PAGE_NAME,
   ORIG_PORTLET_ID,
   PORTLET_LABEL,
   RELEASE_NOTES,
@@ -7,6 +8,7 @@ import {
   VERSION,
   VERSION_OPTIONS_KEY,
 } from "./constants";
+import { showDebugPage } from "./debug";
 import { initCsd } from "./modules/csd";
 import { initEditCount } from "./modules/editCount";
 import { initMi } from "./modules/mi";
@@ -55,6 +57,13 @@ async function init() {
     mw.config.get("wgPageName") === CONFIG_PAGE_NAME
   ) {
     await showConfigPage();
+  }
+
+  if (
+    mw.config.get("wgAction") === "view" &&
+    mw.config.get("wgPageName") === DEBUG_PAGE_NAME
+  ) {
+    await showDebugPage();
   }
 
   // モバイル無効設定
