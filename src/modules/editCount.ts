@@ -132,8 +132,6 @@ function appendEditCount(content: JQuery<HTMLElement>) {
 
       if (typeof editCount !== "number") continue;
 
-      console.log(editCount);
-
       savedCounts.set(username, editCount);
 
       const span = document.createElement("span");
