@@ -1,4 +1,11 @@
-import { DEFAULT_OPTIONS, MI_CHOICES, OPTIONS_KEY, ORIG_PORTLET_ID, SCRIPT_NAME } from "./constants";
+import {
+  DEFAULT_OPTIONS,
+  ISSUE_TEMPLATE_AREA,
+  MI_CHOICES,
+  OPTIONS_KEY,
+  ORIG_PORTLET_ID,
+  SCRIPT_NAME,
+} from "./constants";
 
 export const sleep = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -110,8 +117,11 @@ export function createPortletLink(
 ): HTMLLIElement | null {
   const theme = mw.config.get("skin");
   const portlet = mw.util.addPortletLink(
-    theme === "minerva" ? "p-tb" :
-    getOptionProperty("useIndividualPortlet") === true ? ORIG_PORTLET_ID:"p-cactions",
+    theme === "minerva"
+      ? "p-tb"
+      : getOptionProperty("useIndividualPortlet") === true
+        ? ORIG_PORTLET_ID
+        : "p-cactions",
     "#",
     title,
     id,
@@ -168,23 +178,23 @@ export function getOptionProperty(option: string) {
   return current;
 }*/
 export function getOptionProperty(propertyPath: string) {
-  const properties = propertyPath.split('.');
+  const properties = propertyPath.split(".");
   let currentObject = getSavedOptions();
 
   for (const prop of properties) {
-      if (prop in currentObject) {
-          currentObject = currentObject[prop];
-      } else {
-          currentObject = DEFAULT_OPTIONS;
-          for (const defaultProp of properties) {
-              if (defaultProp in currentObject) {
-                  currentObject = currentObject[defaultProp];
-              } else {
-                  return undefined;
-              }
-          }
-          return currentObject;
+    if (prop in currentObject) {
+      currentObject = currentObject[prop];
+    } else {
+      currentObject = DEFAULT_OPTIONS;
+      for (const defaultProp of properties) {
+        if (defaultProp in currentObject) {
+          currentObject = currentObject[defaultProp];
+        } else {
+          return undefined;
+        }
       }
+      return currentObject;
+    }
   }
   return currentObject;
 }
@@ -193,45 +203,69 @@ export function errorMessage(message: string) {
   return mw.notify(`${SCRIPT_NAME}: ${message}`, { type: "error" });
 }
 
-const issueTemplateMaps: ReadonlyMap<string, (typeof MI_CHOICES)[number]["id"]> = new Map(
+const issueTemplateMaps: ReadonlyMap<
+  string,
+  (typeof MI_CHOICES)[number]["id"]
+> = new Map(
   // @ts-expect-error 検証済み
-  MI_CHOICES.flatMap(choice => 
-    [[choice.name.toLowerCase(), choice.id], ...(("aliases" in choice) ? choice.aliases?.map(alias => [alias, choice.id]) ?? [] : [])]
-  )
+  MI_CHOICES.flatMap((choice) => [
+    [choice.name.toLowerCase(), choice.id],
+    ...("aliases" in choice
+      ? choice.aliases?.map((alias) => [alias, choice.id]) ?? []
+      : []),
+  ]),
 );
 
 type IssueTemplateType = (typeof MI_CHOICES)[number]["id"];
+type IssueTemplate = { name: IssueTemplateType; date: string };
 
-export function extractIssueTemplates(inputString: string): { name: IssueTemplateType, date: string }[] {
+export function extractIssueTemplates(
+  inputString: string,
+): IssueTemplate[] {
   const pattern = /\{\{([^}]+)\}\}/g;
   let match;
-  const output: { name: IssueTemplateType, date: string }[] = [];
+  const output: IssueTemplate[] = [];
 
   while ((match = pattern.exec(inputString)) !== null) {
-    const parts = match[1]!.split("|").map(part => part.trim());
+    const parts = match[1]!.split("|").map((part) => part.trim());
     const namePart = parts[0]!.toLowerCase().replaceAll("_", " ");
 
-    if (["multiple", "複数の問題", "multiple issues", "article issues"].includes(namePart)) {
+    if (
+      ["multiple", "複数の問題", "multiple issues", "article issues"].includes(
+        namePart,
+      )
+    ) {
       // section 除外
-      const hasSection = parts.some(part => part.startsWith('section='));
+      const hasSection = parts.some((part) => part.replaceAll(" ", "").startsWith("section="));
       if (!hasSection) {
-        parts.slice(1).forEach(part => {
-          const [paramName, paramValue] = part.split("=").map(p => p.trim());
+        parts.slice(1).forEach((part) => {
+          console.log(part);
+          const [paramName, paramValue] = part.split("=").map((p) => p.trim());
           if (issueTemplateMaps.has(paramName!.toLowerCase())) {
-            const templateObj: { name: IssueTemplateType, date: string } = { name: issueTemplateMaps.get(paramName!.toLowerCase()) as IssueTemplateType, date: paramValue! };
+            const templateObj: IssueTemplate = {
+              name: issueTemplateMaps.get(
+                paramName!.toLowerCase(),
+              ) as IssueTemplateType,
+              date: paramValue!,
+            };
             output.push(templateObj);
           }
         });
       }
     } else {
       // section 除外
-      const hasSection = parts.some(part => part.startsWith('section='));
+      const hasSection = parts.some((part) => part.replaceAll(" ", "").startsWith("section="));
       if (!hasSection && issueTemplateMaps.has(namePart.toLowerCase())) {
-        const templateObj = { name: issueTemplateMaps.get(namePart.toLowerCase())!, date: "" };
+        const templateObj = {
+          name: issueTemplateMaps.get(namePart.toLowerCase())!,
+          date: "",
+        };
         // date 引数を探す
-        const datePart = parts.find(part => part.replaceAll(" ", "").startsWith('date='));
+        const datePart = parts.find((part) =>
+          part.replaceAll(" ", "").startsWith("date="),
+        );
         if (datePart) {
-          templateObj.date = datePart.split('=')[1]!.trim();
+          templateObj.date = datePart.split("=")[1]!.trim();
         }
         output.push(templateObj);
       }
@@ -241,25 +275,52 @@ export function extractIssueTemplates(inputString: string): { name: IssueTemplat
   return output;
 }
 
-export function removeIssueTemplates(inputString: string): string {
+export function replaceFirstAndRemoveOtherIssueTemplates(
+  inputString: string,
+): string {
   const pattern = /\{\{([^}]+)\}\}/g;
   let match;
   let outputString = inputString;
+  let replaced = false;
 
   while ((match = pattern.exec(inputString)) !== null) {
     const block = match[0];
-    const parts = match[1]!.split('|').map(part => part.trim());
+    const parts = match[1]!.split("|").map((part) => part.trim());
     const namePart = parts[0]!.toLowerCase();
 
-    if (["multiple", "複数の問題", "multiple issues", "article issues"].includes(namePart)) {
-      const hasSection = parts.some(part => part.startsWith('section='));
+    if (
+      ["multiple", "複数の問題", "multiple issues", "article issues"].includes(
+        namePart,
+      )
+    ) {
+      const hasSection = parts.some((part) => part.replaceAll(" ", "").startsWith("section="));
       if (!hasSection) {
-        outputString = outputString.replace(block, '');
+        if (!replaced) {
+          outputString = outputString.replace(
+            block,
+            ISSUE_TEMPLATE_AREA
+          );
+          replaced = true;
+        } else {
+          outputString = outputString.replace(block, "");
+        }
       }
-    } else if ([...issueTemplateMaps.keys()].map(value => value.toLowerCase()).includes(namePart)) {
-      const hasSection = parts.some(part => part.startsWith('section='));
+    } else if (
+      [...issueTemplateMaps.keys()]
+        .map((value) => value.toLowerCase())
+        .includes(namePart)
+    ) {
+      const hasSection = parts.some((part) => part.replaceAll(" ", "").startsWith("section="));
       if (!hasSection) {
-        outputString = outputString.replace(block, '');
+        if (!replaced) {
+          outputString = outputString.replace(
+            block,
+            ISSUE_TEMPLATE_AREA
+          );
+          replaced = true;
+        } else {
+          outputString = outputString.replace(block, "");
+        }
       }
     }
   }

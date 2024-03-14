@@ -21,6 +21,8 @@ export const RELEASE_NOTES = "/wiki/利用者:鈴音雨/WKSpinner#リリース�
 export const ORIG_PORTLET_ID = "p-wks";
 export const PORTLET_LABEL = "WK";
 
+export const ISSUE_TEMPLATE_AREA = "WKSPINNER_ISSUE_TEMPLATE_AREA";
+
 export type Options = {
   disableMobile: boolean;
   prefLinkInToolbar: boolean;

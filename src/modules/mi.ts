@@ -4,6 +4,7 @@ import {
   SUMMARY_AD,
   SUMMARY_AD_ATTRACT,
   ERRORS,
+  ISSUE_TEMPLATE_AREA,
 } from "@/constants";
 import {
   createPortletLink,
@@ -11,7 +12,7 @@ import {
   extractIssueTemplates,
   getImage,
   getOptionProperty,
-  removeIssueTemplates,
+  replaceFirstAndRemoveOtherIssueTemplates,
 } from "@/util";
 
 export async function initMi() {
@@ -60,7 +61,7 @@ export async function initMi() {
       rvslots: "main",
     });
     const pageContent = pageRes.query.pages[0].revisions[0].slots.main.content;
-    
+
     const extracted = extractIssueTemplates(pageContent);
 
     dialogContent.empty();
@@ -74,15 +75,26 @@ export async function initMi() {
     for (const choice of MI_CHOICES) {
       const div = $("<div>").addClass("wks-inline");
       div.append(
-        $("<input>").prop({
-          id: `wks-mi-dialog-type-${choice.id}`,
-          type: "checkbox",
-          checked: extracted.some((t) => t.name === choice.id),
-        }).attr("data-date", extracted.some((t) => t.name === choice.id) ? extracted.find((t) => t.name === choice.id)!.date : ""),
+        $("<input>")
+          .prop({
+            id: `wks-mi-dialog-type-${choice.id}`,
+            type: "checkbox",
+            checked: extracted.some((t) => t.name === choice.id),
+          })
+          .attr(
+            "data-date",
+            extracted.some((t) => t.name === choice.id)
+              ? extracted.find((t) => t.name === choice.id)!.date
+              : "",
+          ),
       );
       div.append(
         $("<label>")
-          .html(extracted.some((t) => t.name === choice.id) ? `${choice.name} (${extracted.find((t) => t.name === choice.id)!.date})` : choice.name)
+          .html(
+            extracted.some((t) => t.name === choice.id)
+              ? `${choice.name} (${extracted.find((t) => t.name === choice.id)!.date})`
+              : choice.name,
+          )
           .prop("for", `wks-mi-dialog-type-${choice.id}`),
       );
       if (choice.params.length) {
@@ -151,16 +163,19 @@ export async function initMi() {
       ).length;
 
       if (count >= 2) {
-        return (
+        return replaceFirstAndRemoveOtherIssueTemplates(pageContent).replace(
+          ISSUE_TEMPLATE_AREA,
           `{{複数の問題\n${MI_CHOICES.map((choice) => {
             const checked = $(`#wks-mi-dialog-type-${choice.id}`).prop(
               "checked",
             );
             const isOriginal = extracted.some((t) => t.name === choice.id);
-            const originalDate = $(`#wks-mi-dialog-type-${choice.id}`).attr("data-date")!;
+            const originalDate = $(`#wks-mi-dialog-type-${choice.id}`).attr(
+              "data-date",
+            )!;
             if (checked) {
               const params = MI_CHOICES.find((c) => c.id === choice.id)!.params;
-              return `|${choice.name}=${isOriginal ? originalDate:date}${
+              return `|${choice.name}=${isOriginal ? originalDate : date}${
                 params.length
                   ? `${params
                       .map((param) => {
@@ -178,20 +193,26 @@ export async function initMi() {
             } else {
               return "";
             }
-          }).join("")}}}\n` + removeIssueTemplates(pageContent)
+          }).join("")}}}\n`,
         );
       } else {
         const choice = MI_CHOICES.find((choice) =>
           $(`#wks-mi-dialog-type-${choice.id}`).prop("checked"),
         );
         if (!choice) {
-          return removeIssueTemplates(pageContent);
+          return replaceFirstAndRemoveOtherIssueTemplates(pageContent).replace(
+            ISSUE_TEMPLATE_AREA,
+            "",
+          );
         }
         const params = choice.params;
         const isOriginal = extracted.some((t) => t.name === choice.id);
-        const originalDate = $(`#wks-mi-dialog-type-${choice.id}`).attr("data-date")!;
-        return (
-          `{{${choice.name}|date=${isOriginal ? originalDate:date}${
+        const originalDate = $(`#wks-mi-dialog-type-${choice.id}`).attr(
+          "data-date",
+        )!;
+        return replaceFirstAndRemoveOtherIssueTemplates(pageContent).replace(
+          ISSUE_TEMPLATE_AREA,
+          `{{${choice.name}|date=${isOriginal ? originalDate : date}${
             params.length
               ? `|${params
                   .map((param) => {
@@ -205,7 +226,7 @@ export async function initMi() {
                   })
                   .join("|")}`
               : ""
-          }}}\n` + removeIssueTemplates(pageContent)
+          }}}\n`,
         );
       }
     };
@@ -218,10 +239,10 @@ export async function initMi() {
         count >= 2
           ? "複数の問題"
           : count == 0
-          ? "問題テンプレートを除去"
-          : MI_CHOICES.find((choice) =>
-              $(`#wks-mi-dialog-type-${choice.id}`).prop("checked"),
-            )!.name;
+            ? "問題テンプレートを除去"
+            : MI_CHOICES.find((choice) =>
+                $(`#wks-mi-dialog-type-${choice.id}`).prop("checked"),
+              )!.name;
       return (
         (($("#wks-mi-dialog-summary-input").val() as string).replaceAll(
           "$t",
@@ -232,7 +253,7 @@ export async function initMi() {
 
     const checkParams = () => {
       const errList = $("<ul>");
-      
+
       for (const choice of MI_CHOICES) {
         if ($(`#wks-mi-dialog-type-${choice.id}`).prop("checked")) {
           const params = choice.params;
@@ -240,9 +261,17 @@ export async function initMi() {
             if (param.required) {
               const val = $(`#wks-mi-dialog-type-params-${param.id}`).val();
               if (param.type === "select" && val === "null") {
-                errList.append($("<li>").text(`${choice.name}の${param.name}が選択されていません。`));
+                errList.append(
+                  $("<li>").text(
+                    `${choice.name}の${param.name}が選択されていません。`,
+                  ),
+                );
               } else if (param.type === "input" && val === "") {
-                errList.append($("<li>").text(`${choice.name}の${param.name}が入力されていません。`));
+                errList.append(
+                  $("<li>").text(
+                    `${choice.name}の${param.name}が入力されていません。`,
+                  ),
+                );
               }
             }
           }
@@ -250,11 +279,13 @@ export async function initMi() {
       }
 
       if (errList.children().length) {
-        return $("<div>").append($("<p>").text("入力にエラーがあります。")).append(errList);
+        return $("<div>")
+          .append($("<p>").text("入力にエラーがあります。"))
+          .append(errList);
       } else {
         return false;
       }
-    }
+    };
 
     const preview = async () => {
       const err = checkParams();
