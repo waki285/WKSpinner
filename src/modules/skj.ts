@@ -435,7 +435,7 @@ export async function initSkj() {
           nocreate: 1,
           text: getFinalContentPrepend(),
           summary:
-            ($("#wks-skj-dialog-summary-template").val() || "+Sakujo") +
+            ($("#wks-skj-dialog-summary-template").val() as string || "+Sakujo").replaceAll("$d", pageName).replaceAll("$p", mw.config.get("wgPageName")) +
             SUMMARY_AD,
           formatversion: "2",
           baserevid: revisionId,
@@ -497,7 +497,7 @@ export async function initSkj() {
             createonly: 1,
             text: getFinalContentRequest(),
             summary:
-              ($("#wks-skj-dialog-summary-submit").val() || "削除依頼") +
+              ($("#wks-skj-dialog-summary-submit").val() as string || "削除依頼").replaceAll("$d", pageName).replaceAll("$p", mw.config.get("wgPageName")) +
               SUMMARY_AD,
             formatversion: "2",
           });
@@ -582,7 +582,7 @@ export async function initSkj() {
               nocreate: 1,
               text: `${logPageContent}\n{{${pageName}}}`,
               summary:
-                ($("#wks-skj-dialog-summary-note").val() || "削除依頼の追加") +
+                ($("#wks-skj-dialog-summary-note").val() as string || "削除依頼の追加").replaceAll("$d", pageName).replaceAll("$p", mw.config.get("wgPageName")) +
                 SUMMARY_AD,
               formatversion: "2",
             });

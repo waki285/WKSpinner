@@ -205,6 +205,8 @@ export async function showConfigPage() {
   const skjSummaryNoteField = new OO.ui.FieldLayout(skjSummaryNote, {
     label: "編集の要約 (削除依頼ページ追記) デフォルト値",
     align: "inline",
+    help: "$d には削除依頼ページが入ります (例: Wikipedia:削除依頼/ほげほげ 20240314) $p には削除依頼対象ページが入ります (例: ほげほげ) 三つの要約欄すべてに適用できます",
+    helpInline: true,
   });
 
   const skjSignReason = new OO.ui.CheckboxInputWidget({
