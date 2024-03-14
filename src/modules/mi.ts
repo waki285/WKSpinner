@@ -92,7 +92,12 @@ export async function initMi() {
         $("<label>")
           .html(
             extracted.some((t) => t.name === choice.id)
-              ? `${choice.name} (${extracted.find((t) => t.name === choice.id)!.date})`
+              ? `${choice.name} (${extracted.find((t) => t.name === choice.id)!.date}) ${Object.entries(
+                  extracted.find((t) => t.name === choice.id)!,
+                )
+                  .filter((e) => e[0] !== "name" && e[0] !== "date")
+                  .map((e) => `(${e[0]}: ${e[1]})`)
+                  .join(", ")}`
               : choice.name,
           )
           .prop("for", `wks-mi-dialog-type-${choice.id}`),
@@ -112,14 +117,27 @@ export async function initMi() {
           switch (param.type) {
             case "select":
               input = $("<select>");
+              // eslint-disable-next-line no-case-declarations
+              const options: Map<string, string> = new Map();
               for (const choice of param.choices) {
                 input.append(
                   $("<option>").prop({ value: choice.id, text: choice.name }),
                 );
+                options.set(choice.name, choice.id);
+              }
+              if (extracted.some((t) => t.name === choice.id)) {
+                input.val(
+                  options.get(extracted.find((t) => t.name === choice.id)![param.name]!)!
+                );
               }
               break;
             case "input":
-              input = $("<input>").prop({ type: "text" });
+              input = $("<input>").prop({
+                type: "text",
+                value: extracted.some((t) => t.name === choice.id)
+                  ? extracted.find((t) => t.name === choice.id)![param.name]
+                  : "",
+              });
               break;
           }
           params.append(
@@ -189,7 +207,7 @@ export async function initMi() {
                       })
                       .join("|")}`
                   : ""
-              }\n`;
+              }${extracted.some(x => "ソートキー" in x && MI_CHOICES.find(y => y.id === x.name)?.name === choice.name) ? `|ソートキー=${extracted.find(x => x["ソートキー"]! && MI_CHOICES.find(y => y.id === x.name)?.name === choice.name)!["ソートキー"]}`:""}\n`;
             } else {
               return "";
             }
@@ -226,7 +244,7 @@ export async function initMi() {
                   })
                   .join("|")}`
               : ""
-          }}}\n`,
+          }${extracted.some(x => "ソートキー" in x && MI_CHOICES.find(y => y.id === x.name)?.name === choice.name) ? `|ソートキー=${extracted.find(x => x["ソートキー"]! && MI_CHOICES.find(y => y.id === x.name)?.name === choice.name)!["ソートキー"]}`:""}}}\n`,
         );
       }
     };

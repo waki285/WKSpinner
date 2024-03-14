@@ -217,7 +217,7 @@ const issueTemplateMaps: ReadonlyMap<
 );
 
 type IssueTemplateType = (typeof MI_CHOICES)[number]["id"];
-type IssueTemplate = { name: IssueTemplateType; date: string };
+type IssueTemplate = { name: IssueTemplateType; date: string; [key: string]: string };
 
 export function extractIssueTemplates(
   inputString: string,
@@ -229,49 +229,52 @@ export function extractIssueTemplates(
   while ((match = pattern.exec(inputString)) !== null) {
     const parts = match[1]!.split("|").map((part) => part.trim());
     const namePart = parts[0]!.toLowerCase().replaceAll("_", " ");
+    let templateObj = {} as IssueTemplate;
 
     if (
       ["multiple", "複数の問題", "multiple issues", "article issues"].includes(
         namePart,
       )
     ) {
-      // section 除外
       const hasSection = parts.some((part) => part.replaceAll(" ", "").startsWith("section="));
       if (!hasSection) {
         parts.slice(1).forEach((part) => {
-          console.log(part);
           const [paramName, paramValue] = part.split("=").map((p) => p.trim());
           if (issueTemplateMaps.has(paramName!.toLowerCase())) {
-            const templateObj: IssueTemplate = {
-              name: issueTemplateMaps.get(
-                paramName!.toLowerCase(),
-              ) as IssueTemplateType,
+            templateObj = {
+              name: issueTemplateMaps.get(paramName!.toLowerCase()) as IssueTemplateType,
               date: paramValue!,
             };
             output.push(templateObj);
+          } else {
+            templateObj[paramName!] = paramValue!;
           }
         });
       }
     } else {
-      // section 除外
       const hasSection = parts.some((part) => part.replaceAll(" ", "").startsWith("section="));
       if (!hasSection && issueTemplateMaps.has(namePart.toLowerCase())) {
-        const templateObj = {
+        templateObj = {
           name: issueTemplateMaps.get(namePart.toLowerCase())!,
           date: "",
         };
-        // date 引数を探す
         const datePart = parts.find((part) =>
           part.replaceAll(" ", "").startsWith("date="),
         );
         if (datePart) {
           templateObj.date = datePart.split("=")[1]!.trim();
         }
+        parts.slice(1).forEach((part) => {
+          const [paramName, paramValue] = part.split("=").map((p) => p.trim());
+          if (!issueTemplateMaps.has(paramName!.toLowerCase())) {
+            templateObj[paramName!] = paramValue!;
+          }
+        });
         output.push(templateObj);
       }
     }
   }
-
+  console.log(output);
   return output;
 }
 
