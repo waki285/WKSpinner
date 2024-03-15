@@ -43,6 +43,13 @@ export type Options = {
       summary: string;
     };
   };
+  csrd: {
+    enabled: boolean;
+    enableMobile: boolean;
+    default: {
+      summary: string;
+    };
+  };
   skj: {
     enabled: boolean;
     enableMobile: boolean;
@@ -88,6 +95,13 @@ export const DEFAULT_OPTIONS = {
     enableMobile: true,
     default: {
       summary: "+sd",
+    },
+  },
+  csrd: {
+    enabled: true,
+    enableMobile: true,
+    default: {
+      summary: "+srd",
     },
   },
   skj: {
@@ -140,6 +154,26 @@ export type SDReason = {
   ))[];
   blank: boolean;
 };
+
+export type SRDReason = {
+  type: string;
+  name: string;
+  shortDesc: string;
+  params: ({
+    id: number | null;
+    name: string;
+    required: boolean;
+  } & (
+    | { type: "input"; placeholder: string }
+    | {
+        type: "select";
+        choices: {
+          name: string;
+          id: string;
+        }[];
+      }
+  ))[];
+}
 
 export const SD_REASON = [
   {
@@ -581,6 +615,57 @@ export const SD_REASON = [
     blank: false,
   },
 ] as const satisfies SDReason[];
+
+export const SRD_REASON = [
+  {
+    type: "1",
+    name: "1-1",
+    shortDesc: "荒らしによる著作権侵害・ライセンス問題",
+    params: [
+      {
+        id: 3,
+        name: "著作権侵害の詳細",
+        type: "input",
+        placeholder: "https://example.com/hogehoge からの転載",
+        required: true,
+      },
+    ],
+  },
+  {
+    type: "1",
+    name: "1-2",
+    shortDesc: "荒らしによるプライバシー侵害問題",
+    params: [
+      {
+        id: 3,
+        name: "プライバシー侵害の詳細",
+        type: "input",
+        placeholder: "非公開氏名と電話番号の記載",
+        required: true,
+      },
+    ],
+  },
+  {
+    type: "1",
+    name: "1-3",
+    shortDesc: "荒らしによる名誉毀損問題",
+    params: [
+      {
+        id: 3,
+        name: "名誉毀損問題の詳細",
+        type: "input",
+        placeholder: "冒頭に虚偽の逮捕歴の記載",
+        required: true,
+      },
+    ],
+  },
+  {
+    type: "2",
+    name: "2",
+    shortDesc: "パスワード公開",
+    params: [],
+  },
+] as const satisfies SRDReason[];
 
 export type MIChoice = {
   name: string;

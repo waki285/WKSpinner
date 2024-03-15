@@ -148,6 +148,49 @@ export async function showConfigPage() {
 
   configArea.append(csdFieldset.$element);
 
+  const csrdFieldset = new OO.ui.FieldsetLayout({
+    label: "即時版指定削除テンプレート貼り付け",
+    classes: ["container", "wks-pref-container"],
+  });
+
+  const csrdEnabled = new OO.ui.CheckboxInputWidget({
+    value: "csrd-enabled",
+    selected: getOptionProperty("csd.enabled"),
+  });
+
+  const csrdEnabledField = new OO.ui.FieldLayout(csrdEnabled, {
+    label: "有効にする",
+    align: "inline",
+  });
+
+  const csrdEnableMobile = new OO.ui.CheckboxInputWidget({
+    value: "csrd-enable-mobile",
+    selected: getOptionProperty("csrd.enableMobile"),
+  });
+
+  const csrdEnableMobileField = new OO.ui.FieldLayout(csrdEnableMobile, {
+    label: "モバイルでも有効にする",
+    align: "inline",
+  });
+
+  const csrdSummary = new OO.ui.TextInputWidget({
+    value: getOptionProperty("csrd.default.summary"),
+    placeholder: "+srd",
+  });
+
+  const csrdSummaryField = new OO.ui.FieldLayout(csrdSummary, {
+    label: "編集の要約デフォルト値",
+    align: "inline",
+  });
+
+  csrdFieldset.addItems([
+    csrdEnabledField,
+    csrdEnableMobileField,
+    csrdSummaryField,
+  ]);
+
+  configArea.append(csrdFieldset.$element);
+
   const skjFieldset = new OO.ui.FieldsetLayout({
     label: "削除依頼提出",
     classes: ["container", "wks-pref-container"],
@@ -444,6 +487,13 @@ export async function showConfigPage() {
         enableMobile: csdEnableMobile.isSelected(),
         default: {
           summary: csdSummary.getValue() || "",
+        },
+      },
+      csrd: {
+        enabled: csrdEnabled.isSelected(),
+        enableMobile: csrdEnableMobile.isSelected(),
+        default: {
+          summary: csrdSummary.getValue() || "",
         },
       },
       skj: {

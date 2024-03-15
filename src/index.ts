@@ -10,6 +10,7 @@ import {
 } from "./constants";
 import { showDebugPage } from "./debug";
 import { initCsd } from "./modules/csd";
+import { initCsrd } from "./modules/csrd";
 import { initEditCount } from "./modules/editCount";
 import { initMi } from "./modules/mi";
 import { initSkj } from "./modules/skj";
@@ -109,6 +110,15 @@ async function init() {
     !(isMobile && getOptionProperty("csd.enableMobile") === false)
   ) {
     await initCsd();
+  }
+
+  // 即時版指定削除
+  if (
+    getOptionProperty("csrd.enabled") === true && // 無効でない
+    !(isMobile && getOptionProperty("csrd.enableMobile") === false) &&
+    mw.config.get("wgAction") === "history"
+  ) {
+    await initCsrd();
   }
 
   // 問題

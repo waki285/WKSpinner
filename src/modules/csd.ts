@@ -178,6 +178,8 @@ export async function initCsd() {
       }
     };
 
+    handleSelect();
+
     dialogTypeSelect.on("change", handleSelect);
 
     const dialogComment = createRow("comment");
@@ -315,7 +317,7 @@ export async function initCsd() {
           },
         });
       const previewContent = $("<div>")
-        .prop("id", "anr-dialog-preview-content")
+        .prop("id", "wks-dialog-preview-content")
         .text("読み込み中")
         .append(getImage("load", "margin-left: 0.5em;"));
       previewDialog.append(previewContent);
