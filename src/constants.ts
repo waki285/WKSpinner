@@ -688,22 +688,22 @@ export type MIChoice = {
 };
 
 export const MI_CHOICES = [
-  { name: "出典の明記", id: "cite", params: [], aliases: ["references"] },
-  { name: "存命人物の出典明記", id: "cite-living", params: [] },
-  { name: "存命人物の出典皆無", id: "cite-living-no", params: [] },
-  { name: "参照方法", id: "ref", params: [] },
-  { name: "脚注の不足", id: "ref-lack", params: [] },
-  { name: "未検証", id: "unverified", params: [] },
-  { name: "単一の出典", id: "single", params: [] },
-  { name: "一次資料", id: "primary", params: [] },
+  { name: "出典の明記", id: "cite", params: [], aliases: ["references", "unreferenced", "refimprove", "出典明記", "unref", "出典なし"] },
+  { name: "存命人物の出典明記", id: "cite-living", params: [], aliases: ["blpsources", "blp sources"] },
+  { name: "存命人物の出典皆無", id: "cite-living-no", params: [], aliases: ["blp unsourced"] },
+  { name: "参照方法", id: "ref", params: [], aliases: ["citation style"] },
+  { name: "脚注の不足", id: "ref-lack", params: [], aliases: ["more footnotes"] },
+  { name: "未検証", id: "unverified", params: [], aliases: ["not verified"] },
+  { name: "単一の出典", id: "single", params: [], aliases: ["one source", "onesource", "single source", "singlesource", "唯一の出典"] },
+  { name: "一次資料", id: "primary", params: [], aliases: ["一次資料のみ", "primary sources"] },
   { name: "精度", id: "cite-accuracy", params: [] },
-  { name: "更新", id: "update", params: [] },
+  { name: "更新", id: "update", params: [], aliases: ["update", "同期", "sync"] },
   { name: "大言壮語", id: "boast", params: [] },
-  { name: "観点", id: "view", params: [] },
-  { name: "独自研究", id: "research", params: [] },
-  { name: "正確性", id: "accuracy", params: [] },
+  { name: "観点", id: "view", params: [], aliases: ["pov", "npov", "中立的な観点", "中立", "coi"] },
+  { name: "独自研究", id: "research", params: [], aliases: ["original research", "独自の研究", "独自調査"] },
+  { name: "正確性", id: "accuracy", params: [], aliases: ["disputed"] },
   { name: "要改訳", id: "translation", params: [] },
-  { name: "言葉を濁さない", id: "vague", params: [] },
+  { name: "言葉を濁さない", id: "vague", params: [], aliases: ["weasel"] },
   {
     name: "特筆性",
     id: "notable",
@@ -725,19 +725,21 @@ export const MI_CHOICES = [
         required: false,
       },
     ],
+    aliases: ["notability", "著名性"]
   },
   {
     name: "国際化",
     id: "i18n",
     params: [{ name: "領域", id: "area", type: "input", required: false }],
+    aliases: ["globalize", "グローバル", "worldwideview"]
   },
-  { name: "宣伝", id: "advert", params: [] },
-  { name: "孤立", id: "orphan", params: [] },
+  { name: "宣伝", id: "advert", params: [], aliases: ["advert", "ad"] },
+  { name: "孤立", id: "orphan", params: [], aliases: ["orphan"] },
   { name: "Wikify", id: "wikify", params: [] },
-  { name: "雑多な内容の箇条書き", id: "list", params: [] },
+  { name: "雑多な内容の箇条書き", id: "list", params: [], aliases: ["雑多", "trivia"] },
   { name: "内容過剰", id: "excessive", params: [] },
   { name: "画像過剰", id: "image", params: [] },
-  { name: "物語世界内の観点", id: "fictional", params: [] },
+  { name: "物語世界内の観点", id: "fictional", params: [], aliases: ["in-universe"] },
 ] as const satisfies MIChoice[];
 
 export type WarnTemplate = {
