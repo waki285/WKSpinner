@@ -1,7 +1,7 @@
 export const DEV = false;
 
 // 変更必須
-export const VERSION = "0.8.1";
+export const VERSION = "0.9.0";
 
 export const SCRIPT_NAME = "WKSpinner";
 export const SKJ_REQUEST_PAGE_NAME = DEV
