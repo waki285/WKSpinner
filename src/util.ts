@@ -328,5 +328,9 @@ export function replaceFirstAndRemoveOtherIssueTemplates(
     }
   }
 
+  if (!replaced) {
+    outputString = ISSUE_TEMPLATE_AREA + outputString;
+  }
+
   return outputString;
 }
