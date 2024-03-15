@@ -684,6 +684,8 @@ export async function initSkj() {
         mw.notify(err, { type: "error" });
         return;
       }
+      const pageName =
+      SKJ_REQUEST_PAGE_NAME + $("#wks-skj-dialog-page-name-input").val();
       const previewDialog = $("<div>")
         .css({
           maxHeight: "70vh",
@@ -716,7 +718,7 @@ export async function initSkj() {
           title: mw.config.get("wgPageName"),
           text: getFinalContentPrepend(),
           summary:
-            ($("#wks-skj-dialog-summary-template").val() || "+Sakujo") +
+            ($("#wks-skj-dialog-summary-template").val() as string || "+Sakujo").replaceAll("$d", pageName).replaceAll("$p", mw.config.get("wgPageName")) +
             SUMMARY_AD,
           prop: "text|modules|jsconfigvars",
           pst: true,
@@ -732,7 +734,7 @@ export async function initSkj() {
             SKJ_REQUEST_PAGE_NAME + $("#wks-skj-dialog-page-name-input").val(),
           text: getFinalContentRequest(),
           summary:
-            ($("#wks-skj-dialog-summary-submit").val() || "削除依頼") +
+            ($("#wks-skj-dialog-summary-submit").val() as string || "削除依頼").replaceAll("$d", pageName).replaceAll("$p", mw.config.get("wgPageName")) +
             SUMMARY_AD,
           prop: "text|modules|jsconfigvars",
           pst: true,
