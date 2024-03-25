@@ -29,6 +29,8 @@ export type Options = {
   prefLinkInToolbar: boolean;
   useIndividualPortlet: boolean;
   versionNotify: string;
+  timezone: string;
+  historyTimeFormat: string;
   mi: {
     enabled: boolean;
     enableMobile: boolean;
@@ -83,6 +85,8 @@ export const DEFAULT_OPTIONS = {
   prefLinkInToolbar: true,
   useIndividualPortlet: false,
   versionNotify: "all",
+  timezone: "UTC",
+  historyTimeFormat: "(\\d{4})年(\\d{1,2})月(\\d{1,2})日 \\((.)\\) (\\d{2}):(\\d{2})|YMDWHm",
   mi: {
     enabled: true,
     enableMobile: true,
@@ -1392,3 +1396,8 @@ export const NAMESPACE_MAP: ReadonlyMap<number, string> = new Map([
 
 export const REDLINK_REGEX =
   /w\/index\.php\?title=(.+?)(&action=edit)?&redlink=1/;
+
+export const TIMEZONE_VALUES: ReadonlyMap<string, number> = new Map([
+  ["UTC", 0],
+  ["JST", 9],
+]);

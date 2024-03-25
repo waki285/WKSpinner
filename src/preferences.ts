@@ -1,4 +1,4 @@
-import { DEFAULT_OPTIONS, OPTIONS_KEY, Options, SCRIPT_NAME } from "./constants";
+import { DEFAULT_OPTIONS, OPTIONS_KEY, Options, SCRIPT_NAME, TIMEZONE_VALUES } from "./constants";
 import { getOptionProperty } from "./util";
 
 export async function showConfigPage() {
@@ -66,6 +66,33 @@ export async function showConfigPage() {
   configArea.append(versionNotifyField.$element);
 
   versionNotifySelect.selectItemByData(getOptionProperty("versionNotify"));
+
+  const timezone = new OO.ui.TextInputWidget({
+    value: getOptionProperty("timezone"),
+    placeholder: "UTC",
+  });
+  const timezoneField = new OO.ui.FieldLayout(timezone, {
+    label: "タイムゾーン",
+    align: "top",
+    help: "ウィキの個人設定で設定しているものと同じものを設定してください。即時版指定削除機能での時間をUTCに調節するために使用します。現時点ではUTCとJSTのみ使用可能です。",
+    helpInline: true,
+  });
+
+  configArea.append(timezoneField.$element);
+
+  const historyTimeFormat = new OO.ui.TextInputWidget({
+    value: getOptionProperty("historyTimeFormat"),
+    placeholder: "(\\d{4})年(\\d{1,2})月(\\d{1,2})日 \\((.)\\) (\\d{2}):(\\d{2})",
+  });
+
+  const historyTimeFormatField = new OO.ui.FieldLayout(historyTimeFormat, {
+    label: "履歴ページの日時正規表現",
+    align: "top",
+    help: "履歴ページの日時を取得するための正規表現を設定します。ウィキの言語を日本語にしている限りここを修正する必要はありません。",
+    helpInline: true,
+  });
+
+  configArea.append(historyTimeFormatField.$element);
 
   const miFieldset = new OO.ui.FieldsetLayout({
     label: "問題テンプレート貼り付け",
@@ -467,6 +494,14 @@ export async function showConfigPage() {
 
   saveButton.on("click", () => {
     console.log("Save Button Clicked!!");
+
+    const keys = [...TIMEZONE_VALUES.keys()];
+
+    if (!keys.includes(timezone.getValue())) {
+      mw.notify("タイムゾーンが正しくありません。", { type: "error" });
+      return;
+    }
+
     saveButton.setDisabled(true);
     discardButton.setDisabled(true);
 
@@ -475,6 +510,8 @@ export async function showConfigPage() {
       prefLinkInToolbar: prefLinkInToolbar.isSelected(),
       useIndividualPortlet: useIndividualPortlet.isSelected(),
       versionNotify: (versionNotifySelect.findSelectedItem() as OO.ui.OptionWidget).getData() as string,
+      timezone: timezone.getValue() || "UTC",
+      historyTimeFormat: historyTimeFormat.getValue() || "(\\d{4})年(\\d{1,2})月(\\d{1,2})日 \\((.)\\) (\\d{2}):(\\d{2})",
       mi: {
         enabled: miEnabled.isSelected(),
         enableMobile: miEnableMobile.isSelected(),
