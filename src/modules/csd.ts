@@ -70,6 +70,7 @@ export async function initCsd() {
     const dialogTypeRow = createRow("type");
     const dialogTypeSelect = $("<select>");
     dialogTypeSelect.prop("id", "wks-csd-dialog-type-select");
+    dialogTypeSelect.addClass("wks-input-full");
 
     const generalCsdReasons = SD_REASON.filter(
       (reason) => reason.type === "全般",
@@ -151,7 +152,7 @@ export async function initCsd() {
               type: "text",
               placeholder: param.placeholder,
               required: param.required,
-              style: "width: 100%;",
+              class: "wks-input-full",
             }),
           );
         } else if (param.type === "select") {
@@ -190,7 +191,7 @@ export async function initCsd() {
       id: "wks-csd-dialog-comment",
       type: "text",
       placeholder: "コメント",
-      style: "width: 100%;",
+      class: "wks-input-full",
     });
     dialogComment.append(dialogCommentInput);
 
@@ -207,7 +208,7 @@ export async function initCsd() {
         id: "wks-csd-dialog-summary-input",
         type: "text",
         placeholder: "+sd",
-        style: "width: 100%;",
+        class: "wks-input-full",
         value: getOptionProperty("csd.default.summary"),
       }),
     );
