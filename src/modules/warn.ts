@@ -14,7 +14,7 @@ import {
 
 export async function initWarn() {
   const namespaceNumber = mw.config.get("wgNamespaceNumber");
-  const revisionId = mw.config.get("wgRevisionId");
+  //const revisionId = mw.config.get("wgRevisionId");
 
   const warnPortlet = createPortletLink(
     "通知",
@@ -63,6 +63,7 @@ export async function initWarn() {
     const dialogTypeRow = createRow("type");
     const dialogTypeSelect = $("<select>");
     dialogTypeSelect.prop("id", "wks-warn-dialog-type-select");
+    dialogTypeSelect.addClass("wks-input-full");
 
     for (const template of WARN_TEMPLATES) {
       // optgroup があったらそこに追加し、なかったら作成
@@ -113,7 +114,7 @@ export async function initWarn() {
               type: "text",
               placeholder: param.placeholder,
               required: param.required,
-              style: "width: 100%;",
+              class: "wks-input-full",
               value: ("defaultValue" in param ? param.defaultValue : "")
             }),
           );
@@ -144,7 +145,7 @@ export async function initWarn() {
             id: "wks-warn-dialog-sectiontitle-input",
             type: "text",
             placeholder: "セクションタイトル",
-            style: "width: 100%;",
+            class: "wks-input-full",
             value: selectedTemplate.defaultTitle,
           }),
         );
@@ -161,7 +162,7 @@ export async function initWarn() {
     const dialogCommentInput = $("<textarea>").prop({
       id: "wks-warn-dialog-comment",
       placeholder: "コメント",
-      style: "width: 100%;",
+      class: "wks-input-full",
       rows: 3,
     });
     
@@ -180,9 +181,22 @@ export async function initWarn() {
         id: "wks-warn-dialog-summary-input",
         type: "text",
         placeholder: "$t",
-        style: "width: 100%;",
+        class: "wks-input-full",
         value: getOptionProperty("warn.default.summary") || "$t",
       }),
+    );
+
+    const subscribeRow = createRow("subscribe");
+    const subscribeCheckbox = $("<input>").prop({
+      id: "wks-warn-dialog-subscribe-checkbox",
+      type: "checkbox",
+      checked: true
+    });
+    subscribeRow.append(subscribeCheckbox);
+    subscribeRow.append(
+      $("<label>")
+        .html("このセクションを購読する")
+        .prop("for", "wks-warn-dialog-subscribe-checkbox"),
     );
 
     dialogTypeRow.append(dialogTypeSelect);
@@ -191,6 +205,7 @@ export async function initWarn() {
     dialogFieldset.append(dialogTypeParams);
     dialogFieldset.append(dialogComment);
     dialogFieldset.append(dialogSummary);
+    dialogFieldset.append(subscribeRow);
 
     const getFinalContent = () => {
       const tl = WARN_TEMPLATES.find(
@@ -205,7 +220,7 @@ export async function initWarn() {
             return input.val() ? `|${param.id}=${input.val()}` : "";
           })
           .join("") + 
-        "}}\n" + dialogCommentInput.val() + "--~~~~"
+        "}}\n" + dialogCommentInput.val()// + "--~~~~"
       );
     };
 
@@ -277,21 +292,23 @@ export async function initWarn() {
         .text("読み込み中")
         .append(getImage("load", "margin-left: 0.5em;"));
       previewDialog.append(previewContent);
-      const parseRes = await new mw.Api().post({
-        action: "parse",
-        title: talkPageName,
-        section: "new",
+      const parseRes = (await new mw.Api().post({
+        action: "discussiontoolspreview",
+        page: talkPageName,
+        type: "topic",
         sectiontitle: selectedTemplate?.hasTitle ? "":$("#wks-warn-dialog-sectiontitle-input").val(),
-        text: getFinalContent(),
-        summary: getFinalSummary(),
-        prop: "text|modules|jsconfigvars",
-        pst: true,
-        disablelimitreport: true,
-        disableeditsection: true,
-        disabletoc: true,
+        wikitext: getFinalContent(),
+        uselang: "ja",
+        useskin: mw.config.get("skin"),
+        //summary: getFinalSummary(),
+        //prop: "text|modules|jsconfigvars",
+        //pst: true,
+        //disablelimitreport: true,
+        //disableeditsection: true,
+        //disabletoc: true,
         //contentmodel: "wikitext",
         formatversion: "2",
-      });
+      })).discussiontoolspreview;
       previewContent.empty();
       if (parseRes.parse.modules.length) {
         mw.loader.load(parseRes.parse.modules);
@@ -299,16 +316,16 @@ export async function initWarn() {
       if (parseRes.parse.modulestyles.length) {
         mw.loader.load(parseRes.parse.modulestyles);
       }
-      const summaryPreview = $("<div>")
+      /*const summaryPreview = $("<div>")
         .html(parseRes.parse.parsedsummary)
         .prop("id", "wks-warn-dialog-preview-summary");
-      const hr = $("<hr>").addClass("wks-hr");
+      const hr = $("<hr>").addClass("wks-hr");*/
       const previewDiv = $("<div>")
         .html(parseRes.parse.text)
         .prop("id", "wks-warn-dialog-preview-div")
         .addClass("wks-dialog-preview-div");
-      previewContent.append(summaryPreview);
-      previewContent.append(hr);
+      //previewContent.append(summaryPreview);
+      //previewContent.append(hr);
       previewContent.append(previewDiv);
       previewDialog.dialog({
         position: {
@@ -335,16 +352,21 @@ export async function initWarn() {
 
       try {
         const editRes = await new mw.Api().postWithEditToken({
-          action: "edit",
-          title: talkPageName,
-          text: getFinalContent(),
+          action: "discussiontoolsedit",
+          page: talkPageName,
+          uselang: "ja",
+          useskin: mw.config.get("skin"),
+          wikitext: getFinalContent(),
           summary: getFinalSummary(),
           formatversion: "2",
-          section: "new",
+          paction: "addtopic",
+          dtenable: 1,
+          dttags: "discussiontools,discussiontools-source,discussiontools-source-enhanced,discussiontools-newtopic",
           sectiontitle: selectedTemplate?.hasTitle ? "":$("#wks-warn-dialog-sectiontitle-input").val(),
-          baserevid: revisionId,
+          allownosectiontitle: true,
+          autosubscribe: $("#wks-warn-dialog-subscribe-checkbox").prop("checked") ? "yes":"no",
         });
-        if (editRes.edit.result === "Success") {
+        if ((editRes.discussiontoolsedit?.result || editRes.edit?.result)?.toLowerCase() === "success") {
           mw.notify("ページの編集に成功しました。");
           warnDialog.dialog("close");
           window.location.href = mw.util.getUrl(talkPageName);
