@@ -5,6 +5,7 @@ import {
   OPTIONS_KEY,
   ORIG_PORTLET_ID,
   SCRIPT_NAME,
+  TIMEZONE_VALUES,
 } from "./constants";
 
 export const sleep = (ms: number) =>
@@ -333,4 +334,20 @@ export function replaceFirstAndRemoveOtherIssueTemplates(
   }
 
   return outputString;
+}
+
+export function formatDate(year: number, month: number, day: number, hour: number, minute: number, timezone: string) {
+  const timezoneValue = TIMEZONE_VALUES.get(timezone);
+  if (timezoneValue === undefined) {
+    throw new Error("Invalid timezone");
+  }
+  const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+  const date = new Date(Date.UTC(year, month - 1, day, hour - timezoneValue, minute));
+  const yearStr = date.getUTCFullYear();
+  const monthStr = (date.getUTCMonth() + 1);
+  const dayStr = date.getUTCDate();
+  const weekdayStr = weekdays[date.getUTCDay()];
+  const hourStr = ('0' + date.getUTCHours()).slice(-2);
+  const minuteStr = ('0' + date.getUTCMinutes()).slice(-2);
+  return `${yearStr}年${monthStr}月${dayStr}日 (${weekdayStr}) ${hourStr}:${minuteStr}`;
 }
