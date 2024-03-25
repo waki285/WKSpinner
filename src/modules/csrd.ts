@@ -1,8 +1,46 @@
 import { SRD_REASON, SUMMARY_AD, SUMMARY_AD_ATTRACT } from "@/constants";
-import { createRowFunc, getImage, getOptionProperty, sleep } from "@/util";
+import { createRowFunc, formatDate, getImage, getOptionProperty, sleep } from "@/util";
 
 function formatDateRanges(data: [string, number][]) {
   data.sort((a, b) => a[1] - b[1]);
+
+  const regex = new RegExp(
+    getOptionProperty("historyTimeFormat").split("|")[0],
+  );
+
+  data = data.map((d) => {
+    const [_match, q, z, e, _r, t, b] = d[0].match(regex)!;
+
+    const splitFlag = getOptionProperty("historyTimeFormat").split("|")[1];
+
+    let y, m, day, h, min;
+
+    for (let i = 0; i < splitFlag.length; i++) {
+      switch (splitFlag[i]) {
+        case "Y":
+          y = q;
+          break;
+        case "M":
+          m = z;
+          break;
+        case "D":
+          day = e;
+          break;
+        case "W":
+          break;
+        case "H":
+          h = t;
+          break;
+        case "m":
+          min = b;
+          break;
+      }
+    }
+
+    const dateString = formatDate(parseInt(y!, 10), parseInt(m!, 10), parseInt(day!, 10), parseInt(h!, 10), parseInt(min!, 10), getOptionProperty("timezone") || "UTC");
+
+    return [dateString, d[1]];
+  });
 
   let output = "";
   let start = data[0]![0]!;
@@ -190,6 +228,7 @@ export async function initCsrd() {
     dialogFieldset.append(dialogTypeParams);
     dialogFieldset.append(dialogComment);
     dialogFieldset.append(dialogSummary);
+    dialogFieldset.append($("<p>").text(getOptionProperty("timezone") !== "UTC" ? "注意: あなたはWKSpinnerの設定でタイムゾーンをUTC以外に設定しているため、タイムゾーンが自動で補正されます。":""))
 
     const revisions: [string, number][] = [];
     const functions: ((e: Event) => void)[] = [];
