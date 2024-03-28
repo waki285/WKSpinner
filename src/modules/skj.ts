@@ -383,12 +383,12 @@ export async function initSkj() {
         .append($("<span>").text("ページの存在チェック中"));
       progressDialog.append(progressDialogContentCheckExists);
 
-      const pageName =
-        SKJ_REQUEST_PAGE_NAME + $("#wks-skj-dialog-page-name-input").val();
+      const getPageName =
+        () => SKJ_REQUEST_PAGE_NAME + $("#wks-skj-dialog-page-name-input").val();
       const pageRes = await new mw.Api().post({
         action: "query",
         format: "json",
-        titles: pageName,
+        titles: getPageName(),
         formatversion: "2",
       });
 
@@ -397,7 +397,7 @@ export async function initSkj() {
         progressDialogContentCheckExists.append(getImage("cross", ""));
         progressDialogContentCheckExists.append(
           $("<span>").html(
-            `削除依頼ページが<a href="/wiki/${pageName}">既に存在します</a>。`,
+            `削除依頼ページが<a href="/wiki/${getPageName()}">既に存在します</a>。`,
           ),
         );
         progressDialog.dialog({
@@ -435,7 +435,7 @@ export async function initSkj() {
           nocreate: 1,
           text: getFinalContentPrepend(),
           summary:
-            ($("#wks-skj-dialog-summary-template").val() as string || "+Sakujo").replaceAll("$d", pageName).replaceAll("$p", mw.config.get("wgPageName")) +
+            ($("#wks-skj-dialog-summary-template").val() as string || "+Sakujo").replaceAll("$d", getPageName()).replaceAll("$p", mw.config.get("wgPageName")) +
             SUMMARY_AD,
           formatversion: "2",
           baserevid: revisionId,
@@ -493,11 +493,11 @@ export async function initSkj() {
         try {
           const submitRes = await new mw.Api().postWithEditToken({
             action: "edit",
-            title: pageName,
+            title: getPageName(),
             createonly: 1,
             text: getFinalContentRequest(),
             summary:
-              ($("#wks-skj-dialog-summary-submit").val() as string || "削除依頼").replaceAll("$d", pageName).replaceAll("$p", mw.config.get("wgPageName")) +
+              ($("#wks-skj-dialog-summary-submit").val() as string || "削除依頼").replaceAll("$d", getPageName()).replaceAll("$p", mw.config.get("wgPageName")) +
               SUMMARY_AD,
             formatversion: "2",
           });
@@ -526,7 +526,7 @@ export async function initSkj() {
           progressDialogContentSubmit.append(getImage("check", ""));
           progressDialogContentSubmit.append(
             $("<span>").html(
-              `依頼ページの作成に成功しました。(<a href="/wiki/${pageName}" target="_blank">リンク</a>)`,
+              `依頼ページの作成に成功しました。(<a href="/wiki/${getPageName()}" target="_blank">リンク</a>)`,
             ),
           );
 
@@ -580,9 +580,9 @@ export async function initSkj() {
               action: "edit",
               title: logPageName,
               nocreate: 1,
-              text: `${logPageContent}\n{{${pageName}}}`,
+              text: `${logPageContent}\n{{${getPageName()}}}`,
               summary:
-                ($("#wks-skj-dialog-summary-note").val() as string || "削除依頼の追加").replaceAll("$d", pageName).replaceAll("$p", mw.config.get("wgPageName")) +
+                ($("#wks-skj-dialog-summary-note").val() as string || "削除依頼の追加").replaceAll("$d", getPageName()).replaceAll("$p", mw.config.get("wgPageName")) +
                 SUMMARY_AD,
               formatversion: "2",
             });
