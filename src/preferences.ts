@@ -466,6 +466,60 @@ export async function showConfigPage() {
 
   configArea.append(warnFieldset.$element);
 
+  const rfpFieldset = new OO.ui.FieldsetLayout({
+    label: "保護依頼",
+    classes: ["container", "wks-pref-container"],
+  });
+
+  const rfpEnabled = new OO.ui.CheckboxInputWidget({
+    value: "rfp-enabled",
+    selected: getOptionProperty("rfp.enabled"),
+  });
+
+  const rfpEnabledField = new OO.ui.FieldLayout(rfpEnabled, {
+    label: "有効にする",
+    align: "inline",
+  });
+
+  const rfpEnableMobile = new OO.ui.CheckboxInputWidget({
+    value: "rfp-enable-mobile",
+    selected: getOptionProperty("rfp.enableMobile"),
+  });
+
+  const rfpEnableMobileField = new OO.ui.FieldLayout(rfpEnableMobile, {
+    label: "モバイルでも有効にする",
+    align: "inline",
+  });
+
+  const rfpSummarySubmit = new OO.ui.TextInputWidget({
+    value: getOptionProperty("rfp.default.summarySubmit"),
+    placeholder: "保護依頼",
+  });
+
+  const rfpSummarySubmitField = new OO.ui.FieldLayout(rfpSummarySubmit, {
+    label: "編集の要約 (保護依頼ページ編集) デフォルト値",
+    align: "inline",
+  });
+
+  const rfpSummaryTemplate = new OO.ui.TextInputWidget({
+    value: getOptionProperty("rfp.default.summaryTemplate"),
+    placeholder: "+保護依頼",
+  });
+
+  const rfpSummaryTemplateField = new OO.ui.FieldLayout(rfpSummaryTemplate, {
+    label: "編集の要約 (保護依頼テンプレート貼り付け) デフォルト値",
+    align: "inline",
+  });
+
+  rfpFieldset.addItems([
+    rfpEnabledField,
+    rfpEnableMobileField,
+    rfpSummarySubmitField,
+    rfpSummaryTemplateField,
+  ]);
+
+  configArea.append(rfpFieldset.$element);
+
   const saveButton = new OO.ui.ButtonWidget({
     label: "保存",
     flags: ["progressive"],
@@ -562,6 +616,14 @@ export async function showConfigPage() {
           summary: warnSummary.getValue() || "",
         }
       },
+      rfp: {
+        enabled: rfpEnabled.isSelected(),
+        enableMobile: rfpEnableMobile.isSelected(),
+        default: {
+          summarySubmit: rfpSummarySubmit.getValue() || "",
+          summaryTemplate: rfpSummaryTemplate.getValue() || "",
+        }
+      }
     };
     console.log(newOptions);
 

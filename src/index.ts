@@ -13,6 +13,7 @@ import { initCsd } from "./modules/csd";
 import { initCsrd } from "./modules/csrd";
 import { initEditCount } from "./modules/editCount";
 import { initMi } from "./modules/mi";
+import { initRFP } from "./modules/rfp";
 import { initSkj } from "./modules/skj";
 import { initWarn } from "./modules/warn";
 import { showConfigPage } from "./preferences";
@@ -145,6 +146,14 @@ async function init() {
     (namespaceNumber === 2 || namespaceNumber === 3)
   ) {
     await initWarn();
+  }
+
+  // 保護依頼
+  if (
+    getOptionProperty("rfp.enabled") === true && // 無効でない
+    !(isMobile && getOptionProperty("rfp.enableMobile") === false)
+  ) {
+    await initRFP();
   }
 }
 

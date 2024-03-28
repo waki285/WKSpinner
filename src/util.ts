@@ -12,7 +12,7 @@ export const sleep = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-let lib: any;
+export let lib: any;
 
 /**
  * Get an \<img> tag.
@@ -350,4 +350,10 @@ export function formatDate(year: number, month: number, day: number, hour: numbe
   const hourStr = ('0' + date.getUTCHours()).slice(-2);
   const minuteStr = ('0' + date.getUTCMinutes()).slice(-2);
   return `${yearStr}年${monthStr}月${dayStr}日 (${weekdayStr}) ${hourStr}:${minuteStr}`;
+}
+
+export function pageNameToNamespace(pageName: string) {
+  const namespace = pageName.split(":")[0] || "";
+  const namespaceNumber = mw.config.get("wgNamespaceIds")[namespace.toLowerCase()];
+  return namespaceNumber;
 }

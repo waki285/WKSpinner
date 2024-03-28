@@ -78,6 +78,14 @@ export type Options = {
       summary: string;
     };
   };
+  rfp: {
+    enabled: boolean;
+    enableMobile: boolean;
+    default: {
+      summaryTemplate: string;
+      summarySubmit: string;
+    };
+  }
 };
 
 export const DEFAULT_OPTIONS = {
@@ -135,6 +143,15 @@ export const DEFAULT_OPTIONS = {
       summary: "$t",
     }
   },
+  rfp: {
+    enabled: true,
+    enableMobile: true,
+    default: {
+      summaryTemplate: "+保護依頼",
+      summarySubmit: "保護依頼",
+    }
+  
+  }
 } as const satisfies Options;
 
 export type SDReason = {
