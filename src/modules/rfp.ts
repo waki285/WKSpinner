@@ -159,7 +159,7 @@ export async function initRFP() {
         type: "text",
         placeholder: "保護依頼",
         class: "wks-input-full",
-        value: `{{Page|1=${mw.config.get("wgPageName")}}}`,
+        value: `{{Page|${mw.config.get("wgPageName").includes("=") ? "1=":""}${mw.config.get("wgPageName")}}}`,
       }),
     );
 
