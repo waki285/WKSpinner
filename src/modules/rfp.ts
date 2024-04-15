@@ -28,7 +28,7 @@ function getProtectSectionName() {
 }
 
 export async function initRFP() {
-  const rfpPortlet = createPortletLink("保護依頼 (β)", "wks-rfp", "保護依頼をする");
+  const rfpPortlet = createPortletLink("保護依頼", "wks-rfp", "保護依頼をする");
 
   if (!rfpPortlet) {
     console.warn(`${SCRIPT_NAME}: メニューの作成に失敗しました。`);
@@ -228,7 +228,7 @@ export async function initRFP() {
     const getFinalContentPrepend = (namespace: number, _header: string) =>
       `${
         namespace === 10 ? "<noinclude>" : ""
-      }{{保護依頼}}${namespace === 10 ? "</noinclude>" : "\n"}\n`;
+      }{{保護依頼}}${namespace === 10 ? "</noinclude>" : "\n"}`;
 
     const getFinalContentRequest = () =>
       `==== ${$("#wks-rfp-dialog-header-input").val()} ====\n${
