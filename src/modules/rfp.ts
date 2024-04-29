@@ -116,7 +116,7 @@ export async function initRFP() {
 
       const removeFunc = () => {
         dialogPageNameRow.remove();
-        dialogAddPageBtn.remove();
+        // dialogAddPageBtn.remove(); // why?
         pages.splice(pages.indexOf(num), 1);
       };
 
