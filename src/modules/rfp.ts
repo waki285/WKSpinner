@@ -123,6 +123,7 @@ export async function initRFP() {
       const dialogRemovePageBtn = $("<button>")
         .prop("id", `wks-rfp-dialog-remove-page-${num}-button`)
         .text("削除")
+        .addClass("wks-shrink-0")
         .on("click", removeFunc);
 
       dialogPageNameRow.append(dialogRemovePageBtn);
