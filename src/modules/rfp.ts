@@ -363,7 +363,7 @@ export async function initRFP() {
           ),
         );
 
-        if (!$("#wks-rfp-dialog-template-cb").val()) {
+        if (!$("#wks-rfp-dialog-template-cb").prop("checked")) {
           progressDialog.dialog({
             buttons: [
               {
