@@ -329,7 +329,7 @@ export async function initRFP() {
             .index.toString(),
           summary: $("#wks-rfp-dialog-summary-submit").val() + SUMMARY_AD,
           nocreate: 1,
-          appendtext: `\n${getFinalContentRequest()}`,
+          appendtext: `\n\n${getFinalContentRequest()}`,
           formatversion: "2",
         });
 
