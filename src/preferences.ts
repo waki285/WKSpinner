@@ -182,7 +182,7 @@ export async function showConfigPage() {
 
   const csrdEnabled = new OO.ui.CheckboxInputWidget({
     value: "csrd-enabled",
-    selected: getOptionProperty("csd.enabled"),
+    selected: getOptionProperty("csrd.enabled"),
   });
 
   const csrdEnabledField = new OO.ui.FieldLayout(csrdEnabled, {
