@@ -478,9 +478,6 @@ export async function initSkj() {
           .append(getImage("load", ""))
           .append($("<span>").text("5秒待機します..."));
 
-        // DEBUG! TODO: Remove
-        throw new Error("DEBUG");
-
         progressDialog.append(progressDialogContentWait1);
 
         await sleep(5000);
