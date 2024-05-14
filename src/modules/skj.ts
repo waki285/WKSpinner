@@ -284,8 +284,10 @@ export async function initSkj() {
       },
     );
 
-    const getFinalContentPrepend = () =>
-      `${
+    // 第一タプル: prependtext か text か (true なら text, false なら prependtext)
+    // forceText を true にすると text になる
+    const getFinalContentPrepend = (forceText = false) =>
+      [forceText || $("#wks-skj-dialog-blank-cb").prop("checked"), `${
         mw.config.get("wgNamespaceNumber") === 10 ? "<noinclude>" : ""
       }{{subst:Sakujo${
         $("#wks-skj-dialog-page-name-input").val() ==
@@ -299,8 +301,8 @@ export async function initSkj() {
             }}}`
           : ""
       }${mw.config.get("wgNamespaceNumber") === 10 ? "</noinclude>" : "\n"}${
-        $("#wks-skj-dialog-blank-cb").prop("checked") ? "" : pageContent
-      }`;
+        !$("#wks-skj-dialog-blank-cb").prop("checked") && forceText ? pageContent : ""
+      }`] as const;
 
     const getFinalContentRequest = () => `{{subst:新規削除依頼サブページ
 |ページ名=${$("#wks-skj-dialog-use-id-cb").prop("checked") ? "" : mw.config.get("wgPageName")}
@@ -429,11 +431,13 @@ export async function initSkj() {
       progressDialog.append(progressDialogContentPrependTl);
 
       try {
+        const [isText, t] = getFinalContentPrepend();
         const prependRes = await new mw.Api().postWithEditToken({
           action: "edit",
           title: mw.config.get("wgPageName"),
           nocreate: 1,
-          text: getFinalContentPrepend(),
+          text: isText ? t : undefined,
+          prependtext: isText ? undefined : t,
           summary:
             ($("#wks-skj-dialog-summary-template").val() as string || "+Sakujo").replaceAll("$d", getPageName()).replaceAll("$p", mw.config.get("wgPageName")) +
             SUMMARY_AD,
@@ -473,6 +477,9 @@ export async function initSkj() {
           .addClass("wks-inline")
           .append(getImage("load", ""))
           .append($("<span>").text("5秒待機します..."));
+
+        // DEBUG! TODO: Remove
+        throw new Error("DEBUG");
 
         progressDialog.append(progressDialogContentWait1);
 
@@ -716,7 +723,7 @@ export async function initSkj() {
         new mw.Api().post({
           action: "parse",
           title: mw.config.get("wgPageName"),
-          text: getFinalContentPrepend(),
+          text: getFinalContentPrepend(true)[1],
           summary:
             ($("#wks-skj-dialog-summary-template").val() as string || "+Sakujo").replaceAll("$d", pageName).replaceAll("$p", mw.config.get("wgPageName")) +
             SUMMARY_AD,
