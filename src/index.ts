@@ -1,6 +1,7 @@
 import {
   CONFIG_PAGE_NAME,
   DEBUG_PAGE_NAME,
+  OPTIONS_KEY,
   ORIG_PORTLET_ID,
   PORTLET_LABEL,
   RELEASE_NOTES,
@@ -17,7 +18,7 @@ import { initRFP } from "./modules/rfp";
 import { initSkj } from "./modules/skj";
 import { initWarn } from "./modules/warn";
 import { showConfigPage } from "./preferences";
-import { getOptionProperty, loadLibrary } from "./util";
+import { getOptionProperty, getSavedOptions, loadLibrary } from "./util";
 import cmp from "semver-compare";
 
 mw.loader.load(
@@ -103,6 +104,7 @@ async function init() {
     mw.util.addPortlet(ORIG_PORTLET_ID, PORTLET_LABEL, "#p-search");
   }
 
+  await migrate();
   versionNotify();
 
   // 即時削除
@@ -154,6 +156,25 @@ async function init() {
     !(isMobile && getOptionProperty("rfp.enableMobile") === false)
   ) {
     await initRFP();
+  }
+}
+
+async function migrate() {
+  const lastVersion = mw.user.options.get(VERSION_OPTIONS_KEY) || "0.0.0";
+  // 0.10.6未満のバージョンからのアップデート
+  if (cmp(lastVersion, "0.10.6") === -1) {
+    const settings = getSavedOptions();
+    if (settings?.rfp?.default?.summarySubmit === "保護依頼") {
+      settings.rfp.default.summarySubmit = "+$p";
+      await new mw.Api()
+        .postWithEditToken({
+          action: "options",
+          format: "json",
+          optionname: OPTIONS_KEY,
+          optionvalue: JSON.stringify(settings),
+          formatversion: "2",
+        })
+    }
   }
 }
 
