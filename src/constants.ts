@@ -1,7 +1,7 @@
 export const DEV = false;
 
 // 変更必須
-export const VERSION = "0.10.5";
+export const VERSION = "0.10.6";
 
 export const SCRIPT_NAME = "WKSpinner";
 export const SKJ_REQUEST_PAGE_NAME = DEV
@@ -148,7 +148,7 @@ export const DEFAULT_OPTIONS = {
     enableMobile: true,
     default: {
       summaryTemplate: "+保護依頼",
-      summarySubmit: "保護依頼",
+      summarySubmit: "+$p",
     }
   
   }
