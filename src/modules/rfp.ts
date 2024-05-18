@@ -313,8 +313,7 @@ export async function initRFP() {
         .append($("<span>").text("保護依頼中"));
       progressDialog.append(progressDialogContentSubmitRFP);
 
-      // TODO:
-      const pageName = "利用者:鈴音雨/sandbox2";//"Wikipedia:保護依頼";
+      const pageName = "Wikipedia:保護依頼";
       const nft = await lib.Wikitext.newFromTitle(pageName);
       const sections = nft.parseSections();
 
