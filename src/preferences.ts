@@ -499,6 +499,8 @@ export async function showConfigPage() {
   const rfpSummarySubmitField = new OO.ui.FieldLayout(rfpSummarySubmit, {
     label: "編集の要約 (保護依頼ページ編集) デフォルト値",
     align: "inline",
+    help: "$p には保護依頼対象ページのリンクの羅列が入ります",
+    helpInline: true,
   });
 
   const rfpSummaryTemplate = new OO.ui.TextInputWidget({

@@ -142,7 +142,7 @@ export async function initRFP() {
     dialogTemplateRow.append(
       $("<label>")
         .html(
-          '{{<a href="/wiki/Template:保護依頼">保護依頼</a>}}を貼り付ける (複数ページの場合非推奨)',
+          '{{<a href="/wiki/Template:保護依頼" target="_blank">保護依頼</a>}}を貼り付ける (複数ページの場合非推奨)',
         )
         .prop("for", "wks-rfp-dialog-template-cb"),
     );
@@ -210,7 +210,7 @@ export async function initRFP() {
     const summarySubmit = $("<div>").addClass("wks-inline");
     summarySubmit.append(
       $("<label>")
-        .html("依頼ページ編集: ")
+        .html("依頼ページ編集 ($p: ページ名の羅列): ")
         .prop("for", "wks-rfp-dialog-summary-submit")
         .addClass("wks-shrink-0"),
     );
@@ -218,7 +218,7 @@ export async function initRFP() {
       $("<input>").prop({
         id: "wks-rfp-dialog-summary-submit",
         type: "text",
-        placeholder: "保護依頼",
+        placeholder: "+$p",
         class: "wks-input-full",
         value: getOptionProperty("rfp.default.summarySubmit"),
       }),
@@ -313,7 +313,8 @@ export async function initRFP() {
         .append($("<span>").text("保護依頼中"));
       progressDialog.append(progressDialogContentSubmitRFP);
 
-      const pageName = "Wikipedia:保護依頼";
+      // TODO:
+      const pageName = "利用者:鈴音雨/sandbox2";//"Wikipedia:保護依頼";
       const nft = await lib.Wikitext.newFromTitle(pageName);
       const sections = nft.parseSections();
 
@@ -327,7 +328,12 @@ export async function initRFP() {
               section.title.includes(getProtectSectionName()),
             )
             .index.toString(),
-          summary: $("#wks-rfp-dialog-summary-submit").val() + SUMMARY_AD,
+          summary: ($("#wks-rfp-dialog-summary-submit").val() as string).replaceAll("$p", pages.map(
+            (pageNumber) =>
+              $(
+                "#wks-rfp-dialog-page-name-" + pageNumber + "-input",
+              ).val() as string,
+            ).map(x => `[[特別:PageHistory/${x}|${x}]]`).join(", ")) + SUMMARY_AD,
           nocreate: 1,
           appendtext: `\n\n${getFinalContentRequest()}`,
           formatversion: "2",
