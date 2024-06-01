@@ -197,11 +197,11 @@ export async function initCsrd() {
     dialogAdditional.append(
       $("<label>")
         .html("追加情報")
-        .prop("for", "wks-csrd-dialog-additional"),
+        .prop("for", "wks-csrd-dialog-additional-tb"),
     );
     dialogAdditional.append(
       $("<input>").prop({
-        id: "wks-csrd-dialog-additional",
+        id: "wks-csrd-dialog-additional-tb",
         type: "text",
         placeholder: "20xx年x月x日 (x) xx:xx (UTC) の版は要約欄を含む",
         style: "width: 100%; font-size: 16px;",
@@ -277,7 +277,7 @@ export async function initCsrd() {
                 mw.config.get("wgPageName").endsWith(".js")
               ? "/* "
               : ""
-        }{{即時版指定削除|${dialogTypeSelect.val()}|${formatDateRanges(revisions)}${$("#wks-csrd-dialog-additional").val() ? ` ${$("#wks-csrd-dialog-additional").val()}`:""}${dialogTypeParams
+        }{{即時版指定削除|${dialogTypeSelect.val()}|${formatDateRanges(revisions)}${$("#wks-csrd-dialog-additional-tb").val() ? ` ${$("#wks-csrd-dialog-additional-tb").val()}`:""}${dialogTypeParams
           .children()
           .toArray()
           .filter(
