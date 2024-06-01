@@ -277,7 +277,7 @@ export async function initCsrd() {
                 mw.config.get("wgPageName").endsWith(".js")
               ? "/* "
               : ""
-        }{{即時版指定削除|${dialogTypeSelect.val()}|${formatDateRanges(revisions)}${dialogAdditional.val() ? ` ${dialogAdditional.val()}`:""}${dialogTypeParams
+        }{{即時版指定削除|${dialogTypeSelect.val()}|${formatDateRanges(revisions)}${$("#wks-csrd-dialog-additional").val() ? ` ${$("#wks-csrd-dialog-additional").val()}`:""}${dialogTypeParams
           .children()
           .toArray()
           .filter(
