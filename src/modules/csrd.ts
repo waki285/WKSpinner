@@ -193,6 +193,21 @@ export async function initCsrd() {
 
     dialogTypeSelect.on("change", handleSelect);
 
+    const dialogAdditional = createRow("additional");
+    dialogAdditional.append(
+      $("<label>")
+        .html("追加情報")
+        .prop("for", "wks-csrd-dialog-additional"),
+    );
+    dialogAdditional.append(
+      $("<input>").prop({
+        id: "wks-csrd-dialog-additional",
+        type: "text",
+        placeholder: "20xx年x月x日 (x) xx:xx (UTC) の版は要約欄を含む",
+        style: "width: 100%; font-size: 16px;",
+      }),
+    );
+
     const dialogComment = createRow("comment");
     dialogComment.append(
       $("<label>").html("コメント").prop("for", "wks-csrd-dialog-comment"),
@@ -226,6 +241,7 @@ export async function initCsrd() {
     dialogTypeRow.append(dialogTypeSelect);
     dialogFieldset.append(dialogTypeRow);
     dialogFieldset.append(dialogTypeParams);
+    dialogFieldset.append(dialogAdditional);
     dialogFieldset.append(dialogComment);
     dialogFieldset.append(dialogSummary);
     dialogFieldset.append($("<p>").text(getOptionProperty("timezone") !== "UTC" ? "注意: あなたはWKSpinnerの設定でタイムゾーンをUTC以外に設定しているため、タイムゾーンが自動で補正されます。":""))
@@ -261,7 +277,7 @@ export async function initCsrd() {
                 mw.config.get("wgPageName").endsWith(".js")
               ? "/* "
               : ""
-        }{{即時版指定削除|${dialogTypeSelect.val()}|${formatDateRanges(revisions)}${dialogTypeParams
+        }{{即時版指定削除|${dialogTypeSelect.val()}|${formatDateRanges(revisions)}${dialogAdditional.val() ? ` ${dialogAdditional.val()}`:""}${dialogTypeParams
           .children()
           .toArray()
           .filter(
