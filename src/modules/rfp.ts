@@ -235,9 +235,21 @@ export async function initRFP() {
       `==== ${$("#wks-rfp-dialog-header-input").val()} ====\n${
         pages.length === 1
           ? ""
-          : pages
+          : pages.length > 3 ?
+          `{{MultiProtect\n${pages
+              .map((pageNumber, i) => {
+                return `|${($(
+                  "#wks-rfp-dialog-page-name-" + pageNumber + "-input",
+                ).val() as string).includes("=") ? `${i+1}=`:""}${$(
+                  "#wks-rfp-dialog-page-name-" + pageNumber + "-input",
+                ).val()}`;
+              })
+              .join("\n") + "\n}}\n"}`
+          :pages
               .map((pageNumber) => {
-                return `* {{Page|1=${$(
+                return `* {{Page|${($(
+                  "#wks-rfp-dialog-page-name-" + pageNumber + "-input",
+                ).val() as string).includes("=") ? "1=":""}${$(
                   "#wks-rfp-dialog-page-name-" + pageNumber + "-input",
                 ).val()}}}`;
               })
