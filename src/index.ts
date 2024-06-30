@@ -176,6 +176,21 @@ async function migrate() {
         })
     }
   }
+  // 0.10.8未満のバージョンからのアップデート
+  if (cmp(lastVersion, "0.10.8") === -1) {
+    const settings = getSavedOptions();
+    if (settings?.warn?.default?.summary === "$t") {
+      settings.warn.default.summary = "+{{$t}}";
+      await new mw.Api()
+        .postWithEditToken({
+          action: "options",
+          format: "json",
+          optionname: OPTIONS_KEY,
+          optionvalue: JSON.stringify(settings),
+          formatversion: "2",
+        })
+    }
+  }
 }
 
 async function versionNotify() {

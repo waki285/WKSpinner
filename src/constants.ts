@@ -1,7 +1,7 @@
 export const DEV = false;
 
 // 変更必須
-export const VERSION = "0.10.8";
+export const VERSION = "0.10.9";
 
 export const SCRIPT_NAME = "WKSpinner";
 export const SKJ_REQUEST_PAGE_NAME = DEV
@@ -140,7 +140,7 @@ export const DEFAULT_OPTIONS = {
     enabled: true,
     enableMobile: true,
     default: {
-      summary: "$t",
+      summary: "+{{$t}}",
     }
   },
   rfp: {

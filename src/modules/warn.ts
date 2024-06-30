@@ -172,7 +172,7 @@ export async function initWarn() {
     dialogSummary.append(
       $("<label>")
         .html(
-          `編集の要約 (指定しない場合 "$t") ($tにはテンプレート名) "${SUMMARY_AD_ATTRACT}" が自動付加されます`,
+          `編集の要約 (指定しない場合 "+{{$t}}") ($tにはテンプレート名) "${SUMMARY_AD_ATTRACT}" が自動付加されます`,
         )
         .prop("for", "wks-warn-dialog-summary-input"),
     );
