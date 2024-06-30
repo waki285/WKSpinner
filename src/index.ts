@@ -176,8 +176,8 @@ async function migrate() {
         })
     }
   }
-  // 0.10.8未満のバージョンからのアップデート
-  if (cmp(lastVersion, "0.10.8") === -1) {
+  // 0.10.10未満のバージョンからのアップデート
+  if (cmp(lastVersion, "0.10.10") === -1) {
     const settings = getSavedOptions();
     if (settings?.warn?.default?.summary === "$t") {
       settings.warn.default.summary = "+{{$t}}";
