@@ -218,11 +218,14 @@ const issueTemplateMaps: ReadonlyMap<
 );
 
 type IssueTemplateType = (typeof MI_CHOICES)[number]["id"];
-type IssueTemplate = { name: IssueTemplateType; date: string; [key: string]: string };
+type IssueTemplate = {
+  name: IssueTemplateType;
+  date: string;
+  dubious?: string;
+  [key: string]: string;
+};
 
-export function extractIssueTemplates(
-  inputString: string,
-): IssueTemplate[] {
+export function extractIssueTemplates(inputString: string): IssueTemplate[] {
   const pattern = /\{\{([^}]+)\}\}/g;
   let match;
   const output: IssueTemplate[] = [];
@@ -237,13 +240,17 @@ export function extractIssueTemplates(
         namePart,
       )
     ) {
-      const hasSection = parts.some((part) => part.replaceAll(" ", "").startsWith("section="));
+      const hasSection = parts.some((part) =>
+        part.replaceAll(" ", "").startsWith("section="),
+      );
       if (!hasSection) {
         parts.slice(1).forEach((part) => {
           const [paramName, paramValue] = part.split("=").map((p) => p.trim());
           if (issueTemplateMaps.has(paramName!.toLowerCase())) {
             templateObj = {
-              name: issueTemplateMaps.get(paramName!.toLowerCase()) as IssueTemplateType,
+              name: issueTemplateMaps.get(
+                paramName!.toLowerCase(),
+              ) as IssueTemplateType,
               date: paramValue!,
             };
             output.push(templateObj);
@@ -253,8 +260,31 @@ export function extractIssueTemplates(
         });
       }
     } else {
-      const hasSection = parts.some((part) => part.replaceAll(" ", "").startsWith("section="));
+      const hasSection = parts.some((part) =>
+        part.replaceAll(" ", "").startsWith("section="),
+      );
       if (!hasSection && issueTemplateMaps.has(namePart.toLowerCase())) {
+        if (
+          namePart === "精度" ||
+          namePart.toLowerCase() === "disputed" ||
+          namePart === "正確性"
+        ) {
+          const otherParams = parts
+            .slice(1)
+            .filter(
+              (part) =>
+                !part.replaceAll(" ", "").startsWith("date=") &&
+                !part.replaceAll(" ", "").startsWith("ソートキー="),
+            );
+          if (otherParams.length > 0) {
+            output.push({
+              name: issueTemplateMaps.get(namePart.toLowerCase())!,
+              date: "",
+              dubious: "true"
+            });
+            continue;
+          }
+        }
         templateObj = {
           name: issueTemplateMaps.get(namePart.toLowerCase())!,
           date: "",
@@ -297,13 +327,12 @@ export function replaceFirstAndRemoveOtherIssueTemplates(
         namePart,
       )
     ) {
-      const hasSection = parts.some((part) => part.replaceAll(" ", "").startsWith("section="));
+      const hasSection = parts.some((part) =>
+        part.replaceAll(" ", "").startsWith("section="),
+      );
       if (!hasSection) {
         if (!replaced) {
-          outputString = outputString.replace(
-            block,
-            ISSUE_TEMPLATE_AREA
-          );
+          outputString = outputString.replace(block, ISSUE_TEMPLATE_AREA);
           replaced = true;
         } else {
           outputString = outputString.replace(block, "");
@@ -314,13 +343,29 @@ export function replaceFirstAndRemoveOtherIssueTemplates(
         .map((value) => value.toLowerCase())
         .includes(namePart)
     ) {
-      const hasSection = parts.some((part) => part.replaceAll(" ", "").startsWith("section="));
+      const hasSection = parts.some((part) =>
+        part.replaceAll(" ", "").startsWith("section="),
+      );
       if (!hasSection) {
+        if (
+          namePart === "精度" ||
+          namePart.toLowerCase() === "disputed" ||
+          namePart === "正確性"
+        ) {
+          const otherParams = parts
+            .slice(1)
+            .filter(
+              (part) =>
+                !part.replaceAll(" ", "").startsWith("date=") &&
+                !part.replaceAll(" ", "").startsWith("ソートキー="),
+            );
+          if (otherParams.length > 0) {
+            continue;
+          }
+        }
+
         if (!replaced) {
-          outputString = outputString.replace(
-            block,
-            ISSUE_TEMPLATE_AREA
-          );
+          outputString = outputString.replace(block, ISSUE_TEMPLATE_AREA);
           replaced = true;
         } else {
           outputString = outputString.replace(block, "");
@@ -336,24 +381,34 @@ export function replaceFirstAndRemoveOtherIssueTemplates(
   return outputString;
 }
 
-export function formatDate(year: number, month: number, day: number, hour: number, minute: number, timezone: string) {
+export function formatDate(
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number,
+  timezone: string,
+) {
   const timezoneValue = TIMEZONE_VALUES.get(timezone);
   if (timezoneValue === undefined) {
     throw new Error("Invalid timezone");
   }
-  const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
-  const date = new Date(Date.UTC(year, month - 1, day, hour - timezoneValue, minute));
+  const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+  const date = new Date(
+    Date.UTC(year, month - 1, day, hour - timezoneValue, minute),
+  );
   const yearStr = date.getUTCFullYear();
-  const monthStr = (date.getUTCMonth() + 1);
+  const monthStr = date.getUTCMonth() + 1;
   const dayStr = date.getUTCDate();
   const weekdayStr = weekdays[date.getUTCDay()];
-  const hourStr = ('0' + date.getUTCHours()).slice(-2);
-  const minuteStr = ('0' + date.getUTCMinutes()).slice(-2);
+  const hourStr = ("0" + date.getUTCHours()).slice(-2);
+  const minuteStr = ("0" + date.getUTCMinutes()).slice(-2);
   return `${yearStr}年${monthStr}月${dayStr}日 (${weekdayStr}) ${hourStr}:${minuteStr}`;
 }
 
 export function pageNameToNamespace(pageName: string) {
   const namespace = pageName.split(":")[0] || "";
-  const namespaceNumber = mw.config.get("wgNamespaceIds")[namespace.toLowerCase()];
+  const namespaceNumber =
+    mw.config.get("wgNamespaceIds")[namespace.toLowerCase()];
   return namespaceNumber;
 }

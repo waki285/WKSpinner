@@ -80,6 +80,7 @@ export async function initMi() {
             id: `wks-mi-dialog-type-${choice.id}`,
             type: "checkbox",
             checked: extracted.some((t) => t.name === choice.id),
+            disabled: extracted.some((t) => t.name === choice.id && t.dubious === "true"),
           })
           .attr(
             "data-date",
@@ -92,12 +93,12 @@ export async function initMi() {
         $("<label>")
           .html(
             extracted.some((t) => t.name === choice.id)
-              ? `${choice.name} (${extracted.find((t) => t.name === choice.id)!.date}) ${Object.entries(
+              ? `${choice.name} ${extracted.find((t) => t.name === choice.id)!.dubious === "true" ? "(特殊なパラメーターが指定されているため WKSpinner で変更できません)":`(${extracted.find((t) => t.name === choice.id)!.date}) ${Object.entries(
                   extracted.find((t) => t.name === choice.id)!,
                 )
                   .filter((e) => e[0] !== "name" && e[0] !== "date")
                   .map((e) => `(${e[0]}: ${e[1]})`)
-                  .join(", ")}`
+                  .join(", ")}`}`
               : choice.name,
           )
           .prop("for", `wks-mi-dialog-type-${choice.id}`),
@@ -177,7 +178,7 @@ export async function initMi() {
     const getFinalContent = () => {
       const date = `${new Date().getFullYear()}年${new Date().getMonth() + 1}月`;
       const count = MI_CHOICES.filter((choice) =>
-        $(`#wks-mi-dialog-type-${choice.id}`).prop("checked"),
+        $(`#wks-mi-dialog-type-${choice.id}:not(:disabled)`).prop("checked"),
       ).length;
 
       if (count >= 2) {
@@ -215,7 +216,7 @@ export async function initMi() {
         );
       } else {
         const choice = MI_CHOICES.find((choice) =>
-          $(`#wks-mi-dialog-type-${choice.id}`).prop("checked"),
+          $(`#wks-mi-dialog-type-${choice.id}:not(:disabled)`).prop("checked"),
         );
         if (!choice) {
           return replaceFirstAndRemoveOtherIssueTemplates(pageContent).replace(
