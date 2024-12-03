@@ -246,6 +246,18 @@ export async function initCsd() {
                 case "hightechodap":
                   fi = "[[LTA:HGTCHDP]]";
                   break;
+                case "nttpc":
+                  fi = "[[LTA:NTTPC]]";
+                  break;
+                case "suzu":
+                  fi = "[[LTA:SUZU]]";
+                  break;
+                case "raya":
+                  fi = "[[LTA:RAYA]]";
+                  break;
+                case "als":
+                  fi = "[[LTA:ALS]]";
+                  break;
                 default:
                   break;
               }
