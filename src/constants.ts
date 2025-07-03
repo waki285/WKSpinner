@@ -1,7 +1,7 @@
 export const DEV = false;
 
 // 変更必須
-export const VERSION = "0.10.12";
+export const VERSION = "0.10.13";
 
 export const SCRIPT_NAME = "WKSpinner";
 export const SKJ_REQUEST_PAGE_NAME = DEV
@@ -320,6 +320,8 @@ export const SD_REASON = [
           { name: "Suzukitaro系 (LTA:SUZU)", id: "suzu" },
           { name: "らやまはなたさかあ系 (LTA:RAYA) (作成した全記事/2024年8月22日以降の全ての記事以外)", id: "raya" },
           { name: "Alec Smithson系 (LTA:ALS) (日本語版未BLの場合他言語版を引数に言語名を書くorリンクなどで明記)", id: "als" },
+          { name: "Sorrysorry系 (LTA:SORRY)", id: "sorry" },
+          { name: "さんさんさんさん系 (LTA:SAN)", id: "san" },
         ],
         required: true,
       },
@@ -1134,6 +1136,22 @@ export const WARN_TEMPLATES = [
       }
     ],
     category: "投稿内容関係"
+  },
+  {
+    name: "Uw-ai1",
+    description: "AI生成コンテンツの注意",
+    hasTitle: false,
+    defaultTitle: "大規模言語モデルの利用について",
+    params: [
+      {
+        type: "input",
+        name: "対象ページ",
+        id: "1",
+        required: false,
+        placeholder: "ほげほげ",
+      },
+    ],
+    category: "投稿内容関係" 
   },
   {
     name: "発言改竄",

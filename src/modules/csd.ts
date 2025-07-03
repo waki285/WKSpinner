@@ -258,6 +258,12 @@ export async function initCsd() {
                 case "als":
                   fi = "[[LTA:ALS]]";
                   break;
+                case "sorry":
+                  fi = "[[LTA:SORRY]]";
+                  break;
+                case "san":
+                  fi = "[[LTA:SAN]]";
+                  break;
                 default:
                   break;
               }

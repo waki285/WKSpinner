@@ -1,6 +1,6 @@
 {
   "name": "wkspinner",
-  "version": "0.10.12",
+  "version": "0.10.13",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -20,7 +20,7 @@
     "esbuild": "^0.19.12",
     "eslint": "^8.56.0",
     "prettier": "^3.2.5",
-    "types-mediawiki-renovate": "^2.10.0",
+    "types-mediawiki": "^1",
     "typescript": "^5.3.3"
   },
   "dependencies": {
