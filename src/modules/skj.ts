@@ -79,7 +79,17 @@ export async function initSkj() {
     dialogPageNameDiv.append(
       $("<span>").text(SKJ_REQUEST_PAGE_NAME).addClass("wks-shrink-0"),
     );
-    const yyyymmdd = new Date().toISOString().split("T")[0]!.replace(/-/g, "");
+    const jstFormatter = new Intl.DateTimeFormat("ja-JP", {
+      timeZone: "Asia/Tokyo",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    const jstParts = jstFormatter.formatToParts(new Date());
+    const yyyymmdd =
+      (jstParts.find((p) => p.type === "year")?.value || "") +
+      (jstParts.find((p) => p.type === "month")?.value || "") +
+      (jstParts.find((p) => p.type === "day")?.value || "");
     dialogPageNameDiv.append(
       $("<input>").prop({
         id: "wks-skj-dialog-page-name-input",
@@ -287,22 +297,27 @@ export async function initSkj() {
     // 第一タプル: prependtext か text か (true なら text, false なら prependtext)
     // forceText を true にすると text になる
     const getFinalContentPrepend = (forceText = false) =>
-      [forceText || $("#wks-skj-dialog-blank-cb").prop("checked"), `${
-        mw.config.get("wgNamespaceNumber") === 10 ? "<noinclude>" : ""
-      }{{subst:Sakujo${
-        $("#wks-skj-dialog-page-name-input").val() ==
-        mw.config.get("wgPageName")
-          ? ""
-          : `|${$("#wks-skj-dialog-page-name-input").val()}`
-      }}}${
-        $("#wks-skj-dialog-cr-cb").prop("checked")
-          ? `\n{{Copyrights${
-              $("#wks-skj-dialog-blank-cb").prop("checked") ? "|白紙化=1" : ""
-            }}}`
-          : ""
-      }${mw.config.get("wgNamespaceNumber") === 10 ? "</noinclude>" : "\n"}${
-        !$("#wks-skj-dialog-blank-cb").prop("checked") && forceText ? pageContent : ""
-      }`] as const;
+      [
+        forceText || $("#wks-skj-dialog-blank-cb").prop("checked"),
+        `${
+          mw.config.get("wgNamespaceNumber") === 10 ? "<noinclude>" : ""
+        }{{subst:Sakujo${
+          $("#wks-skj-dialog-page-name-input").val() ===
+          mw.config.get("wgPageName")
+            ? ""
+            : `|${$("#wks-skj-dialog-page-name-input").val()}`
+        }}}${
+          $("#wks-skj-dialog-cr-cb").prop("checked")
+            ? `\n{{Copyrights${
+                $("#wks-skj-dialog-blank-cb").prop("checked") ? "|白紙化=1" : ""
+              }}}`
+            : ""
+        }${mw.config.get("wgNamespaceNumber") === 10 ? "</noinclude>" : "\n"}${
+          !$("#wks-skj-dialog-blank-cb").prop("checked") && forceText
+            ? pageContent
+            : ""
+        }`,
+      ] as const;
 
     const getFinalContentRequest = () => `{{subst:新規削除依頼サブページ
 |ページ名=${$("#wks-skj-dialog-use-id-cb").prop("checked") ? "" : mw.config.get("wgPageName")}
@@ -385,8 +400,8 @@ export async function initSkj() {
         .append($("<span>").text("ページの存在チェック中"));
       progressDialog.append(progressDialogContentCheckExists);
 
-      const getPageName =
-        () => SKJ_REQUEST_PAGE_NAME + $("#wks-skj-dialog-page-name-input").val();
+      const getPageName = () =>
+        SKJ_REQUEST_PAGE_NAME + $("#wks-skj-dialog-page-name-input").val();
       const pageRes = await new mw.Api().post({
         action: "query",
         format: "json",
@@ -439,8 +454,12 @@ export async function initSkj() {
           text: isText ? t : undefined,
           prependtext: isText ? undefined : t,
           summary:
-            ($("#wks-skj-dialog-summary-template").val() as string || "+Sakujo").replaceAll("$d", getPageName()).replaceAll("$p", mw.config.get("wgPageName")) +
-            SUMMARY_AD,
+            (
+              ($("#wks-skj-dialog-summary-template").val() as string) ||
+              "+Sakujo"
+            )
+              .replaceAll("$d", getPageName())
+              .replaceAll("$p", mw.config.get("wgPageName")) + SUMMARY_AD,
           formatversion: "2",
           baserevid: revisionId,
           notminor: 1,
@@ -501,8 +520,12 @@ export async function initSkj() {
             createonly: 1,
             text: getFinalContentRequest(),
             summary:
-              ($("#wks-skj-dialog-summary-submit").val() as string || "削除依頼").replaceAll("$d", getPageName()).replaceAll("$p", mw.config.get("wgPageName")) +
-              SUMMARY_AD,
+              (
+                ($("#wks-skj-dialog-summary-submit").val() as string) ||
+                "削除依頼"
+              )
+                .replaceAll("$d", getPageName())
+                .replaceAll("$p", mw.config.get("wgPageName")) + SUMMARY_AD,
             formatversion: "2",
           });
 
@@ -586,8 +609,12 @@ export async function initSkj() {
               nocreate: 1,
               text: `${logPageContent}\n{{${getPageName()}}}`,
               summary:
-                ($("#wks-skj-dialog-summary-note").val() as string || "削除依頼の追加").replaceAll("$d", getPageName()).replaceAll("$p", mw.config.get("wgPageName")) +
-                SUMMARY_AD,
+                (
+                  ($("#wks-skj-dialog-summary-note").val() as string) ||
+                  "削除依頼の追加"
+                )
+                  .replaceAll("$d", getPageName())
+                  .replaceAll("$p", mw.config.get("wgPageName")) + SUMMARY_AD,
               formatversion: "2",
             });
 
@@ -689,7 +716,7 @@ export async function initSkj() {
         return;
       }
       const pageName =
-      SKJ_REQUEST_PAGE_NAME + $("#wks-skj-dialog-page-name-input").val();
+        SKJ_REQUEST_PAGE_NAME + $("#wks-skj-dialog-page-name-input").val();
       const previewDialog = $("<div>")
         .css({
           maxHeight: "70vh",
@@ -722,8 +749,12 @@ export async function initSkj() {
           title: mw.config.get("wgPageName"),
           text: getFinalContentPrepend(true)[1],
           summary:
-            ($("#wks-skj-dialog-summary-template").val() as string || "+Sakujo").replaceAll("$d", pageName).replaceAll("$p", mw.config.get("wgPageName")) +
-            SUMMARY_AD,
+            (
+              ($("#wks-skj-dialog-summary-template").val() as string) ||
+              "+Sakujo"
+            )
+              .replaceAll("$d", pageName)
+              .replaceAll("$p", mw.config.get("wgPageName")) + SUMMARY_AD,
           prop: "text|modules|jsconfigvars",
           pst: true,
           disablelimitreport: true,
@@ -738,8 +769,12 @@ export async function initSkj() {
             SKJ_REQUEST_PAGE_NAME + $("#wks-skj-dialog-page-name-input").val(),
           text: getFinalContentRequest(),
           summary:
-            ($("#wks-skj-dialog-summary-submit").val() as string || "削除依頼").replaceAll("$d", pageName).replaceAll("$p", mw.config.get("wgPageName")) +
-            SUMMARY_AD,
+            (
+              ($("#wks-skj-dialog-summary-submit").val() as string) ||
+              "削除依頼"
+            )
+              .replaceAll("$d", pageName)
+              .replaceAll("$p", mw.config.get("wgPageName")) + SUMMARY_AD,
           prop: "text|modules|jsconfigvars",
           pst: true,
           disablelimitreport: true,
