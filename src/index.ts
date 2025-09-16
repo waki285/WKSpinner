@@ -220,4 +220,8 @@ async function versionNotify() {
   }
 }
 
-init();
+mw.loader.using("jquery.ui").then(() =>
+  init()
+).catch((e) => {
+  console.error(e);
+});
