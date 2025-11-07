@@ -101,7 +101,7 @@ async function init() {
   }
 
   if (getOptionProperty("useIndividualPortlet") === true && !isMobile) {
-    mw.util.addPortlet(ORIG_PORTLET_ID, PORTLET_LABEL, "#p-search");
+    mw.util.addPortlet(ORIG_PORTLET_ID, PORTLET_LABEL, "#p-cactions");
   }
 
   await migrate();
