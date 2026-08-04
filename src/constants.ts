@@ -65,6 +65,9 @@ export type Options = {
   versionNotify: string;
   timezone: string;
   historyTimeFormat: string;
+  wikidata: {
+    enabled: boolean;
+  };
   mi: {
     enabled: boolean;
     enableMobile: boolean;
@@ -130,6 +133,9 @@ export const DEFAULT_OPTIONS = {
   timezone: "UTC",
   historyTimeFormat:
     "(\\d{4})年(\\d{1,2})月(\\d{1,2})日 \\((.)\\) (\\d{2}):(\\d{2})|YMDWHm",
+  wikidata: {
+    enabled: false,
+  },
   mi: {
     enabled: true,
     enableMobile: true,

@@ -94,6 +94,21 @@ export async function showConfigPage() {
 
   configArea.append(historyTimeFormatField.$element);
 
+  const wikidataFieldset = new OO.ui.FieldsetLayout({
+    label: "ウィキデータ説明表示",
+    classes: ["container", "wks-pref-container"],
+  });
+  const wikidataEnabled = new OO.ui.CheckboxInputWidget({
+    value: "wikidata-enabled",
+    selected: getOptionProperty("wikidata.enabled"),
+  });
+  const wikidataEnabledField = new OO.ui.FieldLayout(wikidataEnabled, {
+    label: "PC版のページ見出しにウィキデータの日本語説明を表示する",
+    align: "inline",
+  });
+  wikidataFieldset.addItems([wikidataEnabledField]);
+  configArea.append(wikidataFieldset.$element);
+
   const miFieldset = new OO.ui.FieldsetLayout({
     label: "問題テンプレート貼り付け",
     classes: ["container", "wks-pref-container"],
@@ -568,6 +583,9 @@ export async function showConfigPage() {
       versionNotify: (versionNotifySelect.findSelectedItem() as OO.ui.OptionWidget).getData() as string,
       timezone: timezone.getValue() || "UTC",
       historyTimeFormat: historyTimeFormat.getValue() || "(\\d{4})年(\\d{1,2})月(\\d{1,2})日 \\((.)\\) (\\d{2}):(\\d{2})",
+      wikidata: {
+        enabled: wikidataEnabled.isSelected(),
+      },
       mi: {
         enabled: miEnabled.isSelected(),
         enableMobile: miEnableMobile.isSelected(),

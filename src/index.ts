@@ -17,6 +17,7 @@ import { initMi } from "./modules/mi";
 import { initRFP } from "./modules/rfp";
 import { initSkj } from "./modules/skj";
 import { initWarn } from "./modules/warn";
+import { initWikidata } from "./modules/wikidata";
 import { applyOptionMigrations } from "./option-migrations";
 import { showConfigPage } from "./preferences";
 import { getOptionProperty, getSavedOptions, loadLibrary } from "./util";
@@ -99,6 +100,14 @@ async function init() {
     ) {
       initEditCount();
     }
+  }
+
+  if (
+    !isMobile &&
+    mw.config.get("wgAction") === "view" &&
+    getOptionProperty("wikidata.enabled") === true
+  ) {
+    await initWikidata();
   }
 
   if (getOptionProperty("useIndividualPortlet") === true && !isMobile) {
