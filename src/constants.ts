@@ -24,6 +24,39 @@ export const PORTLET_LABEL = "WK";
 
 export const ISSUE_TEMPLATE_AREA = "WKSPINNER_ISSUE_TEMPLATE_AREA";
 
+export const HATNOTE_TEMPLATES = [
+  { name: "Catmain", aliases: [] },
+  { name: "Dablink", aliases: [] },
+  { name: "Hatnote", aliases: [] },
+  { name: "Otheruses", aliases: ["About", "Other uses"] },
+  { name: "Otheruses2", aliases: ["Other uses2"] },
+  { name: "Otheruseslist", aliases: [] },
+  { name: "Redirect", aliases: ["転送"] },
+  { name: "Redirect-multi", aliases: [] },
+  { name: "Redirect2", aliases: [] },
+  { name: "Redirect3", aliases: [] },
+  { name: "Redirect3list", aliases: [] },
+  { name: "Redirectlist", aliases: [] },
+  { name: "See Wiktionary", aliases: ["See wt", "See wiktionary"] },
+  { name: "Self reference", aliases: ["Selfref"] },
+  { name: "Transcluded section", aliases: [] },
+  { name: "Wikinewsの案内", aliases: [] },
+  { name: "WikipediaPage", aliases: [] },
+  { name: "簡易区別", aliases: [] },
+  { name: "誤表記リダイレクト", aliases: [] },
+  {
+    name: "混同",
+    aliases: [
+      "Distinguish",
+      "Confused",
+      "Confuse",
+      "Dist",
+      "Not to be confused with",
+    ],
+  },
+  { name: "混同2", aliases: ["Distinguish2", "Confused2", "Confuse2"] },
+] as const;
+
 export type Options = {
   disableMobile: boolean;
   prefLinkInToolbar: boolean;

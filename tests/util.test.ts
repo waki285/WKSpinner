@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ISSUE_TEMPLATE_AREA } from "../src/constants";
+import { HATNOTE_TEMPLATES, ISSUE_TEMPLATE_AREA } from "../src/constants";
 import { replaceFirstAndRemoveOtherIssueTemplates } from "../src/util";
 
 const MULTIPLE_ISSUES_TEMPLATE = `{{複数の問題
@@ -42,6 +42,62 @@ describe("replaceFirstAndRemoveOtherIssueTemplates", () => {
       expected: `${MULTIPLE_ISSUES_TEMPLATE}'''なんとかなんとか'''は、～`,
     },
   ])("$name", ({ input, expected }) => {
+    expect(mergeIssueTemplates(input)).toBe(expected);
+  });
+
+  const hatnoteTemplateNames = HATNOTE_TEMPLATES.flatMap(
+    ({ name, aliases }) => [name, ...aliases],
+  );
+
+  it.each(hatnoteTemplateNames)(
+    "places the issue template below the %s hatnote or alias",
+    (templateName) => {
+      const input = `{{${templateName}}}\nBODY`;
+      const expected = `{{${templateName}}}\n${MULTIPLE_ISSUES_TEMPLATE}BODY`;
+
+      expect(mergeIssueTemplates(input)).toBe(expected);
+    },
+  );
+
+  it("normalizes template namespace, casing, and underscores", () => {
+    const input = "{{Template:OTHER_USES}}\nBODY";
+    const expected = `{{Template:OTHER_USES}}\n${MULTIPLE_ISSUES_TEMPLATE}BODY`;
+
+    expect(mergeIssueTemplates(input)).toBe(expected);
+  });
+
+  it("places the issue template below all hatnotes", () => {
+    const input = "{{Otheruses}}\n{{Redirect}}\nBODY";
+    const expected = `{{Otheruses}}\n{{Redirect}}\n${MULTIPLE_ISSUES_TEMPLATE}BODY`;
+
+    expect(mergeIssueTemplates(input)).toBe(expected);
+  });
+
+  it("preserves a blank line between the hatnote area and the body", () => {
+    const input = "{{Otheruses}}\n\nBODY";
+    const expected = `{{Otheruses}}\n${MULTIPLE_ISSUES_TEMPLATE}\nBODY`;
+
+    expect(mergeIssueTemplates(input)).toBe(expected);
+  });
+
+  it("adds a line break after an inline hatnote", () => {
+    const input = "{{Otheruses}}BODY";
+    const expected = `{{Otheruses}}\n${MULTIPLE_ISSUES_TEMPLATE}BODY`;
+
+    expect(mergeIssueTemplates(input)).toBe(expected);
+  });
+
+  it("moves an existing issue template below a hatnote", () => {
+    const input = "{{一次資料|date=2020年5月}}\n{{Otheruses}}\nBODY";
+    const expected = `{{Otheruses}}\n${MULTIPLE_ISSUES_TEMPLATE}BODY`;
+
+    expect(mergeIssueTemplates(input)).toBe(expected);
+  });
+
+  it("detects a hatnote containing a nested template", () => {
+    const input = "{{Hatnote|{{lang|en|Example}}}}\nBODY";
+    const expected = `{{Hatnote|{{lang|en|Example}}}}\n${MULTIPLE_ISSUES_TEMPLATE}BODY`;
+
     expect(mergeIssueTemplates(input)).toBe(expected);
   });
 });

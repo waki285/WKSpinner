@@ -1,5 +1,6 @@
 import {
   DEFAULT_OPTIONS,
+  HATNOTE_TEMPLATES,
   ISSUE_TEMPLATE_AREA,
   MI_CHOICES,
   OPTIONS_KEY,
@@ -223,6 +224,95 @@ type IssueTemplate = {
   [key: string]: string;
 };
 
+const normalizeTemplateName = (name: string) =>
+  name
+    .trim()
+    .toLowerCase()
+    .replaceAll("_", " ")
+    .replace(/^(?:template|テンプレート)\s*:/, "");
+
+const hatnoteTemplateNames = new Set(
+  HATNOTE_TEMPLATES.flatMap(({ name, aliases }) => [name, ...aliases]).map(
+    normalizeTemplateName,
+  ),
+);
+
+type TemplateBlock = {
+  name: string;
+  end: number;
+};
+
+function findTopLevelTemplateBlocks(inputString: string): TemplateBlock[] {
+  const blocks: TemplateBlock[] = [];
+
+  for (let start = 0; start < inputString.length - 1; start++) {
+    if (inputString.slice(start, start + 2) !== "{{") {
+      continue;
+    }
+
+    let depth = 1;
+    let cursor = start + 2;
+    let nameEnd: number | undefined;
+
+    while (cursor < inputString.length - 1 && depth > 0) {
+      const pair = inputString.slice(cursor, cursor + 2);
+      if (pair === "{{") {
+        depth++;
+        cursor += 2;
+      } else if (pair === "}}") {
+        depth--;
+        cursor += 2;
+      } else {
+        if (
+          depth === 1 &&
+          nameEnd === undefined &&
+          inputString[cursor] === "|"
+        ) {
+          nameEnd = cursor;
+        }
+        cursor++;
+      }
+    }
+
+    if (depth !== 0) {
+      break;
+    }
+
+    blocks.push({
+      name: inputString.slice(start + 2, nameEnd ?? cursor - 2),
+      end: cursor,
+    });
+    start = cursor - 1;
+  }
+
+  return blocks;
+}
+
+function insertIssueTemplateAreaAfterHatnotes(
+  inputString: string,
+): string | null {
+  const lastHatnote = findTopLevelTemplateBlocks(inputString)
+    .filter(({ name }) => hatnoteTemplateNames.has(normalizeTemplateName(name)))
+    .at(-1);
+
+  if (!lastHatnote) {
+    return null;
+  }
+
+  const trailingLineBreak = inputString
+    .slice(lastHatnote.end)
+    .match(/^[\t ]*(?:\r\n|\n|\r)/)?.[0];
+  const separator = trailingLineBreak ?? "\n";
+  const suffixStart = lastHatnote.end + (trailingLineBreak?.length ?? 0);
+
+  return (
+    inputString.slice(0, lastHatnote.end) +
+    separator +
+    ISSUE_TEMPLATE_AREA +
+    inputString.slice(suffixStart)
+  );
+}
+
 export function extractIssueTemplates(inputString: string): IssueTemplate[] {
   const pattern = /\{\{([^}]+)\}\}/g;
   let match;
@@ -395,8 +485,17 @@ export function replaceFirstAndRemoveOtherIssueTemplates(
     }
   }
 
-  if (!replaced) {
-    outputString = ISSUE_TEMPLATE_AREA + outputString;
+  const contentWithoutTemplateArea = replaced
+    ? outputString.replace(ISSUE_TEMPLATE_AREA, "")
+    : outputString;
+  const outputAfterHatnotes = insertIssueTemplateAreaAfterHatnotes(
+    contentWithoutTemplateArea,
+  );
+
+  if (outputAfterHatnotes !== null) {
+    outputString = outputAfterHatnotes;
+  } else if (!replaced) {
+    outputString = ISSUE_TEMPLATE_AREA + contentWithoutTemplateArea;
   }
 
   return outputString;
