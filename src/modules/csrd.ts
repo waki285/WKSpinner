@@ -1,5 +1,16 @@
-import { ERRORS, SRD_REASON, SUMMARY_AD, SUMMARY_AD_ATTRACT } from "@/constants";
-import { createRowFunc, formatDate, getImage, getOptionProperty, sleep } from "@/util";
+import {
+  ERRORS,
+  SRD_REASON,
+  SUMMARY_AD,
+  SUMMARY_AD_ATTRACT,
+} from "@/constants";
+import {
+  createRowFunc,
+  formatDate,
+  getImage,
+  getOptionProperty,
+  sleep,
+} from "@/util";
 
 function formatDateRanges(data: [string, number][]) {
   data.sort((a, b) => a[1] - b[1]);
@@ -37,7 +48,14 @@ function formatDateRanges(data: [string, number][]) {
       }
     }
 
-    const dateString = formatDate(parseInt(y!, 10), parseInt(m!, 10), parseInt(day!, 10), parseInt(h!, 10), parseInt(min!, 10), getOptionProperty("timezone") || "UTC");
+    const dateString = formatDate(
+      parseInt(y!, 10),
+      parseInt(m!, 10),
+      parseInt(day!, 10),
+      parseInt(h!, 10),
+      parseInt(min!, 10),
+      getOptionProperty("timezone") || "UTC",
+    );
 
     return [dateString, d[1]];
   });
@@ -244,7 +262,13 @@ export async function initCsrd() {
     dialogFieldset.append(dialogAdditional);
     dialogFieldset.append(dialogComment);
     dialogFieldset.append(dialogSummary);
-    dialogFieldset.append($("<p>").text(getOptionProperty("timezone") !== "UTC" ? "注意: あなたはWKSpinnerの設定でタイムゾーンをUTC以外に設定しているため、タイムゾーンが自動で補正されます。":""))
+    dialogFieldset.append(
+      $("<p>").text(
+        getOptionProperty("timezone") !== "UTC"
+          ? "注意: あなたはWKSpinnerの設定でタイムゾーンをUTC以外に設定しているため、タイムゾーンが自動で補正されます。"
+          : "",
+      ),
+    );
 
     const revisions: [string, number][] = [];
     const functions: ((e: Event) => void)[] = [];
@@ -277,7 +301,7 @@ export async function initCsrd() {
                 mw.config.get("wgPageName").endsWith(".js")
               ? "/* "
               : ""
-        }{{即時版指定削除|${dialogTypeSelect.val()}|${formatDateRanges(revisions)}${$("#wks-csrd-dialog-additional-tb").val() ? ` ${$("#wks-csrd-dialog-additional-tb").val()}`:""}${dialogTypeParams
+        }{{即時版指定削除|${dialogTypeSelect.val()}|${formatDateRanges(revisions)}${$("#wks-csrd-dialog-additional-tb").val() ? ` ${$("#wks-csrd-dialog-additional-tb").val()}` : ""}${dialogTypeParams
           .children()
           .toArray()
           .filter(

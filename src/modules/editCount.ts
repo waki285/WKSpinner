@@ -26,7 +26,7 @@ function appendEditCount(content: JQuery<HTMLElement>) {
     if (a.parentElement?.classList?.contains("autocomment")) continue;
 
     let href = a.getAttribute("href");
-    
+
     if (!href) {
       if (isUserpage && a.classList.contains("mw-selflink")) {
         href = "/wiki/" + mw.config.get("wgPageName");
@@ -39,12 +39,12 @@ function appendEditCount(content: JQuery<HTMLElement>) {
       href = `/wiki/${REDLINK_REGEX.exec(href)?.[1] as string}`;
     }
 
-
     if (!href) continue;
 
     href = decodeURIComponent(href);
 
-    const isUser = href.startsWith("/wiki/User:") || href.startsWith("/wiki/利用者:");
+    const isUser =
+      href.startsWith("/wiki/User:") || href.startsWith("/wiki/利用者:");
 
     if (!isUser) continue;
 
@@ -105,7 +105,7 @@ function appendEditCount(content: JQuery<HTMLElement>) {
 
     for (const a of anchors) {
       let href = a.getAttribute("href");
-      
+
       if (!href) continue;
 
       href = decodeURIComponent(href);
@@ -115,19 +115,22 @@ function appendEditCount(content: JQuery<HTMLElement>) {
         href = `/wiki/${REDLINK_REGEX.exec(href)?.[1] as string}`;
       }
 
-      const isUser = href.startsWith("/wiki/User:") || href.startsWith("/wiki/利用者:");
+      const isUser =
+        href.startsWith("/wiki/User:") || href.startsWith("/wiki/利用者:");
       if (!isUser) continue;
-      
+
       const username = /\/wiki\/(User|利用者):(.+)$/.exec(href)?.[2] as string;
 
       if (!username) continue;
-      
+
       if (mw.util.isIPAddress(username)) continue;
 
-      const user = users.find((u: { name?: string }) => u.name === username.replace(/_/g, " "));
+      const user = users.find(
+        (u: { name?: string }) => u.name === username.replace(/_/g, " "),
+      );
 
       if (!user) continue;
-      
+
       const editCount = user.editcount;
 
       if (typeof editCount !== "number") continue;

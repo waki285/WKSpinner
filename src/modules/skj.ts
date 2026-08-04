@@ -352,9 +352,7 @@ export async function initSkj() {
         summaries: [
           {
             label: "Sakujo貼り付け",
-            value: String(
-              $("#wks-skj-dialog-summary-template").val() ?? "",
-            ),
+            value: String($("#wks-skj-dialog-summary-template").val() ?? ""),
           },
           {
             label: "依頼ページ作成",

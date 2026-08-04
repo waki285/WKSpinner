@@ -1,8 +1,4 @@
-import {
-  SCRIPT_NAME,
-  SUMMARY_AD,
-  SUMMARY_AD_ATTRACT,
-} from "@/constants";
+import { SCRIPT_NAME, SUMMARY_AD, SUMMARY_AD_ATTRACT } from "@/constants";
 import {
   createPortletLink,
   createRowFunc,
@@ -160,7 +156,7 @@ export async function initRFP() {
         type: "text",
         placeholder: "保護依頼",
         class: "wks-input-full",
-        value: `{{Page|${mw.config.get("wgPageName").includes("=") ? "1=":""}${mw.config.get("wgPageName")}}}`,
+        value: `{{Page|${mw.config.get("wgPageName").includes("=") ? "1=" : ""}${mw.config.get("wgPageName")}}}`,
       }),
     );
 
@@ -235,25 +231,39 @@ export async function initRFP() {
       `==== ${$("#wks-rfp-dialog-header-input").val()} ====\n${
         pages.length === 1
           ? ""
-          : pages.length > 3 ?
-          `{{MultiProtect\n${pages
-              .map((pageNumber, i) => {
-                return `|${($(
-                  "#wks-rfp-dialog-page-name-" + pageNumber + "-input",
-                ).val() as string).includes("=") ? `${i+1}=`:""}${$(
-                  "#wks-rfp-dialog-page-name-" + pageNumber + "-input",
-                ).val()}`;
-              })
-              .join("\n") + "\n}}\n"}`
-          :pages
-              .map((pageNumber) => {
-                return `* {{Page|${($(
-                  "#wks-rfp-dialog-page-name-" + pageNumber + "-input",
-                ).val() as string).includes("=") ? "1=":""}${$(
-                  "#wks-rfp-dialog-page-name-" + pageNumber + "-input",
-                ).val()}}}`;
-              })
-              .join("\n") + "\n"
+          : pages.length > 3
+            ? `{{MultiProtect\n${
+                pages
+                  .map((pageNumber, i) => {
+                    return `|${
+                      (
+                        $(
+                          "#wks-rfp-dialog-page-name-" + pageNumber + "-input",
+                        ).val() as string
+                      ).includes("=")
+                        ? `${i + 1}=`
+                        : ""
+                    }${$(
+                      "#wks-rfp-dialog-page-name-" + pageNumber + "-input",
+                    ).val()}`;
+                  })
+                  .join("\n") + "\n}}\n"
+              }`
+            : pages
+                .map((pageNumber) => {
+                  return `* {{Page|${
+                    (
+                      $(
+                        "#wks-rfp-dialog-page-name-" + pageNumber + "-input",
+                      ).val() as string
+                    ).includes("=")
+                      ? "1="
+                      : ""
+                  }${$(
+                    "#wks-rfp-dialog-page-name-" + pageNumber + "-input",
+                  ).val()}}}`;
+                })
+                .join("\n") + "\n"
       }${$("#wks-rfp-dialog-desc-input").val()} --~~~~`;
 
     const checkParams = () => {
@@ -339,12 +349,19 @@ export async function initRFP() {
               section.title.includes(getProtectSectionName()),
             )
             .index.toString(),
-          summary: ($("#wks-rfp-dialog-summary-submit").val() as string).replaceAll("$p", pages.map(
-            (pageNumber) =>
-              $(
-                "#wks-rfp-dialog-page-name-" + pageNumber + "-input",
-              ).val() as string,
-            ).map(x => `[[特別:PageHistory/${x}|${x}]]`).join(", ")) + SUMMARY_AD,
+          summary:
+            ($("#wks-rfp-dialog-summary-submit").val() as string).replaceAll(
+              "$p",
+              pages
+                .map(
+                  (pageNumber) =>
+                    $(
+                      "#wks-rfp-dialog-page-name-" + pageNumber + "-input",
+                    ).val() as string,
+                )
+                .map((x) => `[[特別:PageHistory/${x}|${x}]]`)
+                .join(", "),
+            ) + SUMMARY_AD,
           nocreate: 1,
           appendtext: `\n\n${getFinalContentRequest()}`,
           formatversion: "2",
@@ -568,7 +585,8 @@ export async function initRFP() {
         title: pageName,
         text: getFinalContentRequest(),
         summary:
-          (($("#wks-rfp-dialog-summary-template").val() as string) || "+保護依頼") + SUMMARY_AD,
+          (($("#wks-rfp-dialog-summary-template").val() as string) ||
+            "+保護依頼") + SUMMARY_AD,
         prop: "text|modules|jsconfigvars",
         pst: true,
         disablelimitreport: true,
@@ -585,10 +603,7 @@ export async function initRFP() {
         mw.loader.load(parseRes.parse.modulestyles);
       }
       const summaryPreview = $("<div>")
-        .html(
-          "編集の要約: " +
-            parseRes.parse.parsedsummary
-        )
+        .html("編集の要約: " + parseRes.parse.parsedsummary)
         .prop("id", "wks-rfp-dialog-preview-summary");
       const hr = $("<hr>").addClass("wks-hr");
       const previewDiv = $("<div>")
@@ -597,7 +612,6 @@ export async function initRFP() {
       previewContent.append(summaryPreview);
       previewContent.append(hr);
       previewContent.append(previewDiv);
-
 
       previewDialog.dialog({
         position: {

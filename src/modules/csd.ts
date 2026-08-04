@@ -224,14 +224,17 @@ export async function initCsd() {
       return (
         `${
           namespaceNumber === 10
-          ? "<noinclude>"
-          : mw.config.get("wgPageName").endsWith(".css") || mw.config.get("wgPageName").endsWith(".js")
-          ? "/* "
-          : ""
+            ? "<noinclude>"
+            : mw.config.get("wgPageName").endsWith(".css") ||
+                mw.config.get("wgPageName").endsWith(".js")
+              ? "/* "
+              : ""
         }{{即時削除|${dialogTypeSelect.val()}${dialogTypeParams
           .children()
           .toArray()
-          .filter((param) => param.tagName === "INPUT" || param.tagName === "SELECT")
+          .filter(
+            (param) => param.tagName === "INPUT" || param.tagName === "SELECT",
+          )
           .map((param) => {
             const input = $(param).first();
             let fi = input.val();
@@ -281,15 +284,17 @@ export async function initCsd() {
               }
             }
             return `|${input.prop("id").replace("wks-csd-dialog-type-params-", "")}=${fi}`;
-          }).join("")
-          }${dialogCommentInput.val() ? `|コメント=${dialogCommentInput.val()}` : ""}}}${
+          })
+          .join(
+            "",
+          )}${dialogCommentInput.val() ? `|コメント=${dialogCommentInput.val()}` : ""}}}${
           namespaceNumber === 10
-          ? "</noinclude>"
-          : mw.config.get("wgPageName").endsWith(".css") || mw.config.get("wgPageName").endsWith(".js")
-          ? " */\n"
-          : "\n"
-          }` +
-        (dialogBlankInput.prop("checked") ? "" : pageContent)
+            ? "</noinclude>"
+            : mw.config.get("wgPageName").endsWith(".css") ||
+                mw.config.get("wgPageName").endsWith(".js")
+              ? " */\n"
+              : "\n"
+        }` + (dialogBlankInput.prop("checked") ? "" : pageContent)
       );
     };
 
@@ -313,16 +318,22 @@ export async function initCsd() {
         if (param.type === "input" && param.required && !input.val()) {
           errList.append($("<li>").text(`${param.name}が入力されていません`));
         }
-        if (param.type === "select" && param.required && (!input.val() || input.val() === "null")) {
+        if (
+          param.type === "select" &&
+          param.required &&
+          (!input.val() || input.val() === "null")
+        ) {
           errList.append($("<li>").text(`${param.name}が選択されていません`));
         }
       }
       if (errList.children().length) {
-        return $("<div>").append($("<p>").text("入力にエラーがあります。")).append(errList);
+        return $("<div>")
+          .append($("<p>").text("入力にエラーがあります。"))
+          .append(errList);
       } else {
         return null;
       }
-    }
+    };
 
     const preview = async () => {
       const errList = checkParams();

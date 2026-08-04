@@ -1,4 +1,10 @@
-import { DEFAULT_OPTIONS, OPTIONS_KEY, Options, SCRIPT_NAME, TIMEZONE_VALUES } from "./constants";
+import {
+  DEFAULT_OPTIONS,
+  OPTIONS_KEY,
+  Options,
+  SCRIPT_NAME,
+  TIMEZONE_VALUES,
+} from "./constants";
 import { getOptionProperty } from "./util";
 
 export async function showConfigPage() {
@@ -33,12 +39,16 @@ export async function showConfigPage() {
     value: "use-individual-portlet",
     selected: getOptionProperty("useIndividualPortlet"),
   });
-  const useIndividualPortletField = new OO.ui.FieldLayout(useIndividualPortlet, {
-    label: "「その他」タブではなく、新たに「WK」というタブを作りそこに機能を配置",
-    align: "inline",
-    help: "これはモバイルには効果がありません。",
-    helpInline: true,
-  });
+  const useIndividualPortletField = new OO.ui.FieldLayout(
+    useIndividualPortlet,
+    {
+      label:
+        "「その他」タブではなく、新たに「WK」というタブを作りそこに機能を配置",
+      align: "inline",
+      help: "これはモバイルには効果がありません。",
+      helpInline: true,
+    },
+  );
   configArea.append(useIndividualPortletField.$element);
 
   const versionNotifyOptionAll = new OO.ui.RadioOptionWidget({
@@ -55,7 +65,11 @@ export async function showConfigPage() {
   });
 
   const versionNotifySelect = new OO.ui.RadioSelectWidget({
-    items: [versionNotifyOptionAll, versionNotifyOptionMinor, versionNotifyOptionNone],
+    items: [
+      versionNotifyOptionAll,
+      versionNotifyOptionMinor,
+      versionNotifyOptionNone,
+    ],
   });
 
   const versionNotifyField = new OO.ui.FieldLayout(versionNotifySelect, {
@@ -82,7 +96,8 @@ export async function showConfigPage() {
 
   const historyTimeFormat = new OO.ui.TextInputWidget({
     value: getOptionProperty("historyTimeFormat"),
-    placeholder: "(\\d{4})年(\\d{1,2})月(\\d{1,2})日 \\((.)\\) (\\d{2}):(\\d{2})",
+    placeholder:
+      "(\\d{4})年(\\d{1,2})月(\\d{1,2})日 \\((.)\\) (\\d{2}):(\\d{2})",
   });
 
   const historyTimeFormatField = new OO.ui.FieldLayout(historyTimeFormat, {
@@ -388,7 +403,7 @@ export async function showConfigPage() {
         new OO.ui.TextInputWidget({
           value: "",
           placeholder: "依頼者票",
-          classes: ["wks-grow"]
+          classes: ["wks-grow"],
         }),
         button,
       ],
@@ -430,10 +445,7 @@ export async function showConfigPage() {
     align: "inline",
   });
 
-  ecFieldset.addItems([
-    ecEnabledField,
-    ecEnableMobileField,
-  ]);
+  ecFieldset.addItems([ecEnabledField, ecEnableMobileField]);
 
   configArea.append(ecFieldset.$element);
 
@@ -580,9 +592,13 @@ export async function showConfigPage() {
       disableMobile: disableMobile.isSelected(),
       prefLinkInToolbar: prefLinkInToolbar.isSelected(),
       useIndividualPortlet: useIndividualPortlet.isSelected(),
-      versionNotify: (versionNotifySelect.findSelectedItem() as OO.ui.OptionWidget).getData() as string,
+      versionNotify: (
+        versionNotifySelect.findSelectedItem() as OO.ui.OptionWidget
+      ).getData() as string,
       timezone: timezone.getValue() || "UTC",
-      historyTimeFormat: historyTimeFormat.getValue() || "(\\d{4})年(\\d{1,2})月(\\d{1,2})日 \\((.)\\) (\\d{2}):(\\d{2})",
+      historyTimeFormat:
+        historyTimeFormat.getValue() ||
+        "(\\d{4})年(\\d{1,2})月(\\d{1,2})日 \\((.)\\) (\\d{2}):(\\d{2})",
       wikidata: {
         enabled: wikidataEnabled.isSelected(),
       },
@@ -634,7 +650,7 @@ export async function showConfigPage() {
         enableMobile: warnEnableMobile.isSelected(),
         default: {
           summary: warnSummary.getValue() || "",
-        }
+        },
       },
       rfp: {
         enabled: rfpEnabled.isSelected(),
@@ -642,8 +658,8 @@ export async function showConfigPage() {
         default: {
           summarySubmit: rfpSummarySubmit.getValue() || "",
           summaryTemplate: rfpSummaryTemplate.getValue() || "",
-        }
-      }
+        },
+      },
     };
     console.log(newOptions);
 

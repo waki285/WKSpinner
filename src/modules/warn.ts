@@ -26,15 +26,21 @@ export async function initWarn() {
     return;
   }
 
-  const talkPageName = namespaceNumber === 3 ? mw.config.get("wgPageName") : `${mw.config.get("wgFormattedNamespaces")[3]}:${mw.config.get("wgTitle")}`;
+  const talkPageName =
+    namespaceNumber === 3
+      ? mw.config.get("wgPageName")
+      : `${mw.config.get("wgFormattedNamespaces")[3]}:${mw.config.get("wgTitle")}`;
 
   warnPortlet.addEventListener("click", async (e) => {
     e.preventDefault();
 
     if (talkPageName.includes("/")) {
-      mw.notify(`${SCRIPT_NAME}: 警告: ノートページのサブページに警告を行おうとしています！`, { type: "warn" });
+      mw.notify(
+        `${SCRIPT_NAME}: 警告: ノートページのサブページに警告を行おうとしています！`,
+        { type: "warn" },
+      );
     }
-  
+
     const createRow = createRowFunc("warn");
     const warnDialog = $("<div>");
     warnDialog.css("max-height", "70vh").dialog({
@@ -67,7 +73,9 @@ export async function initWarn() {
 
     for (const template of WARN_TEMPLATES) {
       // optgroup があったらそこに追加し、なかったら作成
-      const optGroup = dialogTypeSelect.find(`optgroup[label="${template.category}"]`);
+      const optGroup = dialogTypeSelect.find(
+        `optgroup[label="${template.category}"]`,
+      );
       if (optGroup.length) {
         optGroup.append(
           $("<option>").prop({
@@ -77,12 +85,14 @@ export async function initWarn() {
         );
       } else {
         dialogTypeSelect.append(
-          $("<optgroup>").prop("label", template.category).append(
-            $("<option>").prop({
-              value: template.name,
-              text: `${template.name}: ${template.description}`,
-            }),
-          ),
+          $("<optgroup>")
+            .prop("label", template.category)
+            .append(
+              $("<option>").prop({
+                value: template.name,
+                text: `${template.name}: ${template.description}`,
+              }),
+            ),
         );
       }
     }
@@ -115,10 +125,10 @@ export async function initWarn() {
               placeholder: param.placeholder,
               required: param.required,
               class: "wks-input-full",
-              value: ("defaultValue" in param ? param.defaultValue : "")
+              value: "defaultValue" in param ? param.defaultValue : "",
             }),
           );
-        }/* else if (param.type === "select") {
+        } /* else if (param.type === "select") {
           const select = $("<select>").prop({
             id: `wks-csd-dialog-type-params-${param.id}`,
             required: param.required,
@@ -138,7 +148,9 @@ export async function initWarn() {
       dialogSectionTitleParams.empty();
       if (!selectedTemplate.hasTitle) {
         dialogSectionTitleParams.append(
-          $("<label>").html("セクションタイトル").prop("for", "wks-warn-dialog-sectiontitle-input"),
+          $("<label>")
+            .html("セクションタイトル")
+            .prop("for", "wks-warn-dialog-sectiontitle-input"),
         );
         dialogSectionTitleParams.append(
           $("<input>").prop({
@@ -165,7 +177,7 @@ export async function initWarn() {
       class: "wks-input-full",
       rows: 3,
     });
-    
+
     dialogComment.append(dialogCommentInput);
 
     const dialogSummary = createRow("summary");
@@ -190,7 +202,7 @@ export async function initWarn() {
     const subscribeCheckbox = $("<input>").prop({
       id: "wks-warn-dialog-subscribe-checkbox",
       type: "checkbox",
-      checked: true
+      checked: true,
     });
     subscribeRow.append(subscribeCheckbox);
     subscribeRow.append(
@@ -212,23 +224,25 @@ export async function initWarn() {
         (template) => template.name === dialogTypeSelect.val(),
       )!;
       return (
-        `{{${"nosubst" in tl && tl.nosubst ? "":"subst:"}` +
+        `{{${"nosubst" in tl && tl.nosubst ? "" : "subst:"}` +
         dialogTypeSelect.val() +
         tl.params
           .map((param) => {
             const input = $(`#wks-warn-dialog-type-params-${param.id}`);
             return input.val() ? `|${param.id}=${input.val()}` : "";
           })
-          .join("") + 
-        "}}\n" + dialogCommentInput.val()// + "--~~~~"
+          .join("") +
+        "}}\n" +
+        dialogCommentInput.val() // + "--~~~~"
       );
     };
 
     const getFinalSummary = () => {
-      return ($("#wks-warn-dialog-summary-input").val() || "$t").toString().replace(
-        "$t",
-        dialogTypeSelect.val()?.toString() || "",
-      ) + SUMMARY_AD;
+      return (
+        ($("#wks-warn-dialog-summary-input").val() || "$t")
+          .toString()
+          .replace("$t", dialogTypeSelect.val()?.toString() || "") + SUMMARY_AD
+      );
     };
 
     const checkParams = () => {
@@ -252,11 +266,13 @@ export async function initWarn() {
         }*/
       }
       if (errList.children().length) {
-        return $("<div>").append($("<p>").text("入力にエラーがあります。")).append(errList);
+        return $("<div>")
+          .append($("<p>").text("入力にエラーがあります。"))
+          .append(errList);
       } else {
         return null;
       }
-    }
+    };
 
     const preview = async () => {
       const errList = checkParams();
@@ -292,23 +308,27 @@ export async function initWarn() {
         .text("読み込み中")
         .append(getImage("load", "margin-left: 0.5em;"));
       previewDialog.append(previewContent);
-      const parseRes = (await new mw.Api().post({
-        action: "discussiontoolspreview",
-        page: talkPageName,
-        type: "topic",
-        sectiontitle: selectedTemplate?.hasTitle ? "":$("#wks-warn-dialog-sectiontitle-input").val(),
-        wikitext: getFinalContent(),
-        uselang: "ja",
-        useskin: mw.config.get("skin"),
-        //summary: getFinalSummary(),
-        //prop: "text|modules|jsconfigvars",
-        //pst: true,
-        //disablelimitreport: true,
-        //disableeditsection: true,
-        //disabletoc: true,
-        //contentmodel: "wikitext",
-        formatversion: "2",
-      })).discussiontoolspreview;
+      const parseRes = (
+        await new mw.Api().post({
+          action: "discussiontoolspreview",
+          page: talkPageName,
+          type: "topic",
+          sectiontitle: selectedTemplate?.hasTitle
+            ? ""
+            : $("#wks-warn-dialog-sectiontitle-input").val(),
+          wikitext: getFinalContent(),
+          uselang: "ja",
+          useskin: mw.config.get("skin"),
+          //summary: getFinalSummary(),
+          //prop: "text|modules|jsconfigvars",
+          //pst: true,
+          //disablelimitreport: true,
+          //disableeditsection: true,
+          //disabletoc: true,
+          //contentmodel: "wikitext",
+          formatversion: "2",
+        })
+      ).discussiontoolspreview;
       previewContent.empty();
       if (parseRes.parse.modules.length) {
         mw.loader.load(parseRes.parse.modules);
@@ -361,12 +381,23 @@ export async function initWarn() {
           formatversion: "2",
           paction: "addtopic",
           dtenable: 1,
-          dttags: "discussiontools,discussiontools-source,discussiontools-source-enhanced,discussiontools-newtopic",
-          sectiontitle: selectedTemplate?.hasTitle ? "":$("#wks-warn-dialog-sectiontitle-input").val(),
+          dttags:
+            "discussiontools,discussiontools-source,discussiontools-source-enhanced,discussiontools-newtopic",
+          sectiontitle: selectedTemplate?.hasTitle
+            ? ""
+            : $("#wks-warn-dialog-sectiontitle-input").val(),
           allownosectiontitle: true,
-          autosubscribe: $("#wks-warn-dialog-subscribe-checkbox").prop("checked") ? "yes":"no",
+          autosubscribe: $("#wks-warn-dialog-subscribe-checkbox").prop(
+            "checked",
+          )
+            ? "yes"
+            : "no",
         });
-        if ((editRes.discussiontoolsedit?.result || editRes.edit?.result)?.toLowerCase() === "success") {
+        if (
+          (
+            editRes.discussiontoolsedit?.result || editRes.edit?.result
+          )?.toLowerCase() === "success"
+        ) {
           mw.notify("ページの編集に成功しました。");
           warnDialog.dialog("close");
           window.location.href = mw.util.getUrl(talkPageName);
@@ -375,7 +406,7 @@ export async function initWarn() {
             // @ts-expect-error index get
             "エラー: " + ERRORS[editRes.error?.code] ||
               editRes.error?.info ||
-              editRes.toString()
+              editRes.toString(),
           );
         }
       } catch (e) {

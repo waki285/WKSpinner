@@ -79,9 +79,9 @@ async function init() {
   // 特別ページ
   if (Math.sign(namespaceNumber) === -1) {
     if (getOptionProperty("editCount.enabled") === true) {
-      if (
-        !(isMobile && getOptionProperty("editCount.enableMobile") === false)
-      ) {
+      if (!(
+        isMobile && getOptionProperty("editCount.enableMobile") === false
+      )) {
         if (
           mw.config.get("wgCanonicalSpecialPageName") === "Recentchanges" ||
           mw.config.get("wgCanonicalSpecialPageName") === "Watchlist" ||
@@ -212,8 +212,9 @@ async function versionNotify() {
   }
 }
 
-mw.loader.using("jquery.ui").then(() =>
-  init()
-).catch((e) => {
-  console.error(e);
-});
+mw.loader
+  .using("jquery.ui")
+  .then(() => init())
+  .catch((e) => {
+    console.error(e);
+  });
