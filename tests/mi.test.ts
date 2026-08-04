@@ -8,6 +8,7 @@ import {
 } from "../src/constants";
 import {
   buildMultipleIssueTemplate,
+  buildSelectedIssueTemplates,
   buildSingleIssueTemplate,
   partitionMultipleIssueChoices,
 } from "../src/issue-templates";
@@ -195,6 +196,34 @@ describe("partitionMultipleIssueChoices", () => {
 
     expect(result.groupable.map(({ id }) => id)).toEqual(["technical"]);
     expect(result.standalone.map(({ id }) => id)).toEqual(["fan"]);
+  });
+});
+
+describe("buildSelectedIssueTemplates", () => {
+  it("emits standalone-only parameters outside 複数の問題", () => {
+    expect(
+      buildSelectedIssueTemplates(
+        [
+          multiple("primary"),
+          multiple("not-encyclopedic"),
+          multiple("technical"),
+        ],
+        [],
+        {
+          primary: {},
+          "not-encyclopedic": { type: "NOTBLOG" },
+          technical: {},
+        },
+        {
+          primary: "2026年8月",
+          "not-encyclopedic": "2026年8月",
+          technical: "2026年8月",
+        },
+      ),
+    ).toEqual([
+      "{{複数の問題\n|一次資料=2026年8月\n|専門的=2026年8月\n}}",
+      "{{百科事典的でない|type=NOTBLOG|date=2026年8月}}",
+    ]);
   });
 });
 

@@ -12,10 +12,11 @@ import {
   type StandaloneIssueChoice,
 } from "@/constants";
 import {
-  buildMultipleIssueTemplate,
-  buildSingleIssueTemplate,
+  buildSelectedIssueTemplates,
   getIssueTemplateParamName,
+  partitionMultipleIssueChoices,
 } from "@/issue-templates";
+import MI_DIALOG_STYLE from "@/styles/mi.css";
 import {
   createPortletLink,
   createRowFunc,
@@ -89,74 +90,7 @@ export async function initMi() {
       innerHTML: "<legend>問題テンプレートの貼付・除去</legend>",
     });
     dialogContent.append(dialogFieldset);
-    dialogContent.append(
-      $("<style>").text(`
-        #wks-mi-dialog-type {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-          gap: 1rem;
-          align-items: start;
-        }
-        .wks-mi-template-column {
-          max-height: 52vh;
-          overflow-y: auto;
-          border: 1px solid var(--border-color-base, #a2a9b1);
-          border-radius: 2px;
-          padding: 0.75rem;
-          color: var(--color-base, #202122);
-          background: var(--background-color-neutral-subtle, #f8f9fa);
-        }
-        .wks-mi-template-column > h3 {
-          margin: 0 0 0.25rem;
-          font-size: 1rem;
-        }
-        .wks-mi-template-column > p {
-          margin: 0 0 0.75rem;
-          color: var(--color-subtle, #54595d);
-          font-size: 0.875rem;
-        }
-        .wks-mi-template-group + .wks-mi-template-group {
-          margin-top: 0.875rem;
-          padding-top: 0.75rem;
-          border-top: 1px solid var(--border-color-muted, #c8ccd1);
-        }
-        .wks-mi-template-group > h4 {
-          margin: 0 0 0.375rem;
-          font-size: 0.875rem;
-          color: var(--color-subtle, #54595d);
-        }
-        .wks-mi-template-item {
-          display: block;
-          padding: 0.25rem 0;
-        }
-        .wks-mi-template-main {
-          display: flex;
-          align-items: baseline;
-          gap: 0.375rem;
-        }
-        .wks-mi-template-params {
-          display: grid;
-          grid-template-columns: minmax(7.5rem, auto) minmax(0, 1fr);
-          gap: 0.375rem 0.5rem;
-          align-items: center;
-          margin: 0.375rem 0 0.375rem 1.5rem;
-        }
-        .wks-mi-template-params input,
-        .wks-mi-template-params select {
-          box-sizing: border-box;
-          width: 100%;
-          min-width: 0;
-        }
-        @media (max-width: 800px) {
-          #wks-mi-dialog-type {
-            grid-template-columns: 1fr;
-          }
-          .wks-mi-template-column {
-            max-height: none;
-          }
-        }
-      `),
-    );
+    dialogContent.append($("<style>").text(MI_DIALOG_STYLE));
 
     const getExtractedChoice = (choice: IssueChoice) =>
       extracted.find((template) => template.name === choice.id);
@@ -175,17 +109,15 @@ export async function initMi() {
       const div = $("<div>").addClass("wks-mi-template-item");
       const main = $("<div>").addClass("wks-mi-template-main");
       const isDubious = template?.dubious === "true";
-      div.append(
-        $("<input>")
-          .prop({
-            id: checkboxId(choice),
-            type: "checkbox",
-            checked: template !== undefined,
-            disabled: isDubious,
-          })
-          .attr("data-date", template?.date ?? ""),
-      );
-      main.append(div.children().last());
+      const checkbox = $("<input>")
+        .prop({
+          id: checkboxId(choice),
+          type: "checkbox",
+          checked: template !== undefined,
+          disabled: isDubious,
+        })
+        .attr("data-date", template?.date ?? "");
+      main.append(checkbox);
       main.append(
         $("<label>")
           .text(
@@ -203,7 +135,20 @@ export async function initMi() {
       );
       div.append(main);
       if (choice.params.length) {
-        const params = $("<div>").addClass("wks-mi-template-params");
+        const paramsId = `${checkboxId(choice)}-params`;
+        const params = $("<div>")
+          .prop({ id: paramsId, hidden: !checkbox.prop("checked") })
+          .addClass("wks-mi-template-params");
+        checkbox
+          .attr({
+            "aria-controls": paramsId,
+            "aria-expanded": String(checkbox.prop("checked")),
+          })
+          .on("change", () => {
+            const checked = Boolean(checkbox.prop("checked"));
+            params.prop("hidden", !checked);
+            checkbox.attr("aria-expanded", String(checked));
+          });
         for (const param of choice.params) {
           params.append(
             $("<label>")
@@ -270,46 +215,12 @@ export async function initMi() {
 
     const dialogTypeRow = createRow("type");
     const multipleColumn = $("<section>").addClass("wks-mi-template-column");
-    multipleColumn
-      .append($("<h3>").text("複数の問題にまとめ可"))
-      .append(
-        $("<p>").text(
-          "2件以上選ぶと {{複数の問題}} にまとめて貼り付けます",
-        ),
-      );
+    multipleColumn.append($("<h3>").text("複数の問題にまとめ可"));
     for (const choice of MI_CHOICES) {
       multipleColumn.append(renderChoice(choice));
     }
-    const multipleSortKey = $("<div>").addClass("wks-mi-template-params");
-    multipleSortKey
-      .append(
-        $("<label>")
-          .text("ソートキー (共通):")
-          .prop("for", "wks-mi-dialog-multiple-sort-key"),
-      )
-      .append(
-        $("<input>").prop({
-          id: "wks-mi-dialog-multiple-sort-key",
-          type: "text",
-          value:
-            extracted.find(
-              (template) =>
-                MI_CHOICES.some(({ id }) => id === template.name) &&
-                template["ソートキー"] !== undefined,
-            )?.["ソートキー"] ?? "",
-          placeholder: "記事名の読み",
-        }),
-      );
-    multipleColumn.append(multipleSortKey);
-
     const standaloneColumn = $("<section>").addClass("wks-mi-template-column");
-    standaloneColumn
-      .append($("<h3>").text("単独で貼り付け"))
-      .append(
-        $("<p>").text(
-          "{{複数の問題}} に含められません",
-        ),
-      );
+    standaloneColumn.append($("<h3>").text("単独で貼り付け"));
     const categories = [
       ...new Set(STANDALONE_ISSUE_CHOICES.map(({ category }) => category)),
     ];
@@ -377,39 +288,12 @@ export async function initMi() {
           $(`#${checkboxId(choice)}`).attr("data-date") || date,
         ]),
       );
-      const sortKey = String($("#wks-mi-dialog-multiple-sort-key").val() ?? "");
-      const multipleAdditionalValues = sortKey ? { ソートキー: sortKey } : {};
-      const templates: string[] = [];
-
-      if (selectedMultiple.length >= 2) {
-        templates.push(
-          buildMultipleIssueTemplate(
-            selectedMultiple,
-            values,
-            dates,
-            multipleAdditionalValues,
-          ),
-        );
-      } else if (selectedMultiple[0]) {
-        templates.push(
-          buildSingleIssueTemplate(
-            selectedMultiple[0],
-            values[selectedMultiple[0].id]!,
-            dates[selectedMultiple[0].id]!,
-            multipleAdditionalValues,
-          ),
-        );
-      }
-
-      for (const choice of selectedStandalone) {
-        templates.push(
-          buildSingleIssueTemplate(
-            choice,
-            values[choice.id]!,
-            dates[choice.id]!,
-          ),
-        );
-      }
+      const templates = buildSelectedIssueTemplates(
+        selectedMultiple,
+        selectedStandalone,
+        values,
+        dates,
+      );
 
       return replaceFirstAndRemoveOtherIssueTemplates(pageContent).replace(
         ISSUE_TEMPLATE_AREA,
@@ -421,10 +305,16 @@ export async function initMi() {
       const selectedMultiple = MI_CHOICES.filter((choice) =>
         isChecked(choice, true),
       );
+      const values = Object.fromEntries(
+        selectedMultiple.map((choice) => [choice.id, getParamValues(choice)]),
+      );
+      const { groupable, standalone: separatedChoices } =
+        partitionMultipleIssueChoices(selectedMultiple, values);
       const templateNames = [
-        ...(selectedMultiple.length >= 2
+        ...(groupable.length >= 2
           ? ["複数の問題"]
-          : selectedMultiple.map(({ name }) => name)),
+          : groupable.map(({ name }) => name)),
+        ...separatedChoices.map(({ name }) => name),
         ...STANDALONE_ISSUE_CHOICES.filter((choice) =>
           isChecked(choice, true),
         ).map(({ name }) => name),
@@ -468,12 +358,11 @@ export async function initMi() {
         }
       }
 
-      const selectedMultiple = MI_CHOICES.filter((choice) => isChecked(choice));
-      if (
-        selectedMultiple.length === 1 &&
-        selectedMultiple[0]?.id === "not-encyclopedic"
-      ) {
-        const values = getParamValues(selectedMultiple[0]);
+      const notEncyclopedic = MI_CHOICES.find(
+        (choice) => choice.id === "not-encyclopedic" && isChecked(choice),
+      );
+      if (notEncyclopedic) {
+        const values = getParamValues(notEncyclopedic);
         if (values.type && values.type !== "null" && values.text) {
           errList.append(
             $("<li>").text(

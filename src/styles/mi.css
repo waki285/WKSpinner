@@ -1,0 +1,60 @@
+#wks-mi-dialog-type {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.wks-mi-template-column {
+  min-width: 0;
+}
+
+.wks-mi-template-column > h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.wks-mi-template-group + .wks-mi-template-group {
+  margin-top: 0.75rem;
+}
+
+.wks-mi-template-group > h4 {
+  margin: 0 0 0.375rem;
+  font-size: 0.875rem;
+}
+
+.wks-mi-template-item {
+  display: block;
+  padding: 0.25rem 0;
+}
+
+.wks-mi-template-main {
+  display: flex;
+  align-items: baseline;
+  gap: 0.375rem;
+}
+
+.wks-mi-template-params {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, auto) minmax(0, 1fr);
+  gap: 0.375rem 0.5rem;
+  align-items: center;
+  margin: 0.375rem 0 0.375rem 1.5rem;
+}
+
+.wks-mi-template-params[hidden] {
+  display: none;
+}
+
+.wks-mi-template-params input,
+.wks-mi-template-params select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 800px) {
+  #wks-mi-dialog-type {
+    grid-template-columns: 1fr;
+  }
+}

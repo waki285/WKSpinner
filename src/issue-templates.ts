@@ -126,3 +126,38 @@ export function partitionMultipleIssueChoices(
 
   return { groupable, standalone };
 }
+
+export function buildSelectedIssueTemplates(
+  multipleChoices: readonly MIChoice[],
+  standaloneChoices: readonly StandaloneIssueChoice[],
+  values: Readonly<Record<string, Readonly<Record<string, string>>>>,
+  dates: Readonly<Record<string, string>>,
+): string[] {
+  const { groupable, standalone: separatedChoices } =
+    partitionMultipleIssueChoices(multipleChoices, values);
+  const templates: string[] = [];
+
+  if (groupable.length >= 2) {
+    templates.push(buildMultipleIssueTemplate(groupable, values, dates));
+  } else if (groupable[0]) {
+    templates.push(
+      buildSingleIssueTemplate(
+        groupable[0],
+        values[groupable[0].id] ?? {},
+        dates[groupable[0].id] ?? "",
+      ),
+    );
+  }
+
+  for (const choice of [...separatedChoices, ...standaloneChoices]) {
+    templates.push(
+      buildSingleIssueTemplate(
+        choice,
+        values[choice.id] ?? {},
+        dates[choice.id] ?? "",
+      ),
+    );
+  }
+
+  return templates;
+}
