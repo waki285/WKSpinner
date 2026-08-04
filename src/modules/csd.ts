@@ -264,6 +264,18 @@ export async function initCsd() {
                 case "san":
                   fi = "[[LTA:SAN]]";
                   break;
+                case "nmt":
+                  fi = "[[LTA:NMT]]";
+                  break;
+                case "castub":
+                  fi = "[[LTA:CASTUB]]";
+                  break;
+                case "kamedy":
+                  fi = "[[LTA:KAMEDY]]";
+                  break;
+                case "internet-libertarian":
+                  fi = "[[WP:VIP#Internet_Libertarian]]";
+                  break;
                 default:
                   break;
               }

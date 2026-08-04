@@ -322,6 +322,10 @@ export const SD_REASON = [
           { name: "Alec Smithson系 (LTA:ALS) (日本語版未BLの場合他言語版を引数に言語名を書くorリンクなどで明記)", id: "als" },
           { name: "Sorrysorry系 (LTA:SORRY)", id: "sorry" },
           { name: "さんさんさんさん系 (LTA:SAN)", id: "san" },
+          { name: "NMT系 (LTA:NMT)", id: "nmt" },
+          { name: "中央アジア史サブスタブ濫造系 (LTA:CASTUB)", id: "castub" },
+          { name: "かめでぃー系 (LTA:KAMEDY)", id: "kamedy" },
+          { name: "Internet Libertarian系 (WP:VIP#Internet_Libertarian)", id: "internet-libertarian" }
         ],
         required: true,
       },
