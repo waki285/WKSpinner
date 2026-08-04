@@ -265,6 +265,7 @@ export function extractIssueTemplates(inputString: string): IssueTemplate[] {
       );
       if (!hasSection && issueTemplateMaps.has(namePart.toLowerCase())) {
         if (
+          namePart === "信頼性" ||
           namePart === "精度" ||
           namePart.toLowerCase() === "disputed" ||
           namePart === "正確性"
@@ -348,6 +349,7 @@ export function replaceFirstAndRemoveOtherIssueTemplates(
       );
       if (!hasSection) {
         if (
+          namePart === "信頼性" ||
           namePart === "精度" ||
           namePart.toLowerCase() === "disputed" ||
           namePart === "正確性"

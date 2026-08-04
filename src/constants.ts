@@ -723,7 +723,7 @@ export const MI_CHOICES = [
   { name: "未検証", id: "unverified", params: [], aliases: ["not verified"] },
   { name: "単一の出典", id: "single", params: [], aliases: ["one source", "onesource", "single source", "singlesource", "唯一の出典"] },
   { name: "一次資料", id: "primary", params: [], aliases: ["一次資料のみ", "primary sources"] },
-  { name: "精度", id: "cite-accuracy", params: [] },
+  { name: "信頼性", id: "cite-accuracy", params: [], aliases: ["精度"] },
   { name: "更新", id: "update", params: [], aliases: ["update", "同期", "sync"] },
   { name: "大言壮語", id: "boast", params: [] },
   { name: "観点", id: "view", params: [], aliases: ["pov", "npov", "中立的な観点", "中立", "coi"] },
