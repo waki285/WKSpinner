@@ -192,7 +192,7 @@ export async function initSkj() {
     dialogDescRow.append(
       $("<textarea>").prop({
         id: "wks-skj-dialog-desc-input",
-        placeholder: "ケースE、特筆性なし。〜〜〜",
+        placeholder: "ケースI-1、特筆性なし。〜〜〜",
         style: "width: 100%;",
       }),
     );
