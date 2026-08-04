@@ -11,6 +11,7 @@ import {
   getOptionProperty,
   sleep,
 } from "@/util";
+import { getPageIdPrivacyWarnings } from "@/skj-validation";
 
 export async function initSkj() {
   const revisionId = mw.config.get("wgRevisionId");
@@ -340,6 +341,33 @@ export async function initSkj() {
 
       if (!$("#wks-skj-dialog-opv-input").val()) {
         errList.append($("<li>").text("依頼者票を入力してください。"));
+      }
+
+      const privacyWarnings = getPageIdPrivacyWarnings({
+        usePageId: Boolean($("#wks-skj-dialog-use-id-cb").prop("checked")),
+        requestPageName: String(
+          $("#wks-skj-dialog-page-name-input").val() ?? "",
+        ),
+        targetPageName: String(mw.config.get("wgPageName") ?? ""),
+        summaries: [
+          {
+            label: "Sakujo貼り付け",
+            value: String(
+              $("#wks-skj-dialog-summary-template").val() ?? "",
+            ),
+          },
+          {
+            label: "依頼ページ作成",
+            value: String($("#wks-skj-dialog-summary-submit").val() ?? ""),
+          },
+          {
+            label: "ログへの追記",
+            value: String($("#wks-skj-dialog-summary-note").val() ?? ""),
+          },
+        ],
+      });
+      for (const warning of privacyWarnings) {
+        errList.append($("<li>").text(warning));
       }
 
       if (errList.children().length) {
