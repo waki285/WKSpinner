@@ -1,4 +1,4 @@
-import { SRD_REASON, SUMMARY_AD, SUMMARY_AD_ATTRACT } from "@/constants";
+import { ERRORS, SRD_REASON, SUMMARY_AD, SUMMARY_AD_ATTRACT } from "@/constants";
 import { createRowFunc, formatDate, getImage, getOptionProperty, sleep } from "@/util";
 
 function formatDateRanges(data: [string, number][]) {

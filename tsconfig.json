@@ -2,10 +2,10 @@
   "compilerOptions": {
     "target": "ESNext",
     "lib": ["DOM", "ESNext"],
-    "module": "commonjs",
-    "baseUrl": "./",
+    "types": ["jquery", "node", "oojs", "oojs-ui"],
+    "module": "preserve",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     },
     "allowJs": true,
     "noEmit": true,                                   /* Disable emitting files from a compilation. (I'm using esbuild for build.) */
@@ -18,7 +18,9 @@
     "skipLibCheck": true
   },
   "include": [
+    "build.mjs",
     "src",
+    "tests",
     "./node_modules/types-mediawiki"
   ]
 }

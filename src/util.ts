@@ -83,7 +83,6 @@ export async function loadLibrary(dev?: boolean) {
       .catch(function () {
         const err = [];
         for (let _i = 0; _i < arguments.length; _i++) {
-          // eslint-disable-next-line prefer-rest-params
           err[_i] = arguments[_i];
         }
         console.error(err);
@@ -97,7 +96,6 @@ export async function loadLibrary(dev?: boolean) {
       .catch(function () {
         const err = [];
         for (let _i = 0; _i < arguments.length; _i++) {
-          // eslint-disable-next-line prefer-rest-params
           err[_i] = arguments[_i];
         }
         console.error(err);

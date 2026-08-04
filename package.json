@@ -4,26 +4,33 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
     "build": "node build.mjs",
-    "lint": "eslint . --ext .ts & prettier --check . & tsc"
+    "lint": "eslint . && prettier --check . && tsc"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/node": "^20.11.19",
-    "@types/oojs-ui": "^0.47.6",
+    "@eslint/js": "^10.0.1",
+    "@types/jquery": "^4.0.1",
+    "@types/node": "^26.1.2",
+    "@types/oojs": "^7.0.7",
+    "@types/oojs-ui": "^0.50.0",
     "@types/semver-compare": "^1.0.3",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
-    "esbuild": "^0.19.12",
-    "eslint": "^8.56.0",
-    "prettier": "^3.2.5",
-    "types-mediawiki": "^1",
-    "typescript": "^5.3.3"
+    "@typescript-eslint/eslint-plugin": "^8.66.0",
+    "@typescript-eslint/parser": "^8.66.0",
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "esbuild": "^0.28.1",
+    "eslint": "^10.8.0",
+    "globals": "^17.9.0",
+    "prettier": "^3.9.6",
+    "types-mediawiki": "^2.1.0",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "vitest": "^4.1.10"
   },
   "dependencies": {
     "semver-compare": "^1.0.0"
-  }
+  },
+  "packageManager": "pnpm@11.20.0+sha512.9a6f330a95b66446ea088faf1521405a8a01f07fde7124cc9958dfed52d4bb436737e65b08f85f37b46fcba375092558ac51262b816844b22f63406ed166bfee"
 }
