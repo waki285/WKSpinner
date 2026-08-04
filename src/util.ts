@@ -318,6 +318,37 @@ export function replaceFirstAndRemoveOtherIssueTemplates(
   let outputString = inputString;
   let replaced = false;
 
+  const replaceTemplate = (block: string) => {
+    const blockIndex = outputString.indexOf(block);
+    if (blockIndex === -1) {
+      return;
+    }
+
+    let replacementStart = blockIndex;
+    if (replaced) {
+      const areaIndex = outputString.indexOf(ISSUE_TEMPLATE_AREA);
+      const areaEnd = areaIndex + ISSUE_TEMPLATE_AREA.length;
+      if (
+        areaIndex !== -1 &&
+        /^\s*$/.test(outputString.slice(areaEnd, blockIndex))
+      ) {
+        replacementStart = areaEnd;
+      }
+    }
+
+    const blockEnd = blockIndex + block.length;
+    const trailingLineBreak = outputString
+      .slice(blockEnd)
+      .match(/^[\t ]*\r?\n/);
+    const replacementEnd = blockEnd + (trailingLineBreak?.[0].length ?? 0);
+
+    outputString =
+      outputString.slice(0, replacementStart) +
+      (replaced ? "" : ISSUE_TEMPLATE_AREA) +
+      outputString.slice(replacementEnd);
+    replaced = true;
+  };
+
   while ((match = pattern.exec(inputString)) !== null) {
     const block = match[0];
     const parts = match[1]!.split("|").map((part) => part.trim());
@@ -332,12 +363,7 @@ export function replaceFirstAndRemoveOtherIssueTemplates(
         part.replaceAll(" ", "").startsWith("section="),
       );
       if (!hasSection) {
-        if (!replaced) {
-          outputString = outputString.replace(block, ISSUE_TEMPLATE_AREA);
-          replaced = true;
-        } else {
-          outputString = outputString.replace(block, "");
-        }
+        replaceTemplate(block);
       }
     } else if (
       [...issueTemplateMaps.keys()]
@@ -366,12 +392,7 @@ export function replaceFirstAndRemoveOtherIssueTemplates(
           }
         }
 
-        if (!replaced) {
-          outputString = outputString.replace(block, ISSUE_TEMPLATE_AREA);
-          replaced = true;
-        } else {
-          outputString = outputString.replace(block, "");
-        }
+        replaceTemplate(block);
       }
     }
   }
