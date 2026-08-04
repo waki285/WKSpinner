@@ -17,6 +17,7 @@ import { initMi } from "./modules/mi";
 import { initRFP } from "./modules/rfp";
 import { initSkj } from "./modules/skj";
 import { initWarn } from "./modules/warn";
+import { applyOptionMigrations } from "./option-migrations";
 import { showConfigPage } from "./preferences";
 import { getOptionProperty, getSavedOptions, loadLibrary } from "./util";
 import cmp from "semver-compare";
@@ -161,35 +162,17 @@ async function init() {
 
 async function migrate() {
   const lastVersion = mw.user.options.get(VERSION_OPTIONS_KEY) || "0.0.0";
-  // 0.10.6未満のバージョンからのアップデート
-  if (cmp(lastVersion, "0.10.6") === -1) {
-    const settings = getSavedOptions();
-    if (settings?.rfp?.default?.summarySubmit === "保護依頼") {
-      settings.rfp.default.summarySubmit = "+$p";
-      await new mw.Api()
-        .postWithEditToken({
-          action: "options",
-          format: "json",
-          optionname: OPTIONS_KEY,
-          optionvalue: JSON.stringify(settings),
-          formatversion: "2",
-        })
-    }
-  }
-  // 0.10.10未満のバージョンからのアップデート
-  if (cmp(lastVersion, "0.10.10") === -1) {
-    const settings = getSavedOptions();
-    if (settings?.warn?.default?.summary === "$t") {
-      settings.warn.default.summary = "+{{$t}}";
-      await new mw.Api()
-        .postWithEditToken({
-          action: "options",
-          format: "json",
-          optionname: OPTIONS_KEY,
-          optionvalue: JSON.stringify(settings),
-          formatversion: "2",
-        })
-    }
+  const settings = getSavedOptions();
+  if (applyOptionMigrations(settings, lastVersion)) {
+    const serializedSettings = JSON.stringify(settings);
+    await new mw.Api().postWithEditToken({
+      action: "options",
+      format: "json",
+      optionname: OPTIONS_KEY,
+      optionvalue: serializedSettings,
+      formatversion: "2",
+    });
+    mw.user.options.set(OPTIONS_KEY, serializedSettings);
   }
 }
 

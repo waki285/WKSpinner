@@ -1,7 +1,7 @@
 export const DEV = false;
 
 // 変更必須
-export const VERSION = "0.11.0";
+export const VERSION = "0.11.1";
 
 export const SCRIPT_NAME = "WKSpinner";
 export const SKJ_REQUEST_PAGE_NAME = DEV
@@ -55,6 +55,7 @@ export const HATNOTE_TEMPLATES = [
     ],
   },
   { name: "混同2", aliases: ["Distinguish2", "Confused2", "Confuse2"] },
+  { name: "別人", aliases: [] },
 ] as const;
 
 export type Options = {
@@ -133,7 +134,7 @@ export const DEFAULT_OPTIONS = {
     enabled: true,
     enableMobile: true,
     default: {
-      summary: "+$t",
+      summary: "+{{$t}}",
     },
   },
   csd: {

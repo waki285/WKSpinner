@@ -6,6 +6,9 @@ import type {
 
 type IssueChoice = MIChoice | StandaloneIssueChoice;
 
+const SUMMARY_TEMPLATE_LIMIT = 5;
+const DEFAULT_SUMMARY_FORMAT = "+{{$t}}";
+
 function getSingleParamName(
   choice: IssueChoice,
   param: IssueTemplateParam,
@@ -160,4 +163,25 @@ export function buildSelectedIssueTemplates(
   }
 
   return templates;
+}
+
+export function formatIssueTemplateSummary(
+  format: string,
+  templateNames: readonly string[],
+): string {
+  const normalizedFormat = format || DEFAULT_SUMMARY_FORMAT;
+  if (!templateNames.length) {
+    return normalizedFormat
+      .replaceAll("{{$s1}}", "問題テンプレートを除去")
+      .replaceAll("{{$t}}", "問題テンプレートを除去")
+      .replaceAll("$s1", "問題テンプレートを除去")
+      .replaceAll("$t", "問題テンプレートを除去");
+  }
+
+  return normalizedFormat
+    .replaceAll("$s1", templateNames[0]!)
+    .replaceAll(
+      "$t",
+      templateNames.slice(0, SUMMARY_TEMPLATE_LIMIT).join("}}, {{"),
+    );
 }

@@ -10,6 +10,7 @@ import {
   buildMultipleIssueTemplate,
   buildSelectedIssueTemplates,
   buildSingleIssueTemplate,
+  formatIssueTemplateSummary,
   partitionMultipleIssueChoices,
 } from "../src/issue-templates";
 import { extractIssueTemplates } from "../src/util";
@@ -224,6 +225,24 @@ describe("buildSelectedIssueTemplates", () => {
       "{{複数の問題\n|一次資料=2026年8月\n|専門的=2026年8月\n}}",
       "{{百科事典的でない|type=NOTBLOG|date=2026年8月}}",
     ]);
+  });
+});
+
+describe("formatIssueTemplateSummary", () => {
+  it("expands $t into separately linked template names", () => {
+    expect(
+      formatIssueTemplateSummary("+{{$t}} ($s1)", ["TemplateA", "TemplateB"]),
+    ).toBe("+{{TemplateA}}, {{TemplateB}} (TemplateA)");
+  });
+
+  it("limits $t to five template names", () => {
+    expect(
+      formatIssueTemplateSummary("{{$t}}", ["A", "B", "C", "D", "E", "F"]),
+    ).toBe("{{A}}, {{B}}, {{C}}, {{D}}, {{E}}");
+  });
+
+  it("uses the default format and describes template removal", () => {
+    expect(formatIssueTemplateSummary("", [])).toBe("+問題テンプレートを除去");
   });
 });
 

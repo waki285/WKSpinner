@@ -119,12 +119,12 @@ export async function showConfigPage() {
 
   const miSummary = new OO.ui.TextInputWidget({
     value: getOptionProperty("mi.default.summary"),
-    placeholder: "+$t",
+    placeholder: "+{{$t}}",
   });
   const miSummaryField = new OO.ui.FieldLayout(miSummary, {
     label: "編集の要約デフォルト値",
     align: "top",
-    help: "$t にはテンプレート名 (複数の問題, 特筆性 etc.) が入ります",
+    help: "$t には最大5件のテンプレート名、$s1 には1件目のテンプレート名が入ります",
     helpInline: true,
   });
 

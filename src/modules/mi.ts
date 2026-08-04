@@ -13,6 +13,7 @@ import {
 } from "@/constants";
 import {
   buildSelectedIssueTemplates,
+  formatIssueTemplateSummary,
   getIssueTemplateParamName,
   partitionMultipleIssueChoices,
 } from "@/issue-templates";
@@ -242,7 +243,7 @@ export async function initMi() {
     dialogSummary.append(
       $("<label>")
         .html(
-          `編集の要約 (指定しない場合 "+複数の問題" もしくは単一の場合テンプレート名) "${SUMMARY_AD_ATTRACT}" が自動付加されます`,
+          `編集の要約 ($t: 最大5件のテンプレート名、$s1: 1件目のテンプレート名) "${SUMMARY_AD_ATTRACT}" が自動付加されます`,
         )
         .prop("for", "wks-mi-dialog-summary-input"),
     );
@@ -250,7 +251,7 @@ export async function initMi() {
       $("<input>").prop({
         id: "wks-mi-dialog-summary-input",
         type: "text",
-        placeholder: "+複数の問題",
+        placeholder: "+{{$t}}",
         style: "width: 100%;",
         value: getOptionProperty("mi.default.summary"),
       }),
@@ -319,14 +320,11 @@ export async function initMi() {
           isChecked(choice, true),
         ).map(({ name }) => name),
       ];
-      const tlName = templateNames.length
-        ? templateNames.join("、")
-        : "問題テンプレートを除去";
       return (
-        (($("#wks-mi-dialog-summary-input").val() as string).replaceAll(
-          "$t",
-          tlName,
-        ) || `+${tlName}`) + SUMMARY_AD
+        formatIssueTemplateSummary(
+          String($("#wks-mi-dialog-summary-input").val() ?? ""),
+          templateNames,
+        ) + SUMMARY_AD
       );
     };
 
