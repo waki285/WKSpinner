@@ -1,11 +1,21 @@
 import {
+  ALL_ISSUE_CHOICES,
   MI_CHOICES,
+  STANDALONE_ISSUE_CHOICES,
   SCRIPT_NAME,
   SUMMARY_AD,
   SUMMARY_AD_ATTRACT,
   ERRORS,
   ISSUE_TEMPLATE_AREA,
+  type IssueTemplateParam,
+  type MIChoice,
+  type StandaloneIssueChoice,
 } from "@/constants";
+import {
+  buildMultipleIssueTemplate,
+  buildSingleIssueTemplate,
+  getIssueTemplateParamName,
+} from "@/issue-templates";
 import {
   createPortletLink,
   createRowFunc,
@@ -13,7 +23,15 @@ import {
   getImage,
   getOptionProperty,
   replaceFirstAndRemoveOtherIssueTemplates,
+  type IssueTemplate,
 } from "@/util";
+
+type IssueChoice = MIChoice | StandaloneIssueChoice;
+
+const checkboxId = (choice: IssueChoice) => `wks-mi-dialog-type-${choice.id}`;
+
+const paramInputId = (choice: IssueChoice, param: IssueTemplateParam) =>
+  `wks-mi-dialog-type-params-${choice.id}-${param.id}`;
 
 export async function initMi() {
   const revisionId = mw.config.get("wgRevisionId");
@@ -39,7 +57,7 @@ export async function initMi() {
       title: `${SCRIPT_NAME} - 問題`,
       resizable: false,
       height: "auto",
-      width: "auto",
+      width: `${Math.max(280, Math.min(1180, window.innerWidth - 32))}px`,
       modal: true,
       close: function () {
         $(this).empty().dialog("destroy");
@@ -71,50 +89,135 @@ export async function initMi() {
       innerHTML: "<legend>問題テンプレートの貼付・除去</legend>",
     });
     dialogContent.append(dialogFieldset);
-    const dialogTypeRow = createRow("type");
-    for (const choice of MI_CHOICES) {
-      const div = $("<div>").addClass("wks-inline");
+    dialogContent.append(
+      $("<style>").text(`
+        #wks-mi-dialog-type {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+          gap: 1rem;
+          align-items: start;
+        }
+        .wks-mi-template-column {
+          max-height: 52vh;
+          overflow-y: auto;
+          border: 1px solid var(--border-color-base, #a2a9b1);
+          border-radius: 2px;
+          padding: 0.75rem;
+          color: var(--color-base, #202122);
+          background: var(--background-color-neutral-subtle, #f8f9fa);
+        }
+        .wks-mi-template-column > h3 {
+          margin: 0 0 0.25rem;
+          font-size: 1rem;
+        }
+        .wks-mi-template-column > p {
+          margin: 0 0 0.75rem;
+          color: var(--color-subtle, #54595d);
+          font-size: 0.875rem;
+        }
+        .wks-mi-template-group + .wks-mi-template-group {
+          margin-top: 0.875rem;
+          padding-top: 0.75rem;
+          border-top: 1px solid var(--border-color-muted, #c8ccd1);
+        }
+        .wks-mi-template-group > h4 {
+          margin: 0 0 0.375rem;
+          font-size: 0.875rem;
+          color: var(--color-subtle, #54595d);
+        }
+        .wks-mi-template-item {
+          display: block;
+          padding: 0.25rem 0;
+        }
+        .wks-mi-template-main {
+          display: flex;
+          align-items: baseline;
+          gap: 0.375rem;
+        }
+        .wks-mi-template-params {
+          display: grid;
+          grid-template-columns: minmax(7.5rem, auto) minmax(0, 1fr);
+          gap: 0.375rem 0.5rem;
+          align-items: center;
+          margin: 0.375rem 0 0.375rem 1.5rem;
+        }
+        .wks-mi-template-params input,
+        .wks-mi-template-params select {
+          box-sizing: border-box;
+          width: 100%;
+          min-width: 0;
+        }
+        @media (max-width: 800px) {
+          #wks-mi-dialog-type {
+            grid-template-columns: 1fr;
+          }
+          .wks-mi-template-column {
+            max-height: none;
+          }
+        }
+      `),
+    );
+
+    const getExtractedChoice = (choice: IssueChoice) =>
+      extracted.find((template) => template.name === choice.id);
+
+    const getExtractedParamValue = (
+      choice: IssueChoice,
+      param: IssueTemplateParam,
+      template: IssueTemplate,
+    ) => {
+      const singleName = getIssueTemplateParamName(choice, param);
+      return template[param.name] ?? template[singleName];
+    };
+
+    const renderChoice = (choice: IssueChoice) => {
+      const template = getExtractedChoice(choice);
+      const div = $("<div>").addClass("wks-mi-template-item");
+      const main = $("<div>").addClass("wks-mi-template-main");
+      const isDubious = template?.dubious === "true";
       div.append(
         $("<input>")
           .prop({
-            id: `wks-mi-dialog-type-${choice.id}`,
+            id: checkboxId(choice),
             type: "checkbox",
-            checked: extracted.some((t) => t.name === choice.id),
-            disabled: extracted.some((t) => t.name === choice.id && t.dubious === "true"),
+            checked: template !== undefined,
+            disabled: isDubious,
           })
-          .attr(
-            "data-date",
-            extracted.some((t) => t.name === choice.id)
-              ? extracted.find((t) => t.name === choice.id)!.date
-              : "",
-          ),
+          .attr("data-date", template?.date ?? ""),
       );
-      div.append(
+      main.append(div.children().last());
+      main.append(
         $("<label>")
-          .html(
-            extracted.some((t) => t.name === choice.id)
-              ? `${choice.name} ${extracted.find((t) => t.name === choice.id)!.dubious === "true" ? "(特殊なパラメーターが指定されているため WKSpinner で変更できません)":`(${extracted.find((t) => t.name === choice.id)!.date}) ${Object.entries(
-                  extracted.find((t) => t.name === choice.id)!,
-                )
-                  .filter((e) => e[0] !== "name" && e[0] !== "date")
-                  .map((e) => `(${e[0]}: ${e[1]})`)
-                  .join(", ")}`}`
+          .text(
+            template
+              ? `${choice.name}${
+                  isDubious
+                    ? " (特殊なパラメーターが指定されているため WKSpinner で変更できません)"
+                    : template.date
+                      ? ` (${template.date})`
+                      : ""
+                }`
               : choice.name,
           )
-          .prop("for", `wks-mi-dialog-type-${choice.id}`),
+          .prop("for", checkboxId(choice)),
       );
+      div.append(main);
       if (choice.params.length) {
-        const params = $("<div>").addClass("wks-inline");
+        const params = $("<div>").addClass("wks-mi-template-params");
         for (const param of choice.params) {
           params.append(
             $("<label>")
               .html(
-                `${param.name}${param.required ? ' <span class="wks-red">*</span>' : ""}: `,
+                `${param.name}${
+                  !("category" in choice) && param.multipleName === null
+                    ? " (単独時のみ)"
+                    : ""
+                }${param.required ? ' <span class="wks-red">*</span>' : ""}: `,
               )
-              .prop("for", `wks-mi-dialog-type-params-${param.id}`)
+              .prop("for", paramInputId(choice, param))
               .addClass("wks-shrink-0"),
           );
-          let input;
+          let input: JQuery;
           switch (param.type) {
             case "select":
               input = $("<select>");
@@ -124,35 +227,104 @@ export async function initMi() {
                 input.append(
                   $("<option>").prop({ value: choice.id, text: choice.name }),
                 );
-                options.set(choice.name, choice.id);
+                const templateValue = choice.value ?? choice.name;
+                options.set(templateValue, choice.id);
+                options.set(templateValue.toLowerCase(), choice.id);
               }
-              if (extracted.some((t) => t.name === choice.id)) {
+              if (template) {
+                const extractedValue = getExtractedParamValue(
+                  choice,
+                  param,
+                  template,
+                );
                 input.val(
-                  options.get(extracted.find((t) => t.name === choice.id)![param.name]!)!
+                  extractedValue === undefined
+                    ? param.choices[0]!.id
+                    : (options.get(extractedValue) ??
+                        options.get(extractedValue.toLowerCase()) ??
+                        param.choices[0]!.id),
                 );
               }
               break;
             case "input":
               input = $("<input>").prop({
                 type: "text",
-                value: extracted.some((t) => t.name === choice.id)
-                  ? extracted.find((t) => t.name === choice.id)![param.name]
+                value: template
+                  ? (getExtractedParamValue(choice, param, template) ?? "")
                   : "",
+                placeholder: param.placeholder ?? "",
               });
               break;
           }
           params.append(
             input.prop({
-              id: `wks-mi-dialog-type-params-${param.id}`,
+              id: paramInputId(choice, param),
               required: param.required,
-              style: "width: 100%;",
             }),
           );
         }
         div.append(params);
       }
-      dialogTypeRow.append(div);
+      return div;
+    };
+
+    const dialogTypeRow = createRow("type");
+    const multipleColumn = $("<section>").addClass("wks-mi-template-column");
+    multipleColumn
+      .append($("<h3>").text("複数の問題にまとめ可"))
+      .append(
+        $("<p>").text(
+          "2件以上選ぶと {{複数の問題}} にまとめて貼り付けます",
+        ),
+      );
+    for (const choice of MI_CHOICES) {
+      multipleColumn.append(renderChoice(choice));
     }
+    const multipleSortKey = $("<div>").addClass("wks-mi-template-params");
+    multipleSortKey
+      .append(
+        $("<label>")
+          .text("ソートキー (共通):")
+          .prop("for", "wks-mi-dialog-multiple-sort-key"),
+      )
+      .append(
+        $("<input>").prop({
+          id: "wks-mi-dialog-multiple-sort-key",
+          type: "text",
+          value:
+            extracted.find(
+              (template) =>
+                MI_CHOICES.some(({ id }) => id === template.name) &&
+                template["ソートキー"] !== undefined,
+            )?.["ソートキー"] ?? "",
+          placeholder: "記事名の読み",
+        }),
+      );
+    multipleColumn.append(multipleSortKey);
+
+    const standaloneColumn = $("<section>").addClass("wks-mi-template-column");
+    standaloneColumn
+      .append($("<h3>").text("単独で貼り付け"))
+      .append(
+        $("<p>").text(
+          "{{複数の問題}} に含められません",
+        ),
+      );
+    const categories = [
+      ...new Set(STANDALONE_ISSUE_CHOICES.map(({ category }) => category)),
+    ];
+    for (const category of categories) {
+      const group = $("<section>").addClass("wks-mi-template-group");
+      group.append($("<h4>").text(category));
+      for (const choice of STANDALONE_ISSUE_CHOICES.filter(
+        (item) => item.category === category,
+      )) {
+        group.append(renderChoice(choice));
+      }
+      standaloneColumn.append(group);
+    }
+
+    dialogTypeRow.append(multipleColumn, standaloneColumn);
     dialogFieldset.append(dialogTypeRow);
 
     const dialogSummary = createRow("summary");
@@ -175,93 +347,91 @@ export async function initMi() {
 
     dialogFieldset.append(dialogSummary);
 
+    const isChecked = (choice: IssueChoice, includeDisabled = false) =>
+      Boolean(
+        $(
+          `#${checkboxId(choice)}${includeDisabled ? "" : ":not(:disabled)"}`,
+        ).prop("checked"),
+      );
+
+    const getParamValues = (choice: IssueChoice) =>
+      Object.fromEntries(
+        choice.params.map((param) => [
+          param.id,
+          String($(`#${paramInputId(choice, param)}`).val() ?? ""),
+        ]),
+      );
+
     const getFinalContent = () => {
       const date = `${new Date().getFullYear()}年${new Date().getMonth() + 1}月`;
-      const count = MI_CHOICES.filter((choice) =>
-        $(`#wks-mi-dialog-type-${choice.id}:not(:disabled)`).prop("checked"),
-      ).length;
+      const selectedMultiple = MI_CHOICES.filter((choice) => isChecked(choice));
+      const selectedStandalone = STANDALONE_ISSUE_CHOICES.filter((choice) =>
+        isChecked(choice),
+      );
+      const values = Object.fromEntries(
+        ALL_ISSUE_CHOICES.map((choice) => [choice.id, getParamValues(choice)]),
+      );
+      const dates = Object.fromEntries(
+        ALL_ISSUE_CHOICES.map((choice) => [
+          choice.id,
+          $(`#${checkboxId(choice)}`).attr("data-date") || date,
+        ]),
+      );
+      const sortKey = String($("#wks-mi-dialog-multiple-sort-key").val() ?? "");
+      const multipleAdditionalValues = sortKey ? { ソートキー: sortKey } : {};
+      const templates: string[] = [];
 
-      if (count >= 2) {
-        return replaceFirstAndRemoveOtherIssueTemplates(pageContent).replace(
-          ISSUE_TEMPLATE_AREA,
-          `{{複数の問題\n${MI_CHOICES.map((choice) => {
-            const checked = $(`#wks-mi-dialog-type-${choice.id}`).prop(
-              "checked",
-            );
-            const isOriginal = extracted.some((t) => t.name === choice.id);
-            const originalDate = $(`#wks-mi-dialog-type-${choice.id}`).attr(
-              "data-date",
-            )!;
-            if (checked) {
-              const params = MI_CHOICES.find((c) => c.id === choice.id)!.params;
-              return `|${choice.name}=${isOriginal ? originalDate : date}${
-                params.length
-                  ? `${params
-                      .map((param) => {
-                        const val = $(
-                          `#wks-mi-dialog-type-params-${param.id}`,
-                        ).val();
-                        if (param.type === "select" && val === "null") {
-                          return "";
-                        }
-                        return `|${param.name}=${param.type === "select" ? param.choices.find((c) => c.id === val)!.name : val}`;
-                      })
-                      .join("|")}`
-                  : ""
-              }${extracted.some(x => "ソートキー" in x && MI_CHOICES.find(y => y.id === x.name)?.name === choice.name) ? `|ソートキー=${extracted.find(x => x["ソートキー"]! && MI_CHOICES.find(y => y.id === x.name)?.name === choice.name)!["ソートキー"]}`:""}\n`;
-            } else {
-              return "";
-            }
-          }).join("")}}}\n`,
+      if (selectedMultiple.length >= 2) {
+        templates.push(
+          buildMultipleIssueTemplate(
+            selectedMultiple,
+            values,
+            dates,
+            multipleAdditionalValues,
+          ),
         );
-      } else {
-        const choice = MI_CHOICES.find((choice) =>
-          $(`#wks-mi-dialog-type-${choice.id}:not(:disabled)`).prop("checked"),
-        );
-        if (!choice) {
-          return replaceFirstAndRemoveOtherIssueTemplates(pageContent).replace(
-            ISSUE_TEMPLATE_AREA,
-            "",
-          );
-        }
-        const params = choice.params;
-        const isOriginal = extracted.some((t) => t.name === choice.id);
-        const originalDate = $(`#wks-mi-dialog-type-${choice.id}`).attr(
-          "data-date",
-        )!;
-        return replaceFirstAndRemoveOtherIssueTemplates(pageContent).replace(
-          ISSUE_TEMPLATE_AREA,
-          `{{${choice.name}|date=${isOriginal ? originalDate : date}${
-            params.length
-              ? `|${params
-                  .map((param) => {
-                    const val = $(
-                      `#wks-mi-dialog-type-params-${param.id}`,
-                    ).val();
-                    if (param.type === "select" && val === "null") {
-                      return "";
-                    }
-                    return `${(param as { oneName: string | null }).oneName === null ? "" : `${param.name}=`}${param.type === "select" ? param.choices.find((c) => c.id === val)!.name : val}`;
-                  })
-                  .join("|")}`
-              : ""
-          }${extracted.some(x => "ソートキー" in x && MI_CHOICES.find(y => y.id === x.name)?.name === choice.name) ? `|ソートキー=${extracted.find(x => x["ソートキー"]! && MI_CHOICES.find(y => y.id === x.name)?.name === choice.name)!["ソートキー"]}`:""}}}\n`,
+      } else if (selectedMultiple[0]) {
+        templates.push(
+          buildSingleIssueTemplate(
+            selectedMultiple[0],
+            values[selectedMultiple[0].id]!,
+            dates[selectedMultiple[0].id]!,
+            multipleAdditionalValues,
+          ),
         );
       }
+
+      for (const choice of selectedStandalone) {
+        templates.push(
+          buildSingleIssueTemplate(
+            choice,
+            values[choice.id]!,
+            dates[choice.id]!,
+          ),
+        );
+      }
+
+      return replaceFirstAndRemoveOtherIssueTemplates(pageContent).replace(
+        ISSUE_TEMPLATE_AREA,
+        templates.length ? `${templates.join("\n")}\n` : "",
+      );
     };
 
     const getFinalSummary = () => {
-      const count = MI_CHOICES.filter((choice) =>
-        $(`#wks-mi-dialog-type-${choice.id}`).prop("checked"),
-      ).length;
-      const tlName =
-        count >= 2
-          ? "複数の問題"
-          : count == 0
-            ? "問題テンプレートを除去"
-            : MI_CHOICES.find((choice) =>
-                $(`#wks-mi-dialog-type-${choice.id}`).prop("checked"),
-              )!.name;
+      const selectedMultiple = MI_CHOICES.filter((choice) =>
+        isChecked(choice, true),
+      );
+      const templateNames = [
+        ...(selectedMultiple.length >= 2
+          ? ["複数の問題"]
+          : selectedMultiple.map(({ name }) => name)),
+        ...STANDALONE_ISSUE_CHOICES.filter((choice) =>
+          isChecked(choice, true),
+        ).map(({ name }) => name),
+      ];
+      const tlName = templateNames.length
+        ? templateNames.join("、")
+        : "問題テンプレートを除去";
       return (
         (($("#wks-mi-dialog-summary-input").val() as string).replaceAll(
           "$t",
@@ -273,12 +443,13 @@ export async function initMi() {
     const checkParams = () => {
       const errList = $("<ul>");
 
-      for (const choice of MI_CHOICES) {
-        if ($(`#wks-mi-dialog-type-${choice.id}`).prop("checked")) {
+      for (const choice of ALL_ISSUE_CHOICES) {
+        if (isChecked(choice)) {
           const params = choice.params;
-          for (const param of params) {
+          for (const choiceParam of params) {
+            const param: IssueTemplateParam = choiceParam;
             if (param.required) {
-              const val = $(`#wks-mi-dialog-type-params-${param.id}`).val();
+              const val = $(`#${paramInputId(choice, param)}`).val();
               if (param.type === "select" && val === "null") {
                 errList.append(
                   $("<li>").text(
@@ -294,6 +465,21 @@ export async function initMi() {
               }
             }
           }
+        }
+      }
+
+      const selectedMultiple = MI_CHOICES.filter((choice) => isChecked(choice));
+      if (
+        selectedMultiple.length === 1 &&
+        selectedMultiple[0]?.id === "not-encyclopedic"
+      ) {
+        const values = getParamValues(selectedMultiple[0]);
+        if (values.type && values.type !== "null" && values.text) {
+          errList.append(
+            $("<li>").text(
+              "百科事典的でないのタイプとカスタムテキストは併用できません",
+            ),
+          );
         }
       }
 

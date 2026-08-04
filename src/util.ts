@@ -1,4 +1,5 @@
 import {
+  ALL_ISSUE_CHOICES,
   DEFAULT_OPTIONS,
   HATNOTE_TEMPLATES,
   ISSUE_TEMPLATE_AREA,
@@ -203,33 +204,53 @@ export function errorMessage(message: string) {
   return mw.notify(`${SCRIPT_NAME}: ${message}`, { type: "error" });
 }
 
+function normalizeTemplateName(name: string) {
+  return name
+    .trim()
+    .toLowerCase()
+    .replaceAll("_", " ")
+    .replace(/^(?:template|テンプレート)\s*:/, "");
+}
+
 const issueTemplateMaps: ReadonlyMap<
+  string,
+  (typeof ALL_ISSUE_CHOICES)[number]["id"]
+> = new Map(
+  // @ts-expect-error 検証済み
+  ALL_ISSUE_CHOICES.flatMap((choice) => [
+    [normalizeTemplateName(choice.name), choice.id],
+    ...("aliases" in choice
+      ? (choice.aliases?.map((alias) => [
+          normalizeTemplateName(alias),
+          choice.id,
+        ]) ?? [])
+      : []),
+  ]),
+);
+
+const multipleIssueTemplateMaps: ReadonlyMap<
   string,
   (typeof MI_CHOICES)[number]["id"]
 > = new Map(
   // @ts-expect-error 検証済み
   MI_CHOICES.flatMap((choice) => [
-    [choice.name.toLowerCase(), choice.id],
+    [normalizeTemplateName(choice.name), choice.id],
     ...("aliases" in choice
-      ? choice.aliases?.map((alias) => [alias, choice.id]) ?? []
+      ? (choice.aliases?.map((alias) => [
+          normalizeTemplateName(alias),
+          choice.id,
+        ]) ?? [])
       : []),
   ]),
 );
 
-type IssueTemplateType = (typeof MI_CHOICES)[number]["id"];
-type IssueTemplate = {
+type IssueTemplateType = (typeof ALL_ISSUE_CHOICES)[number]["id"];
+export type IssueTemplate = {
   name: IssueTemplateType;
   date: string;
   dubious?: string;
   [key: string]: string;
 };
-
-const normalizeTemplateName = (name: string) =>
-  name
-    .trim()
-    .toLowerCase()
-    .replaceAll("_", " ")
-    .replace(/^(?:template|テンプレート)\s*:/, "");
 
 const hatnoteTemplateNames = new Set(
   HATNOTE_TEMPLATES.flatMap(({ name, aliases }) => [name, ...aliases]).map(
@@ -320,7 +341,7 @@ export function extractIssueTemplates(inputString: string): IssueTemplate[] {
 
   while ((match = pattern.exec(inputString)) !== null) {
     const parts = match[1]!.split("|").map((part) => part.trim());
-    const namePart = parts[0]!.toLowerCase().replaceAll("_", " ");
+    const namePart = normalizeTemplateName(parts[0]!);
     let templateObj = {} as IssueTemplate;
 
     if (
@@ -334,10 +355,11 @@ export function extractIssueTemplates(inputString: string): IssueTemplate[] {
       if (!hasSection) {
         parts.slice(1).forEach((part) => {
           const [paramName, paramValue] = part.split("=").map((p) => p.trim());
-          if (issueTemplateMaps.has(paramName!.toLowerCase())) {
+          const normalizedParamName = normalizeTemplateName(paramName!);
+          if (multipleIssueTemplateMaps.has(normalizedParamName)) {
             templateObj = {
-              name: issueTemplateMaps.get(
-                paramName!.toLowerCase(),
+              name: multipleIssueTemplateMaps.get(
+                normalizedParamName,
               ) as IssueTemplateType,
               date: paramValue!,
             };
@@ -369,7 +391,7 @@ export function extractIssueTemplates(inputString: string): IssueTemplate[] {
             output.push({
               name: issueTemplateMaps.get(namePart.toLowerCase())!,
               date: "",
-              dubious: "true"
+              dubious: "true",
             });
             continue;
           }
@@ -384,17 +406,29 @@ export function extractIssueTemplates(inputString: string): IssueTemplate[] {
         if (datePart) {
           templateObj.date = datePart.split("=")[1]!.trim();
         }
+        let positionalIndex = 0;
         parts.slice(1).forEach((part) => {
-          const [paramName, paramValue] = part.split("=").map((p) => p.trim());
-          if (!issueTemplateMaps.has(paramName!.toLowerCase())) {
-            templateObj[paramName!] = paramValue!;
+          const separatorIndex = part.indexOf("=");
+          if (separatorIndex === -1) {
+            positionalIndex++;
+            templateObj[String(positionalIndex)] = part;
+            return;
+          }
+
+          const paramName = part.slice(0, separatorIndex).trim();
+          const paramValue = part.slice(separatorIndex + 1).trim();
+          if (
+            paramName.toLowerCase() !== "date" &&
+            paramName.toLowerCase() !== "section" &&
+            paramName !== "節"
+          ) {
+            templateObj[paramName] = paramValue;
           }
         });
         output.push(templateObj);
       }
     }
   }
-  console.log(output);
   return output;
 }
 
@@ -440,7 +474,7 @@ export function replaceFirstAndRemoveOtherIssueTemplates(
   while ((match = pattern.exec(inputString)) !== null) {
     const block = match[0];
     const parts = match[1]!.split("|").map((part) => part.trim());
-    const namePart = parts[0]!.toLowerCase();
+    const namePart = normalizeTemplateName(parts[0]!);
 
     if (
       ["multiple", "複数の問題", "multiple issues", "article issues"].includes(
@@ -453,11 +487,7 @@ export function replaceFirstAndRemoveOtherIssueTemplates(
       if (!hasSection) {
         replaceTemplate(block);
       }
-    } else if (
-      [...issueTemplateMaps.keys()]
-        .map((value) => value.toLowerCase())
-        .includes(namePart)
-    ) {
+    } else if (issueTemplateMaps.has(namePart)) {
       const hasSection = parts.some((part) =>
         part.replaceAll(" ", "").startsWith("section="),
       );
