@@ -1,0 +1,100 @@
+.wks-red {
+  color: red;
+}
+
+#wks-csd-dialog-optionfield {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+#wks-csd-dialog-preview-div {
+  background: white;
+  border: 1px solid black;
+  padding: 0.5rem;
+  overflow-y: scroll;
+}
+
+.wks-hr {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.wks-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.wks-shrink-0 {
+  flex-shrink: 0;
+}
+
+.wks-dialog-preview-div {
+  background: white;
+  padding: 0.5rem;
+  border: 2px dashed gray;
+  max-height: 300px;
+  overflow-y: scroll;
+}
+
+.wks-pref-container {
+  margin-top: 0.5rem;
+}
+
+.wks-pref-preset-horizontal {
+  display: flex;
+  padding-right: 8rem;
+}
+
+.wks-pref-preset-name {
+  width: 7rem;
+  flex-shrink: 0;
+}
+
+.wks-mb-4 {
+  margin-bottom: 1rem;
+}
+
+.wks-editcount {
+  font-size: 12px;
+  margin-left: 0.25rem;
+}
+
+.wks-grow {
+  flex-grow: 1;
+}
+
+.wks-w-full {
+  width: 100%;
+}
+
+.wks-box {
+  background-color: #a3d7de;
+  border: 1px solid #112125;
+  padding: 8px;
+  margin: 16px auto;
+}
+
+.wks-revision-selected {
+  background: #ffb400;
+}
+
+.skin-minerva #csrd-btn {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.wks-mb-1 {
+  margin-bottom: 0.25rem;
+}
+
+.wks-input-full {
+  max-width: 80vw;
+}
+@media screen and (min-width: 1024px) {
+  .wks-input-full {
+    max-width: unset;
+    width: 100%;
+  }
+}

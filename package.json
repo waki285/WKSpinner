@@ -5,7 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "vitest run",
-    "build": "node build.mjs",    "lint": "eslint . && prettier --check . && tsc"
+    "build": "node build.mjs",
+    "deploy": "node deploy.mjs",
+    "deploy:apply": "node deploy.mjs --yes",
+    "lint": "eslint . && prettier --check . && tsc"
   },
   "keywords": [],
   "author": "",
@@ -34,4 +37,3 @@
   },
   "packageManager": "pnpm@11.20.0"
 }
-
