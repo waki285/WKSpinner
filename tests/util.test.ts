@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { HATNOTE_TEMPLATES, ISSUE_TEMPLATE_AREA } from "../src/constants";
-import { replaceFirstAndRemoveOtherIssueTemplates } from "../src/util";
+import { replaceFirstAndRemoveOtherIssueTemplates } from "../src/issue-templates";
 
 const MULTIPLE_ISSUES_TEMPLATE = `{{複数の問題
 |一次資料=2026年8月

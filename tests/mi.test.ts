@@ -10,10 +10,10 @@ import {
   buildMultipleIssueTemplate,
   buildSelectedIssueTemplates,
   buildSingleIssueTemplate,
+  extractIssueTemplates,
   formatIssueTemplateSummary,
   partitionMultipleIssueChoices,
 } from "../src/issue-templates";
-import { extractIssueTemplates } from "../src/util";
 
 function standalone(id: string): StandaloneIssueChoice {
   const choice = STANDALONE_ISSUE_CHOICES.find((item) => item.id === id);
