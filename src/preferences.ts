@@ -1,681 +1,214 @@
 import {
   DEFAULT_OPTIONS,
   OPTIONS_KEY,
-  Options,
+  type Options,
   SCRIPT_NAME,
   TIMEZONE_VALUES,
 } from "./constants";
 import { getOptionProperty } from "./util";
 
-export async function showConfigPage() {
-  const configArea = $("#wkspinner-config-area");
-  configArea.empty();
-  const title = $("<h2>")
-    .text(`${SCRIPT_NAME} 設定`)
-    .prop("style", "margin-top:0;");
-  configArea.append(title);
-  const disableMobile = new OO.ui.CheckboxInputWidget({
-    value: "disable-mobile",
-    selected: getOptionProperty("disableMobile"),
-  });
-  const disableMobileField = new OO.ui.FieldLayout(disableMobile, {
-    label:
-      "モバイルでは全ての機能を無効にする (すべてのモバイル設定を上書きします)",
-    align: "inline",
-  });
-  configArea.append(disableMobileField.$element);
+type VueModule = {
+  createApp: (root: unknown, props?: Record<string, unknown>) => VueApp;
+  h: (
+    type: unknown,
+    props?: Record<string, unknown> | null,
+    children?: unknown,
+  ) => unknown;
+  ref: <T>(value: T) => { value: T };
+};
+type VueApp = {
+  mount: (target: HTMLElement) => unknown;
+  unmount: () => void;
+};
+type CodexModule = {
+  CdxField: unknown;
+  CdxCheckbox: unknown;
+  CdxTextInput: unknown;
+  CdxButton: unknown;
+  CdxRadio: unknown;
+};
 
-  const prefLinkInToolbar = new OO.ui.CheckboxInputWidget({
-    value: "pref-link-in-toolbar",
-    selected: getOptionProperty("prefLinkInToolbar"),
-  });
-  const prefLinkInToolbarField = new OO.ui.FieldLayout(prefLinkInToolbar, {
-    label: "この設定ページへのリンクをツールバーに配置する",
-    align: "inline",
-  });
-  configArea.append(prefLinkInToolbarField.$element);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type RequireFn = (name: string) => any;
+const requireKey = Symbol.for("wkspinner.codex.require");
 
-  const useIndividualPortlet = new OO.ui.CheckboxInputWidget({
-    value: "use-individual-portlet",
-    selected: getOptionProperty("useIndividualPortlet"),
+function waitForCodex(): Promise<RequireFn> {
+  return new Promise((resolve, reject) => {
+    mw.loader.using(
+      ["vue", "@wikimedia/codex"],
+      (require: RequireFn) => {
+        (globalThis as Record<symbol, unknown>)[requireKey] = require;
+        resolve(require);
+      },
+      reject,
+    );
   });
-  const useIndividualPortletField = new OO.ui.FieldLayout(
-    useIndividualPortlet,
-    {
-      label:
-        "「その他」タブではなく、新たに「WK」というタブを作りそこに機能を配置",
-      align: "inline",
-      help: "これはモバイルには効果がありません。",
-      helpInline: true,
-    },
-  );
-  configArea.append(useIndividualPortletField.$element);
+}
 
-  const useCodexModal = new OO.ui.CheckboxInputWidget({
-    value: "use-codex-modal",
-    selected: getOptionProperty("useCodexModal"),
-  });
-  const useCodexModalField = new OO.ui.FieldLayout(useCodexModal, {
-    label: "モダンなモーダルを使用する (β版)",
-    align: "inline",
-    help: "Codex を利用したダイアログに置き換えます。実験的機能です。",
-    helpInline: true,
-  });
-  configArea.append(useCodexModalField.$element);
-
-  const versionNotifyOptionAll = new OO.ui.RadioOptionWidget({
-    data: "all",
-    label: "すべて",
-  });
-  const versionNotifyOptionMinor = new OO.ui.RadioOptionWidget({
-    data: "minor",
-    label: "メジャー・マイナーバージョンのみ",
-  });
-  const versionNotifyOptionNone = new OO.ui.RadioOptionWidget({
-    data: "none",
-    label: "通知しない",
-  });
-
-  const versionNotifySelect = new OO.ui.RadioSelectWidget({
-    items: [
-      versionNotifyOptionAll,
-      versionNotifyOptionMinor,
-      versionNotifyOptionNone,
-    ],
-  });
-
-  const versionNotifyField = new OO.ui.FieldLayout(versionNotifySelect, {
-    label: "バージョンアップ通知",
-    align: "inline",
-  });
-
-  configArea.append(versionNotifyField.$element);
-
-  versionNotifySelect.selectItemByData(getOptionProperty("versionNotify"));
-
-  const timezone = new OO.ui.TextInputWidget({
-    value: getOptionProperty("timezone"),
-    placeholder: "UTC",
-  });
-  const timezoneField = new OO.ui.FieldLayout(timezone, {
-    label: "タイムゾーン",
-    align: "top",
-    help: "ウィキの個人設定で設定しているものと同じものを設定してください。即時版指定削除機能での時間をUTCに調節するために使用します。現時点ではUTCとJSTのみ使用可能です。",
-    helpInline: true,
-  });
-
-  configArea.append(timezoneField.$element);
-
-  const historyTimeFormat = new OO.ui.TextInputWidget({
-    value: getOptionProperty("historyTimeFormat"),
-    placeholder:
-      "(\\d{4})年(\\d{1,2})月(\\d{1,2})日 \\((.)\\) (\\d{2}):(\\d{2})",
-  });
-
-  const historyTimeFormatField = new OO.ui.FieldLayout(historyTimeFormat, {
-    label: "履歴ページの日時正規表現",
-    align: "top",
-    help: "履歴ページの日時を取得するための正規表現を設定します。ウィキの言語を日本語にしている限りここを修正する必要はありません。",
-    helpInline: true,
-  });
-
-  configArea.append(historyTimeFormatField.$element);
-
-  const wikidataFieldset = new OO.ui.FieldsetLayout({
-    label: "ウィキデータ説明表示",
-    classes: ["container", "wks-pref-container"],
-  });
-  const wikidataEnabled = new OO.ui.CheckboxInputWidget({
-    value: "wikidata-enabled",
-    selected: getOptionProperty("wikidata.enabled"),
-  });
-  const wikidataEnabledField = new OO.ui.FieldLayout(wikidataEnabled, {
-    label: "PC版のページ見出しにウィキデータの日本語説明を表示する",
-    align: "inline",
-  });
-  wikidataFieldset.addItems([wikidataEnabledField]);
-  configArea.append(wikidataFieldset.$element);
-
-  const miFieldset = new OO.ui.FieldsetLayout({
-    label: "問題テンプレート貼り付け",
-    classes: ["container", "wks-pref-container"],
-  });
-
-  const miEnabled = new OO.ui.CheckboxInputWidget({
-    value: "mi-enabled",
-    selected: getOptionProperty("mi.enabled"),
-  });
-  const miEnabledField = new OO.ui.FieldLayout(miEnabled, {
-    label: "有効にする",
-    align: "inline",
-  });
-
-  const miEnableMobile = new OO.ui.CheckboxInputWidget({
-    value: "mi-enable-mobile",
-    selected: getOptionProperty("mi.enableMobile"),
-  });
-  const miEnableMobileField = new OO.ui.FieldLayout(miEnableMobile, {
-    label: "モバイルでも有効にする",
-    align: "inline",
-  });
-
-  const miSummary = new OO.ui.TextInputWidget({
-    value: getOptionProperty("mi.default.summary"),
-    placeholder: "+{{$t}}",
-  });
-  const miSummaryField = new OO.ui.FieldLayout(miSummary, {
-    label: "編集の要約デフォルト値",
-    align: "top",
-    help: "$t には最大5件のテンプレート名、$s1 には1件目のテンプレート名が入ります",
-    helpInline: true,
-  });
-
-  miFieldset.addItems([miEnabledField, miEnableMobileField, miSummaryField]);
-
-  configArea.append(miFieldset.$element);
-
-  const csdFieldset = new OO.ui.FieldsetLayout({
-    label: "即時削除テンプレート貼り付け",
-    classes: ["container", "wks-pref-container"],
-  });
-
-  const csdEnabled = new OO.ui.CheckboxInputWidget({
-    value: "csd-enabled",
-    selected: getOptionProperty("csd.enabled"),
-  });
-
-  const csdEnabledField = new OO.ui.FieldLayout(csdEnabled, {
-    label: "有効にする",
-    align: "inline",
-  });
-
-  const csdEnableMobile = new OO.ui.CheckboxInputWidget({
-    value: "csd-enable-mobile",
-    selected: getOptionProperty("csd.enableMobile"),
-  });
-
-  const csdEnableMobileField = new OO.ui.FieldLayout(csdEnableMobile, {
-    label: "モバイルでも有効にする",
-    align: "inline",
-  });
-
-  const csdSummary = new OO.ui.TextInputWidget({
-    value: getOptionProperty("csd.default.summary"),
-    placeholder: "+sd",
-  });
-
-  const csdSummaryField = new OO.ui.FieldLayout(csdSummary, {
-    label: "編集の要約デフォルト値",
-    align: "inline",
-  });
-
-  csdFieldset.addItems([
-    csdEnabledField,
-    csdEnableMobileField,
-    csdSummaryField,
-  ]);
-
-  configArea.append(csdFieldset.$element);
-
-  const csrdFieldset = new OO.ui.FieldsetLayout({
-    label: "即時版指定削除テンプレート貼り付け",
-    classes: ["container", "wks-pref-container"],
-  });
-
-  const csrdEnabled = new OO.ui.CheckboxInputWidget({
-    value: "csrd-enabled",
-    selected: getOptionProperty("csrd.enabled"),
-  });
-
-  const csrdEnabledField = new OO.ui.FieldLayout(csrdEnabled, {
-    label: "有効にする",
-    align: "inline",
-  });
-
-  const csrdEnableMobile = new OO.ui.CheckboxInputWidget({
-    value: "csrd-enable-mobile",
-    selected: getOptionProperty("csrd.enableMobile"),
-  });
-
-  const csrdEnableMobileField = new OO.ui.FieldLayout(csrdEnableMobile, {
-    label: "モバイルでも有効にする",
-    align: "inline",
-  });
-
-  const csrdSummary = new OO.ui.TextInputWidget({
-    value: getOptionProperty("csrd.default.summary"),
-    placeholder: "+srd",
-  });
-
-  const csrdSummaryField = new OO.ui.FieldLayout(csrdSummary, {
-    label: "編集の要約デフォルト値",
-    align: "inline",
-  });
-
-  csrdFieldset.addItems([
-    csrdEnabledField,
-    csrdEnableMobileField,
-    csrdSummaryField,
-  ]);
-
-  configArea.append(csrdFieldset.$element);
-
-  const skjFieldset = new OO.ui.FieldsetLayout({
-    label: "削除依頼提出",
-    classes: ["container", "wks-pref-container"],
-  });
-
-  const skjEnabled = new OO.ui.CheckboxInputWidget({
-    value: "skj-enabled",
-    selected: getOptionProperty("skj.enabled"),
-  });
-  const skjEnabledField = new OO.ui.FieldLayout(skjEnabled, {
-    label: "有効にする",
-    align: "inline",
-  });
-
-  const skjEnableMobile = new OO.ui.CheckboxInputWidget({
-    value: "skj-enable-mobile",
-    selected: getOptionProperty("skj.enableMobile"),
-  });
-  const skjEnableMobileField = new OO.ui.FieldLayout(skjEnableMobile, {
-    label: "モバイルでも有効にする",
-    align: "inline",
-  });
-
-  const skjOpv = new OO.ui.TextInputWidget({
-    value: getOptionProperty("skj.default.opv"),
-    placeholder: "{{AFD|削除}} 依頼者票。",
-  });
-  const skjOpvField = new OO.ui.FieldLayout(skjOpv, {
-    label: "依頼者票デフォルト",
-    align: "inline",
-  });
-
-  const skjSummaryTemplate = new OO.ui.TextInputWidget({
-    value: getOptionProperty("skj.default.summaryTemplate"),
-    placeholder: "+Sakujo",
-  });
-  const skjSummaryTemplateField = new OO.ui.FieldLayout(skjSummaryTemplate, {
-    label: "編集の要約 (Sakujoテンプレート貼り付け) デフォルト値",
-    align: "inline",
-  });
-
-  const skjSummarySubmit = new OO.ui.TextInputWidget({
-    value: getOptionProperty("skj.default.summarySubmit"),
-    placeholder: "削除依頼",
-  });
-  const skjSummarySubmitField = new OO.ui.FieldLayout(skjSummarySubmit, {
-    label: "編集の要約 (削除依頼ページ作成) デフォルト値",
-    align: "inline",
-  });
-
-  const skjSummaryNote = new OO.ui.TextInputWidget({
-    value: getOptionProperty("skj.default.summaryNote"),
-    placeholder: "削除依頼の追加",
-  });
-  const skjSummaryNoteField = new OO.ui.FieldLayout(skjSummaryNote, {
-    label: "編集の要約 (削除依頼ページ追記) デフォルト値",
-    align: "inline",
-    help: "$d には削除依頼ページが入ります (例: Wikipedia:削除依頼/ほげほげ 20240314) $p には削除依頼対象ページが入ります (例: ほげほげ) 三つの要約欄すべてに適用できます",
-    helpInline: true,
-  });
-
-  const skjSignReason = new OO.ui.CheckboxInputWidget({
-    value: "skj-sign-reason",
-    selected: getOptionProperty("skj.signReason"),
-  });
-  const skjSignReasonField = new OO.ui.FieldLayout(skjSignReason, {
-    label: "削除依頼理由にも署名する",
-    align: "inline",
-    help: "削除依頼で、理由部分にも署名をします。この設定をした場合でも、依頼者票部分に署名します。",
-    helpInline: true,
-  });
-
-  skjFieldset.addItems([
-    skjEnabledField,
-    skjEnableMobileField,
-    skjOpvField,
-    skjSummaryTemplateField,
-    skjSummarySubmitField,
-    skjSummaryNoteField,
-    skjSignReasonField,
-  ]);
-
-  // プリセット
-  const savedPresets = getOptionProperty("skj.opvPresets");
-
-  const items: OO.ui.HorizontalLayout[] = [];
-
-  for (const { name, value } of savedPresets) {
-    const button = new OO.ui.ButtonWidget({
-      label: "削除",
-      flags: ["destructive", "progressive"],
-      title: "このプリセットを削除します",
-      icon: "trash",
-    });
-    const item = new OO.ui.HorizontalLayout({
-      items: [
-        new OO.ui.TextInputWidget({
-          value: name,
-          placeholder: "ボタンラベル",
-          classes: ["wks-pref-preset-name"],
-        }),
-        new OO.ui.TextInputWidget({
-          value: value,
-          placeholder: "依頼者票",
-        }),
-        button,
-      ],
-      classes: ["wks-pref-preset-horizontal"],
-    });
-    button.on("click", () => {
-      item.$element.remove();
-      items.splice(items.indexOf(item), 1);
-    });
-    items.push(item);
+async function getRequire(): Promise<RequireFn> {
+  const cached = (globalThis as Record<symbol, unknown>)[requireKey] as
+    RequireFn | undefined;
+  if (cached) {
+    return cached;
   }
+  return waitForCodex();
+}
 
-  const skjPresetAdd = new OO.ui.ButtonWidget({
-    label: "プリセットを追加",
-    flags: ["progressive"],
-    title: "プリセットを追加します",
-    icon: "add",
-    classes: ["wks-mb-4"],
-  });
+type Preset = { name: string; value: string };
 
-  const skjPresetAddField = new OO.ui.FieldLayout(skjPresetAdd, {
-    align: "top",
-  });
-  const skjPresetFieldset = new OO.ui.FieldsetLayout({
-    label: "依頼者票プリセット",
-    classes: ["wks-pref-container"],
-  });
+export async function showConfigPage() {
+  const Vue = (await getRequire())("vue") as VueModule;
+  const Codex = (await getRequire())("@wikimedia/codex") as CodexModule;
+  const { CdxField, CdxCheckbox, CdxTextInput, CdxButton, CdxRadio } = Codex;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const h: any = Vue.h;
 
-  skjPresetFieldset.addItems([skjPresetAddField, ...items]);
+  const configArea = document.getElementById("wkspinner-config-area");
+  if (!configArea) {
+    console.warn(`${SCRIPT_NAME}: 設定エリアが見つかりません`);
+    return;
+  }
+  configArea.innerHTML = "";
 
-  skjFieldset.addItems([skjPresetFieldset]);
+  const host = document.createElement("div");
+  configArea.append(host);
 
-  configArea.append(skjFieldset.$element);
+  const options = {
+    disableMobile: Vue.ref(getOptionProperty("disableMobile") === true),
+    prefLinkInToolbar: Vue.ref(getOptionProperty("prefLinkInToolbar") === true),
+    useIndividualPortlet: Vue.ref(
+      getOptionProperty("useIndividualPortlet") === true,
+    ),
+    useCodexModal: Vue.ref(getOptionProperty("useCodexModal") === true),
+    versionNotify: Vue.ref(String(getOptionProperty("versionNotify") ?? "all")),
+    timezone: Vue.ref(String(getOptionProperty("timezone") ?? "UTC")),
+    historyTimeFormat: Vue.ref(
+      String(
+        getOptionProperty("historyTimeFormat") ??
+          "(\\d{4})年(\\d{1,2})月(\\d{1,2})日 \\((.)\\) (\\d{2}):(\\d{2})",
+      ),
+    ),
+    wikidataEnabled: Vue.ref(getOptionProperty("wikidata.enabled") === true),
+    miEnabled: Vue.ref(getOptionProperty("mi.enabled") === true),
+    miEnableMobile: Vue.ref(getOptionProperty("mi.enableMobile") === true),
+    miSummary: Vue.ref(String(getOptionProperty("mi.default.summary") ?? "")),
+    csdEnabled: Vue.ref(getOptionProperty("csd.enabled") === true),
+    csdEnableMobile: Vue.ref(getOptionProperty("csd.enableMobile") === true),
+    csdSummary: Vue.ref(String(getOptionProperty("csd.default.summary") ?? "")),
+    csrdEnabled: Vue.ref(getOptionProperty("csrd.enabled") === true),
+    csrdEnableMobile: Vue.ref(getOptionProperty("csrd.enableMobile") === true),
+    csrdSummary: Vue.ref(
+      String(getOptionProperty("csrd.default.summary") ?? ""),
+    ),
+    skjEnabled: Vue.ref(getOptionProperty("skj.enabled") === true),
+    skjEnableMobile: Vue.ref(getOptionProperty("skj.enableMobile") === true),
+    skjOpv: Vue.ref(String(getOptionProperty("skj.default.opv") ?? "")),
+    skjSummaryTemplate: Vue.ref(
+      String(getOptionProperty("skj.default.summaryTemplate") ?? ""),
+    ),
+    skjSummarySubmit: Vue.ref(
+      String(getOptionProperty("skj.default.summarySubmit") ?? ""),
+    ),
+    skjSummaryNote: Vue.ref(
+      String(getOptionProperty("skj.default.summaryNote") ?? ""),
+    ),
+    skjSignReason: Vue.ref(getOptionProperty("skj.signReason") === true),
+    ecEnabled: Vue.ref(getOptionProperty("editCount.enabled") === true),
+    ecEnableMobile: Vue.ref(
+      getOptionProperty("editCount.enableMobile") === true,
+    ),
+    warnEnabled: Vue.ref(getOptionProperty("warn.enabled") === true),
+    warnEnableMobile: Vue.ref(getOptionProperty("warn.enableMobile") === true),
+    warnSummary: Vue.ref(
+      String(getOptionProperty("warn.default.summary") ?? ""),
+    ),
+    rfpEnabled: Vue.ref(getOptionProperty("rfp.enabled") === true),
+    rfpEnableMobile: Vue.ref(getOptionProperty("rfp.enableMobile") === true),
+    rfpSummarySubmit: Vue.ref(
+      String(getOptionProperty("rfp.default.summarySubmit") ?? ""),
+    ),
+    rfpSummaryTemplate: Vue.ref(
+      String(getOptionProperty("rfp.default.summaryTemplate") ?? ""),
+    ),
+  };
 
-  skjPresetAdd.on("click", () => {
-    const button = new OO.ui.ButtonWidget({
-      label: "削除",
-      flags: ["destructive", "progressive"],
-      title: "このプリセットを削除します",
-      icon: "trash",
-    });
-    const item = new OO.ui.HorizontalLayout({
-      items: [
-        new OO.ui.TextInputWidget({
-          value: "",
-          placeholder: "ボタンラベル",
-          classes: ["wks-pref-preset-name"],
-        }),
-        new OO.ui.TextInputWidget({
-          value: "",
-          placeholder: "依頼者票",
-          classes: ["wks-grow"],
-        }),
-        button,
-      ],
-      classes: ["wks-pref-preset-horizontal", "wks-w-full"],
-    });
-    button.on("click", () => {
-      item.$element.remove();
-      items.splice(items.indexOf(item), 1);
-    });
-    items.push(item);
-
-    skjPresetFieldset.addItems([item]);
-  });
-
-  const ecFieldset = new OO.ui.FieldsetLayout({
-    label: "編集回数表示",
-    classes: ["container", "wks-pref-container"],
-  });
-
-  const ecEnabled = new OO.ui.CheckboxInputWidget({
-    value: "ec-enabled",
-    selected: getOptionProperty("editCount.enabled"),
-  });
-
-  const ecEnabledField = new OO.ui.FieldLayout(ecEnabled, {
-    label: "有効にする",
-    align: "inline",
-    help: "有効にすると、最近の更新、新しいページでユーザー名の右に編集回数が表示されます。",
-    helpInline: true,
-  });
-
-  const ecEnableMobile = new OO.ui.CheckboxInputWidget({
-    value: "ec-enable-mobile",
-    selected: getOptionProperty("editCount.enableMobile"),
-  });
-
-  const ecEnableMobileField = new OO.ui.FieldLayout(ecEnableMobile, {
-    label: "モバイルでも有効にする",
-    align: "inline",
-  });
-
-  ecFieldset.addItems([ecEnabledField, ecEnableMobileField]);
-
-  configArea.append(ecFieldset.$element);
-
-  const warnFieldset = new OO.ui.FieldsetLayout({
-    label: "ユーザーへの通知 (旧名称: 警告)",
-    classes: ["container", "wks-pref-container"],
-  });
-
-  const warnEnabled = new OO.ui.CheckboxInputWidget({
-    value: "warn-enabled",
-    selected: getOptionProperty("warn.enabled"),
-  });
-
-  const warnEnabledField = new OO.ui.FieldLayout(warnEnabled, {
-    label: "有効にする",
-    align: "inline",
-  });
-
-  const warnEnableMobile = new OO.ui.CheckboxInputWidget({
-    value: "warn-enable-mobile",
-    selected: getOptionProperty("warn.enableMobile"),
-  });
-
-  const warnEnableMobileField = new OO.ui.FieldLayout(warnEnableMobile, {
-    label: "モバイルでも有効にする",
-    align: "inline",
-  });
-
-  const warnSummary = new OO.ui.TextInputWidget({
-    value: getOptionProperty("warn.default.summary"),
-    placeholder: "+$t",
-  });
-  const warnSummaryField = new OO.ui.FieldLayout(warnSummary, {
-    label: "編集の要約デフォルト値",
-    align: "top",
-    help: "$t にはテンプレート名 (Test, ご自身の記事 etc.) が入ります",
-    helpInline: true,
-  });
-
-  warnFieldset.addItems([
-    warnEnabledField,
-    warnEnableMobileField,
-    warnSummaryField,
-  ]);
-
-  configArea.append(warnFieldset.$element);
-
-  const rfpFieldset = new OO.ui.FieldsetLayout({
-    label: "保護依頼",
-    classes: ["container", "wks-pref-container"],
-  });
-
-  const rfpEnabled = new OO.ui.CheckboxInputWidget({
-    value: "rfp-enabled",
-    selected: getOptionProperty("rfp.enabled"),
-  });
-
-  const rfpEnabledField = new OO.ui.FieldLayout(rfpEnabled, {
-    label: "有効にする",
-    align: "inline",
-  });
-
-  const rfpEnableMobile = new OO.ui.CheckboxInputWidget({
-    value: "rfp-enable-mobile",
-    selected: getOptionProperty("rfp.enableMobile"),
-  });
-
-  const rfpEnableMobileField = new OO.ui.FieldLayout(rfpEnableMobile, {
-    label: "モバイルでも有効にする",
-    align: "inline",
-  });
-
-  const rfpSummarySubmit = new OO.ui.TextInputWidget({
-    value: getOptionProperty("rfp.default.summarySubmit"),
-    placeholder: "保護依頼",
-  });
-
-  const rfpSummarySubmitField = new OO.ui.FieldLayout(rfpSummarySubmit, {
-    label: "編集の要約 (保護依頼ページ編集) デフォルト値",
-    align: "inline",
-    help: "$p には保護依頼対象ページのリンクの羅列が入ります",
-    helpInline: true,
-  });
-
-  const rfpSummaryTemplate = new OO.ui.TextInputWidget({
-    value: getOptionProperty("rfp.default.summaryTemplate"),
-    placeholder: "+保護依頼",
-  });
-
-  const rfpSummaryTemplateField = new OO.ui.FieldLayout(rfpSummaryTemplate, {
-    label: "編集の要約 (保護依頼テンプレート貼り付け) デフォルト値",
-    align: "inline",
-  });
-
-  rfpFieldset.addItems([
-    rfpEnabledField,
-    rfpEnableMobileField,
-    rfpSummarySubmitField,
-    rfpSummaryTemplateField,
-  ]);
-
-  configArea.append(rfpFieldset.$element);
-
-  const saveButton = new OO.ui.ButtonWidget({
-    label: "保存",
-    flags: ["progressive"],
-    title: "設定を保存します",
-    icon: "check",
-  });
-
-  const discardButton = new OO.ui.ButtonWidget({
-    label: "設定をリセット",
-    flags: ["destructive", "progressive"],
-    title: "設定をデフォルトの状態にリセットします",
-    icon: "trash",
-  });
-
-  const saveButtonsField = new OO.ui.FieldLayout(
-    new OO.ui.Widget({
-      content: [
-        new OO.ui.HorizontalLayout({
-          items: [saveButton, discardButton],
-        }),
-      ],
-    }),
-    {},
+  const saving = Vue.ref(false);
+  const presets = Vue.ref<Preset[]>(
+    (getOptionProperty("skj.opvPresets") as Preset[] | undefined)?.map((p) => ({
+      ...p,
+    })) ?? [],
   );
-  configArea.append(saveButtonsField.$element);
 
-  saveButton.on("click", () => {
-    console.log("Save Button Clicked!!");
+  const addPreset = () => {
+    presets.value.push({ name: "", value: "" });
+  };
+  const removePreset = (index: number) => {
+    presets.value.splice(index, 1);
+  };
 
+  const save = () => {
     const keys = [...TIMEZONE_VALUES.keys()];
-
-    if (!keys.includes(timezone.getValue())) {
+    if (!keys.includes(options.timezone.value)) {
       mw.notify("タイムゾーンが正しくありません。", { type: "error" });
       return;
     }
-
-    saveButton.setDisabled(true);
-    discardButton.setDisabled(true);
-
+    saving.value = true;
     const newOptions: Options = {
-      disableMobile: disableMobile.isSelected(),
-      prefLinkInToolbar: prefLinkInToolbar.isSelected(),
-      useIndividualPortlet: useIndividualPortlet.isSelected(),
-      useCodexModal: useCodexModal.isSelected(),
-      versionNotify: (
-        versionNotifySelect.findSelectedItem() as OO.ui.OptionWidget
-      ).getData() as string,
-      timezone: timezone.getValue() || "UTC",
+      disableMobile: options.disableMobile.value,
+      prefLinkInToolbar: options.prefLinkInToolbar.value,
+      useIndividualPortlet: options.useIndividualPortlet.value,
+      useCodexModal: options.useCodexModal.value,
+      versionNotify: options.versionNotify.value,
+      timezone: options.timezone.value || "UTC",
       historyTimeFormat:
-        historyTimeFormat.getValue() ||
+        options.historyTimeFormat.value ||
         "(\\d{4})年(\\d{1,2})月(\\d{1,2})日 \\((.)\\) (\\d{2}):(\\d{2})",
-      wikidata: {
-        enabled: wikidataEnabled.isSelected(),
-      },
+      wikidata: { enabled: options.wikidataEnabled.value },
       mi: {
-        enabled: miEnabled.isSelected(),
-        enableMobile: miEnableMobile.isSelected(),
-        default: {
-          summary: miSummary.getValue() || "",
-        },
+        enabled: options.miEnabled.value,
+        enableMobile: options.miEnableMobile.value,
+        default: { summary: options.miSummary.value || "" },
       },
       csd: {
-        enabled: csdEnabled.isSelected(),
-        enableMobile: csdEnableMobile.isSelected(),
-        default: {
-          summary: csdSummary.getValue() || "",
-        },
+        enabled: options.csdEnabled.value,
+        enableMobile: options.csdEnableMobile.value,
+        default: { summary: options.csdSummary.value || "" },
       },
       csrd: {
-        enabled: csrdEnabled.isSelected(),
-        enableMobile: csrdEnableMobile.isSelected(),
-        default: {
-          summary: csrdSummary.getValue() || "",
-        },
+        enabled: options.csrdEnabled.value,
+        enableMobile: options.csrdEnableMobile.value,
+        default: { summary: options.csrdSummary.value || "" },
       },
       skj: {
-        enabled: skjEnabled.isSelected(),
-        enableMobile: skjEnableMobile.isSelected(),
+        enabled: options.skjEnabled.value,
+        enableMobile: options.skjEnableMobile.value,
         default: {
-          opv: skjOpv.getValue() || "",
-          summaryTemplate: skjSummaryTemplate.getValue() || "",
-          summarySubmit: skjSummarySubmit.getValue() || "",
-          summaryNote: skjSummaryNote.getValue() || "",
+          opv: options.skjOpv.value || "",
+          summaryTemplate: options.skjSummaryTemplate.value || "",
+          summarySubmit: options.skjSummarySubmit.value || "",
+          summaryNote: options.skjSummaryNote.value || "",
         },
-        opvPresets: items
-          // @ts-expect-error なんか型が合わない
-          .filter((item) => item.items[0]?.value && item.items[1]?.value)
-          .map((item) => {
-            // @ts-expect-error なんか型が合わない
-            return { name: item.items[0].value, value: item.items[1].value };
-          }),
-        signReason: skjSignReason.isSelected(),
+        opvPresets: presets.value.filter((p) => p.name && p.value),
+        signReason: options.skjSignReason.value,
       },
       editCount: {
-        enabled: ecEnabled.isSelected(),
-        enableMobile: ecEnableMobile.isSelected(),
+        enabled: options.ecEnabled.value,
+        enableMobile: options.ecEnableMobile.value,
       },
       warn: {
-        enabled: warnEnabled.isSelected(),
-        enableMobile: warnEnableMobile.isSelected(),
-        default: {
-          summary: warnSummary.getValue() || "",
-        },
+        enabled: options.warnEnabled.value,
+        enableMobile: options.warnEnableMobile.value,
+        default: { summary: options.warnSummary.value || "" },
       },
       rfp: {
-        enabled: rfpEnabled.isSelected(),
-        enableMobile: rfpEnableMobile.isSelected(),
+        enabled: options.rfpEnabled.value,
+        enableMobile: options.rfpEnableMobile.value,
         default: {
-          summarySubmit: rfpSummarySubmit.getValue() || "",
-          summaryTemplate: rfpSummaryTemplate.getValue() || "",
+          summarySubmit: options.rfpSummarySubmit.value || "",
+          summaryTemplate: options.rfpSummaryTemplate.value || "",
         },
       },
     };
-    console.log(newOptions);
-
     new mw.Api()
       .postWithEditToken({
         action: "options",
@@ -690,17 +223,13 @@ export async function showConfigPage() {
       })
       .catch(() => {
         mw.notify("セーブに失敗しました");
-        saveButton.setDisabled(false);
-        discardButton.setDisabled(false);
+        saving.value = false;
       });
-  });
+  };
 
-  discardButton.on("click", () => {
-    const c = confirm("初期化しますか？");
-    if (!c) return;
-    saveButton.setDisabled(true);
-    discardButton.setDisabled(true);
-
+  const reset = () => {
+    if (!confirm("初期化しますか？")) return;
+    saving.value = true;
     new mw.Api()
       .postWithEditToken({
         action: "options",
@@ -715,8 +244,295 @@ export async function showConfigPage() {
       })
       .catch(() => {
         mw.notify("初期化に失敗しました。");
-        saveButton.setDisabled(false);
-        discardButton.setDisabled(false);
+        saving.value = false;
       });
+  };
+
+  // Helper render functions
+  const checkboxField = (
+    model: { value: boolean },
+    label: string,
+    help?: string,
+  ) =>
+    h(
+      CdxCheckbox,
+      {
+        modelValue: model.value,
+        "onUpdate:modelValue": (v: boolean) => {
+          model.value = v;
+        },
+      },
+      {
+        default: () => label,
+        ...(help ? { description: () => help } : {}),
+      },
+    );
+
+  const textField = (
+    model: { value: string },
+    label: string,
+    placeholder: string,
+    help?: string,
+  ) =>
+    h(CdxField, null, {
+      default: () =>
+        h(CdxTextInput, {
+          modelValue: model.value,
+          "onUpdate:modelValue": (v: string) => {
+            model.value = v;
+          },
+          placeholder,
+        }),
+      label: () => label,
+      ...(help ? { description: () => help } : {}),
+    });
+
+  const radioField = (
+    model: { value: string },
+    label: string,
+    choices: { value: string; label: string }[],
+  ) =>
+    h(
+      CdxField,
+      { isFieldset: true },
+      {
+        label: () => label,
+        default: () =>
+          choices.map((c) =>
+            h(
+              CdxRadio,
+              {
+                modelValue: model.value,
+                "onUpdate:modelValue": (v: string) => {
+                  model.value = v;
+                },
+                inputValue: c.value,
+                name: "version-notify",
+              },
+              () => c.label,
+            ),
+          ),
+      },
+    );
+
+  const panel = (label: string, content: unknown[]) =>
+    h(
+      CdxField,
+      { isFieldset: true },
+      {
+        label: () => label,
+        default: () => content,
+      },
+    );
+
+  const app = Vue.createApp({
+    setup() {
+      return () =>
+        h("div", [
+          h("h2", { style: "margin-top:0;" }, `${SCRIPT_NAME} 設定`),
+          h("div", { style: "display:flex;flex-direction:column;gap:0.5rem;" }, [
+            checkboxField(
+              options.disableMobile,
+              "モバイルでは全ての機能を無効にする (すべてのモバイル設定を上書きします)",
+            ),
+            checkboxField(
+              options.prefLinkInToolbar,
+              "この設定ページへのリンクをツールバーに配置する",
+            ),
+            checkboxField(
+              options.useIndividualPortlet,
+              "「その他」タブではなく、新たに「WK」というタブを作りそこに機能を配置",
+              "これはモバイルには効果がありません。",
+            ),
+            checkboxField(
+              options.useCodexModal,
+              "モダンなモーダルを使用する (β版)",
+              "Codex を利用したダイアログに置き換えます。実験的機能です。",
+            ),
+            radioField(options.versionNotify, "バージョンアップ通知", [
+              { value: "all", label: "すべて" },
+              { value: "minor", label: "メジャー・マイナーバージョンのみ" },
+              { value: "none", label: "通知しない" },
+            ]),
+            textField(
+              options.timezone,
+              "タイムゾーン",
+              "UTC",
+              "ウィキの個人設定で設定しているものと同じものを設定してください。即時版指定削除機能での時間をUTCに調節するために使用します。現時点ではUTCとJSTのみ使用可能です。",
+            ),
+            textField(
+              options.historyTimeFormat,
+              "履歴ページの日時正規表現",
+              "(\\d{4})年(\\d{1,2})月(\\d{1,2})日 \\((.)\\) (\\d{2}):(\\d{2})",
+              "履歴ページの日時を取得するための正規表現を設定します。ウィキの言語を日本語にしている限りここを修正する必要はありません。",
+            ),
+            panel("ウィキデータ説明表示", [
+              checkboxField(
+                options.wikidataEnabled,
+                "PC版のページ見出しにウィキデータの日本語説明を表示する",
+              ),
+            ]),
+            panel("問題テンプレート貼り付け", [
+              checkboxField(options.miEnabled, "有効にする"),
+              checkboxField(options.miEnableMobile, "モバイルでも有効にする"),
+              textField(
+                options.miSummary,
+                "編集の要約デフォルト値",
+                "+{{$t}}",
+                "$t には最大5件のテンプレート名、$s1 には1件目のテンプレート名が入ります",
+              ),
+            ]),
+            panel("即時削除テンプレート貼り付け", [
+              checkboxField(options.csdEnabled, "有効にする"),
+              checkboxField(options.csdEnableMobile, "モバイルでも有効にする"),
+              textField(options.csdSummary, "編集の要約デフォルト値", "+sd"),
+            ]),
+            panel("即時版指定削除テンプレート貼り付け", [
+              checkboxField(options.csrdEnabled, "有効にする"),
+              checkboxField(options.csrdEnableMobile, "モバイルでも有効にする"),
+              textField(options.csrdSummary, "編集の要約デフォルト値", "+srd"),
+            ]),
+            panel("削除依頼提出", [
+              checkboxField(options.skjEnabled, "有効にする"),
+              checkboxField(options.skjEnableMobile, "モバイルでも有効にする"),
+              textField(
+                options.skjOpv,
+                "依頼者票デフォルト",
+                "{{AFD|削除}} 依頼者票。",
+              ),
+              textField(
+                options.skjSummaryTemplate,
+                "編集の要約 (Sakujoテンプレート貼り付け) デフォルト値",
+                "+Sakujo",
+              ),
+              textField(
+                options.skjSummarySubmit,
+                "編集の要約 (削除依頼ページ作成) デフォルト値",
+                "削除依頼",
+              ),
+              textField(
+                options.skjSummaryNote,
+                "編集の要約 (削除依頼ページ追記) デフォルト値",
+                "削除依頼の追加",
+                "$d には削除依頼ページが入ります (例: Wikipedia:削除依頼/ほげほげ 20240314) $p には削除依頼対象ページが入ります (例: ほげほげ) 三つの要約欄すべてに適用できます",
+              ),
+              checkboxField(
+                options.skjSignReason,
+                "削除依頼理由にも署名する",
+                "削除依頼で、理由部分にも署名をします。この設定をした場合でも、依頼者票部分に署名します。",
+              ),
+              h(
+                CdxField,
+                { isFieldset: true },
+                {
+                  label: () => "依頼者票プリセット",
+                  default: () => [
+                    h(
+                      CdxButton,
+                      {
+                        action: "progressive",
+                        weight: "normal",
+                        onClick: addPreset,
+                      },
+                      () => "プリセットを追加",
+                    ),
+                    ...presets.value.map((p, i) =>
+                      h(
+                        "div",
+                        {
+                          style:
+                            "display:flex;gap:0.5rem;align-items:center;margin-top:0.5rem;",
+                        },
+                        [
+                          h(CdxTextInput, {
+                            modelValue: p.name,
+                            "onUpdate:modelValue": (v: string) => {
+                              p.name = v;
+                            },
+                            placeholder: "ボタンラベル",
+                          }),
+                          h(CdxTextInput, {
+                            modelValue: p.value,
+                            "onUpdate:modelValue": (v: string) => {
+                              p.value = v;
+                            },
+                            placeholder: "依頼者票",
+                          }),
+                          h(
+                            CdxButton,
+                            {
+                              action: "destructive",
+                              weight: "quiet",
+                              onClick: () => removePreset(i),
+                            },
+                            () => "削除",
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                },
+              ),
+            ]),
+            panel("編集回数表示", [
+              checkboxField(
+                options.ecEnabled,
+                "有効にする",
+                "有効にすると、最近の更新、新しいページでユーザー名の右に編集回数が表示されます。",
+              ),
+              checkboxField(options.ecEnableMobile, "モバイルでも有効にする"),
+            ]),
+            panel("ユーザーへの通知 (旧名称: 警告)", [
+              checkboxField(options.warnEnabled, "有効にする"),
+              checkboxField(options.warnEnableMobile, "モバイルでも有効にする"),
+              textField(
+                options.warnSummary,
+                "編集の要約デフォルト値",
+                "+$t",
+                "$t にはテンプレート名 (Test, ご自身の記事 etc.) が入ります",
+              ),
+            ]),
+            panel("保護依頼", [
+              checkboxField(options.rfpEnabled, "有効にする"),
+              checkboxField(options.rfpEnableMobile, "モバイルでも有効にする"),
+              textField(
+                options.rfpSummarySubmit,
+                "編集の要約 (保護依頼ページ編集) デフォルト値",
+                "保護依頼",
+                "$p には保護依頼対象ページのリンクの羅列が入ります",
+              ),
+              textField(
+                options.rfpSummaryTemplate,
+                "編集の要約 (保護依頼テンプレート貼り付け) デフォルト値",
+                "+保護依頼",
+              ),
+            ]),
+            h("div", { style: "display:flex;gap:0.5rem;margin-top:1rem;" }, [
+              h(
+                CdxButton,
+                {
+                  action: "progressive",
+                  weight: "primary",
+                  disabled: saving.value,
+                  onClick: save,
+                },
+                () => "保存",
+              ),
+              h(
+                CdxButton,
+                {
+                  action: "destructive",
+                  weight: "normal",
+                  disabled: saving.value,
+                  onClick: reset,
+                },
+                () => "設定をリセット",
+              ),
+            ]),
+          ]),
+        ]);
+    },
   });
+
+  app.mount(host);
 }
