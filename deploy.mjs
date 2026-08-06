@@ -1,6 +1,5 @@
 // @ts-check
 import { readFileSync, existsSync } from "fs";
-import { createHash } from "crypto";
 
 // Minimal .env loader (no external deps)
 if (existsSync(".env")) {
@@ -184,15 +183,18 @@ async function getCsrf() {
 }
 
 /**
+ * Fetch remote page content for exact comparison.
+ * MediaWiki's SHA-1 can differ from a local hash due to newline normalisation
+ * and other server-side transforms, so we compare the actual wikitext.
  * @param {string} title
- * @returns {Promise<string | null>} remote sha1 (null if page is missing)
+ * @returns {Promise<string | null>} remote wikitext (null if page is missing)
  */
-async function getRemoteSha1(title) {
+async function getRemoteContent(title) {
   const res = await api({
     action: "query",
     prop: "revisions",
     titles: title,
-    rvprop: "sha1",
+    rvprop: "content",
     rvslots: "main",
     format: "json",
     formatversion: "2",
@@ -201,7 +203,7 @@ async function getRemoteSha1(title) {
   if (!page || page.missing) {
     return null;
   }
-  return page.revisions?.[0]?.sha1 ?? null;
+  return page.revisions?.[0]?.slots?.main?.content ?? null;
 }
 
 /**
@@ -239,9 +241,11 @@ async function main() {
   let skipped = 0;
   for (let i = 0; i < targets.length; i++) {
     const t = targets[i];
-    const remote = await getRemoteSha1(t.title);
-    const local = createHash("sha1").update(t.body, "utf8").digest("hex");
-    if (remote === local) {
+    const remote = await getRemoteContent(t.title);
+    // MediaWiki strips trailing newlines on save, so normalise both sides
+    // before comparing to avoid spurious updates.
+    const normalize = (s) => s.replace(/\n+$/, "");
+    if (remote !== null && normalize(remote) === normalize(t.body)) {
       console.log(`[skip] ${t.title} (unchanged)`);
       skipped += 1;
       continue;
