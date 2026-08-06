@@ -5,8 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "vitest run",
-    "build": "node build.mjs",
-    "lint": "eslint . && prettier --check . && tsc"
+    "build": "node build.mjs",    "lint": "eslint . && prettier --check . && tsc"
   },
   "keywords": [],
   "author": "",
@@ -25,6 +24,7 @@
     "eslint": "^10.8.0",
     "globals": "^17.9.0",
     "prettier": "^3.9.6",
+    "terser": "^5.49.1",
     "types-mediawiki": "^2.1.0",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "vitest": "^4.1.10"
@@ -34,3 +34,4 @@
   },
   "packageManager": "pnpm@11.20.0"
 }
+
