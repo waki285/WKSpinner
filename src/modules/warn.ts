@@ -6,21 +6,18 @@ import {
   WARN_TEMPLATES,
 } from "@/constants";
 import {
-  createPortletLink,
   createRowFunc,
   getImage,
   getOptionProperty,
+  takePortlet,
 } from "@/util";
+import { openDialog } from "@/dialog";
 
 export async function initWarn() {
   const namespaceNumber = mw.config.get("wgNamespaceNumber");
   //const revisionId = mw.config.get("wgRevisionId");
 
-  const warnPortlet = createPortletLink(
-    "通知",
-    "wks-warn",
-    "ユーザーへ通知・警告を行う",
-  );
+  const warnPortlet = takePortlet("wks-warn");
   if (!warnPortlet) {
     console.warn(`${SCRIPT_NAME}: メニューの作成に失敗しました。`);
     return;
@@ -42,23 +39,15 @@ export async function initWarn() {
     }
 
     const createRow = createRowFunc("warn");
-    const warnDialog = $("<div>");
-    warnDialog.css("max-height", "70vh").dialog({
-      dialogClass: "wks-warn-dialog",
-      title: `${SCRIPT_NAME} - ユーザーへ通知・警告`,
-      resizable: false,
-      height: "auto",
-      width: "auto",
-      modal: true,
-      close: function () {
-        $(this).empty().dialog("destroy");
-      },
-    });
     const dialogContent = $("<div>")
       .prop("id", "wks-warn-dialog-content")
       .text("読み込み中")
       .append(getImage("load", "margin-left: 0.5em;"));
-    warnDialog.append(dialogContent);
+    const warnDialog = await openDialog({
+      title: `${SCRIPT_NAME} - ユーザーへ通知・警告`,
+      dialogClass: "wks-warn-dialog",
+      content: dialogContent,
+    });
     dialogContent.empty();
     const dialogFieldset = $("<fieldset>");
     dialogFieldset.prop({
@@ -288,26 +277,20 @@ export async function initWarn() {
         (template) => template.name === selected,
       );
 
-      const previewDialog = $("<div>")
-        .css({
-          maxHeight: "70vh",
-          maxWidth: "80vw",
-        })
-        .dialog({
-          dialogClass: "wks-warn-dialog wks-warn-dialog-preview",
-          title: `${SCRIPT_NAME} - 通知プレビュー`,
-          height: "auto",
-          width: "auto",
-          modal: true,
-          close: function () {
-            $(this).empty().dialog("destroy");
-          },
-        });
+      const previewContentHolder = $("<div>").css({
+        maxHeight: "70vh",
+        maxWidth: "80vw",
+      });
+      const previewDialog = await openDialog({
+        title: `${SCRIPT_NAME} - 通知プレビュー`,
+        dialogClass: "wks-warn-dialog wks-warn-dialog-preview",
+        content: previewContentHolder,
+      });
       const previewContent = $("<div>")
         .prop("id", "wks-dialog-preview-content")
         .text("読み込み中")
         .append(getImage("load", "margin-left: 0.5em;"));
-      previewDialog.append(previewContent);
+      previewContentHolder.append(previewContent);
       const parseRes = (
         await new mw.Api().post({
           action: "discussiontoolspreview",
@@ -347,13 +330,7 @@ export async function initWarn() {
       //previewContent.append(summaryPreview);
       //previewContent.append(hr);
       previewContent.append(previewDiv);
-      previewDialog.dialog({
-        position: {
-          my: "center",
-          at: "center",
-          of: window,
-        },
-      });
+      previewDialog.reposition();
     };
 
     const execute = async () => {
@@ -399,7 +376,7 @@ export async function initWarn() {
           )?.toLowerCase() === "success"
         ) {
           mw.notify("ページの編集に成功しました。");
-          warnDialog.dialog("close");
+          warnDialog.close();
           window.location.href = mw.util.getUrl(talkPageName);
         } else {
           mw.notify(
@@ -415,35 +392,22 @@ export async function initWarn() {
       }
     };
 
-    warnDialog.dialog({
-      buttons: [
-        {
-          text: "実行",
-          click: function () {
-            return execute();
-          },
-        },
-        {
-          text: "プレビュー",
-          click: function () {
-            return preview();
-          },
-        },
-        {
-          text: "閉じる",
-          click: function () {
-            return warnDialog.dialog("close");
-          },
-        },
-      ],
-    });
-
-    warnDialog.dialog({
-      position: {
-        my: "top",
-        at: "top+5%",
-        of: window,
+    warnDialog.setButtons([
+      {
+        label: "実行",
+        variant: "progressive",
+        onClick: () => execute(),
       },
-    });
+      {
+        label: "プレビュー",
+        onClick: () => preview(),
+      },
+      {
+        label: "閉じる",
+        onClick: () => warnDialog.close(),
+      },
+    ]);
+
+    warnDialog.reposition();
   });
 }

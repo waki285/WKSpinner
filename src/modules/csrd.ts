@@ -4,6 +4,7 @@ import {
   SUMMARY_AD,
   SUMMARY_AD_ATTRACT,
 } from "@/constants";
+import { openDialog } from "@/dialog";
 import {
   createRowFunc,
   formatDate,
@@ -430,26 +431,20 @@ export async function initCsrd() {
         });
         return;
       }
-      const previewDialog = $("<div>")
-        .css({
-          maxHeight: "70vh",
-          maxWidth: "80vw",
-        })
-        .dialog({
-          title: "プレビュー",
-          height: "auto",
-          width: "auto",
-          modal: true,
-          dialogClass: "wks-csrd-dialog-preview",
-          close: function () {
-            $(this).empty().dialog("destroy");
-          },
-        });
+      const previewContentHolder = $("<div>").css({
+        maxHeight: "70vh",
+        maxWidth: "80vw",
+      });
+      const previewDialog = await openDialog({
+        title: "プレビュー",
+        dialogClass: "wks-csrd-dialog-preview",
+        content: previewContentHolder,
+      });
       const previewContent = $("<div>")
         .prop("id", "wks-dialog-preview-content")
         .text("読み込み中")
         .append(getImage("load", "margin-left: 0.5em;"));
-      previewDialog.append(previewContent);
+      previewContentHolder.append(previewContent);
       const parseRes = await new mw.Api().post({
         action: "parse",
         title: mw.config.get("wgPageName"),
@@ -481,13 +476,7 @@ export async function initCsrd() {
       previewContent.append(summaryPreview);
       previewContent.append(hr);
       previewContent.append(previewDiv);
-      previewDialog.dialog({
-        position: {
-          my: "center",
-          at: "center",
-          of: window,
-        },
-      });
+      previewDialog.reposition();
     };
 
     dialogButton.on("click", async (e) => {

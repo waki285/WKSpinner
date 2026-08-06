@@ -4,20 +4,20 @@ import {
   SUMMARY_AD,
   SUMMARY_AD_ATTRACT,
 } from "@/constants";
+import { openDialog } from "@/dialog";
 import {
-  createPortletLink,
   createRowFunc,
   getImage,
   getOptionProperty,
   sleep,
+  takePortlet,
 } from "@/util";
 import { getPageIdPrivacyWarnings } from "@/skj-validation";
 
 export async function initSkj() {
   const revisionId = mw.config.get("wgRevisionId");
 
-  const skjPortlet = createPortletLink("削除依頼", "wks-skj", "削除依頼をする");
-
+  const skjPortlet = takePortlet("wks-skj");
   if (!skjPortlet) {
     console.warn(`${SCRIPT_NAME}: メニューの作成に失敗しました。`);
     return;
@@ -27,23 +27,15 @@ export async function initSkj() {
     e.preventDefault();
 
     const createRow = createRowFunc("skj");
-    const skjDialog = $("<div>");
-    skjDialog.css("max-height", "70vh").dialog({
-      dialogClass: "wks-skj-dialog",
-      title: `${SCRIPT_NAME} - 削除依頼`,
-      resizable: false,
-      height: "auto",
-      width: "auto",
-      modal: true,
-      close: function () {
-        $(this).empty().dialog("destroy");
-      },
-    });
     const dialogContent = $("<div>")
       .prop("id", "wks-skj-dialog-content")
       .text("読み込み中")
       .append(getImage("load", "margin-left: 0.5em;"));
-    skjDialog.append(dialogContent);
+    const skjDialog = await openDialog({
+      title: `${SCRIPT_NAME} - 削除依頼`,
+      dialogClass: "wks-skj-dialog",
+      content: dialogContent,
+    });
     const [pageRes, existRFDPage] = await Promise.all([
       new mw.Api().post({
         action: "query",
@@ -320,13 +312,28 @@ export async function initSkj() {
         }`,
       ] as const;
 
-    const getFinalContentRequest = () => `{{subst:新規削除依頼サブページ
+    const getFinalContentRequest = () => {
+      const reasonRaw = String($("#wks-skj-dialog-desc-input").val() ?? "");
+      const signReason = getOptionProperty("skj.signReason") === true;
+      let reason: string;
+      if (signReason) {
+        // 署名設定がONの時のみ既存の署名を取り除き、末尾の空白・改行を整形する
+        reason = reasonRaw
+          .replace(/--~~~~\s*$/, "")
+          .replace(/~~~~\s*$/, "")
+          .replace(/\s+$/, "");
+      } else {
+        reason = reasonRaw;
+      }
+      const reasonField = `${reason}${signReason ? "--~~~~" : ""}`;
+      return `{{subst:新規削除依頼サブページ
 |ページ名=${$("#wks-skj-dialog-use-id-cb").prop("checked") ? "" : mw.config.get("wgPageName")}
 |ID=${$("#wks-skj-dialog-use-id-cb").prop("checked") ? mw.config.get("wgArticleId") : ""}
 |特記号=${$("#wks-skj-dialog-mark-rights-cb").prop("checked") ? "*" : ""}${$("#wks-skj-dialog-mark-emer-cb").prop("checked") ? "緊" : ""}${$("#wks-skj-dialog-mark-rev-cb").prop("checked") ? "特" : ""}
-|理由=${$("#wks-skj-dialog-desc-input").val()} ${getOptionProperty("skj.signReason") ? "--~~~~" : ""}
+|理由=${reasonField}
 |依頼者票=${$("#wks-skj-dialog-opv-input").val()} --~~~~
 }}`;
+    };
 
     const checkParams = () => {
       const errList = $("<ul>");
@@ -384,35 +391,23 @@ export async function initSkj() {
         return;
       }
 
-      const progressDialog = $("<div>")
-        .css({
-          maxHeight: "70vh",
-          maxWidth: "80vw",
-        })
-        .dialog({
-          dialogClass: "wks-mi-dialog wks-mi-dialog-preview",
-          title: `${SCRIPT_NAME} - 削除依頼`,
-          height: "auto",
-          width: "auto",
-          modal: true,
-          close: function () {
-            $(this).empty().dialog("destroy");
-          },
-        });
-
-      progressDialog.dialog({
-        position: {
-          my: "center",
-          at: "center",
-          of: window,
-        },
+      const progressContentHolder = $("<div>").css({
+        maxHeight: "70vh",
+        maxWidth: "80vw",
       });
+      const progressDialog = await openDialog({
+        title: `${SCRIPT_NAME} - 削除依頼`,
+        dialogClass: "wks-mi-dialog wks-mi-dialog-preview",
+        content: progressContentHolder,
+      });
+
+      progressDialog.reposition();
 
       const wipMessage = $("<p>")
         .addClass("wks-red")
         .css("font-weight", "bold")
         .text("注意: 削除依頼中はタブを閉じないでください！");
-      progressDialog.append(wipMessage);
+      progressContentHolder.append(wipMessage);
 
       const unloadFunc = (e: BeforeUnloadEvent) => {
         e.returnValue = "During the Sakujo progress!";
@@ -424,7 +419,7 @@ export async function initSkj() {
         .addClass("wks-inline")
         .append(getImage("load", ""))
         .append($("<span>").text("ページの存在チェック中"));
-      progressDialog.append(progressDialogContentCheckExists);
+      progressContentHolder.append(progressDialogContentCheckExists);
 
       const getPageName = () =>
         SKJ_REQUEST_PAGE_NAME + $("#wks-skj-dialog-page-name-input").val();
@@ -443,16 +438,12 @@ export async function initSkj() {
             `削除依頼ページが<a href="/wiki/${getPageName()}">既に存在します</a>。`,
           ),
         );
-        progressDialog.dialog({
-          buttons: [
-            {
-              text: "閉じる",
-              click: function () {
-                return progressDialog.dialog("close");
-              },
-            },
-          ],
-        });
+        progressDialog.setButtons([
+          {
+            label: "閉じる",
+            onClick: () => progressDialog.close(),
+          },
+        ]);
         removeEventListener("beforeunload", unloadFunc);
 
         return;
@@ -469,7 +460,7 @@ export async function initSkj() {
         .addClass("wks-inline")
         .append(getImage("load", ""))
         .append($("<span>").text("テンプレートの貼付中"));
-      progressDialog.append(progressDialogContentPrependTl);
+      progressContentHolder.append(progressDialogContentPrependTl);
 
       try {
         const [isText, t] = getFinalContentPrepend();
@@ -497,16 +488,12 @@ export async function initSkj() {
           progressDialogContentPrependTl.append(
             $("<span>").html(`テンプレートの貼付に失敗しました。(Conflict?)`),
           );
-          progressDialog.dialog({
-            buttons: [
-              {
-                text: "閉じる",
-                click: function () {
-                  return progressDialog.dialog("close");
-                },
-              },
-            ],
-          });
+          progressDialog.setButtons([
+            {
+              label: "閉じる",
+              onClick: () => progressDialog.close(),
+            },
+          ]);
           removeEventListener("beforeunload", unloadFunc);
           return;
         }
@@ -523,7 +510,7 @@ export async function initSkj() {
           .append(getImage("load", ""))
           .append($("<span>").text("5秒待機します..."));
 
-        progressDialog.append(progressDialogContentWait1);
+        progressContentHolder.append(progressDialogContentWait1);
 
         await sleep(5000);
 
@@ -537,7 +524,7 @@ export async function initSkj() {
           .append(getImage("load", ""))
           .append($("<span>").text("依頼ページの作成中"));
 
-        progressDialog.append(progressDialogContentSubmit);
+        progressContentHolder.append(progressDialogContentSubmit);
 
         try {
           const submitRes = await new mw.Api().postWithEditToken({
@@ -561,16 +548,12 @@ export async function initSkj() {
             progressDialogContentSubmit.append(
               $("<span>").html(`依頼ページの作成に失敗しました。(Conflict?)`),
             );
-            progressDialog.dialog({
-              buttons: [
-                {
-                  text: "閉じる",
-                  click: function () {
-                    return progressDialog.dialog("close");
-                  },
-                },
-              ],
-            });
+            progressDialog.setButtons([
+              {
+                label: "閉じる",
+                onClick: () => progressDialog.close(),
+              },
+            ]);
             removeEventListener("beforeunload", unloadFunc);
             return;
           }
@@ -589,7 +572,7 @@ export async function initSkj() {
             .append(getImage("load", ""))
             .append($("<span>").text("5秒待機します..."));
 
-          progressDialog.append(progressDialogContentWait2);
+          progressContentHolder.append(progressDialogContentWait2);
 
           await sleep(5000);
 
@@ -605,7 +588,7 @@ export async function initSkj() {
             .append(getImage("load", ""))
             .append($("<span>").text("ログへの追記中"));
 
-          progressDialog.append(progressDialogContentNote);
+          progressContentHolder.append(progressDialogContentNote);
 
           const logPageName =
             SKJ_REQUEST_PAGE_NAME +
@@ -650,16 +633,12 @@ export async function initSkj() {
               progressDialogContentNote.append(
                 $("<span>").html(`ログへの追記に失敗しました。(Conflict?)`),
               );
-              progressDialog.dialog({
-                buttons: [
-                  {
-                    text: "閉じる",
-                    click: function () {
-                      return progressDialog.dialog("close");
-                    },
-                  },
-                ],
-              });
+              progressDialog.setButtons([
+                {
+                  label: "閉じる",
+                  onClick: () => progressDialog.close(),
+                },
+              ]);
 
               removeEventListener("beforeunload", unloadFunc);
               return;
@@ -679,16 +658,12 @@ export async function initSkj() {
             progressDialogContentNote.append(
               $("<span>").html(`ログへの追記に失敗しました。(${e})`),
             );
-            progressDialog.dialog({
-              buttons: [
-                {
-                  text: "閉じる",
-                  click: function () {
-                    return progressDialog.dialog("close");
-                  },
-                },
-              ],
-            });
+            progressDialog.setButtons([
+              {
+                label: "閉じる",
+                onClick: () => progressDialog.close(),
+              },
+            ]);
 
             removeEventListener("beforeunload", unloadFunc);
             return;
@@ -699,16 +674,12 @@ export async function initSkj() {
           progressDialogContentSubmit.append(
             $("<span>").html(`依頼ページの作成に失敗しました。(${e})`),
           );
-          progressDialog.dialog({
-            buttons: [
-              {
-                text: "閉じる",
-                click: function () {
-                  return progressDialog.dialog("close");
-                },
-              },
-            ],
-          });
+          progressDialog.setButtons([
+            {
+              label: "閉じる",
+              onClick: () => progressDialog.close(),
+            },
+          ]);
 
           removeEventListener("beforeunload", unloadFunc);
           return;
@@ -719,16 +690,12 @@ export async function initSkj() {
         progressDialogContentPrependTl.append(
           $("<span>").html(`テンプレートの貼付に失敗しました。(${e})`),
         );
-        progressDialog.dialog({
-          buttons: [
-            {
-              text: "閉じる",
-              click: function () {
-                return progressDialog.dialog("close");
-              },
-            },
-          ],
-        });
+        progressDialog.setButtons([
+          {
+            label: "閉じる",
+            onClick: () => progressDialog.close(),
+          },
+        ]);
 
         removeEventListener("beforeunload", unloadFunc);
         return;
@@ -743,21 +710,15 @@ export async function initSkj() {
       }
       const pageName =
         SKJ_REQUEST_PAGE_NAME + $("#wks-skj-dialog-page-name-input").val();
-      const previewDialog = $("<div>")
-        .css({
-          maxHeight: "70vh",
-          maxWidth: "80vw",
-        })
-        .dialog({
-          dialogClass: "wks-skj-dialog wks-skj-dialog-preview",
-          title: `${SCRIPT_NAME} - 削除依頼プレビュー`,
-          height: "auto",
-          width: "auto",
-          modal: true,
-          close: function () {
-            $(this).empty().dialog("destroy");
-          },
-        });
+      const previewContentHolder = $("<div>").css({
+        maxHeight: "70vh",
+        maxWidth: "80vw",
+      });
+      const previewDialog = await openDialog({
+        title: `${SCRIPT_NAME} - 削除依頼プレビュー`,
+        dialogClass: "wks-skj-dialog wks-skj-dialog-preview",
+        content: previewContentHolder,
+      });
       const previewContent = $("<div>")
         .prop("id", "wks-dialog-preview-content")
         .text("読み込み中")
@@ -766,9 +727,9 @@ export async function initSkj() {
         .prop("id", "wks-dialog-preview-content2")
         .text("読み込み中")
         .append(getImage("load", "margin-left: 0.5em;"));
-      previewDialog.append(previewContent);
-      previewDialog.append($("<hr>").addClass("wks-hr"));
-      previewDialog.append(previewContent2);
+      previewContentHolder.append(previewContent);
+      previewContentHolder.append($("<hr>").addClass("wks-hr"));
+      previewContentHolder.append(previewContent2);
       const [parseRes, parseRes2] = await Promise.all([
         new mw.Api().post({
           action: "parse",
@@ -850,44 +811,25 @@ export async function initSkj() {
       previewContent2.append(hr2);
       previewContent2.append(previewDiv2);
 
-      previewDialog.dialog({
-        position: {
-          my: "top",
-          at: "top+5%",
-          of: window,
-        },
-      });
+      previewDialog.reposition();
     };
 
-    skjDialog.dialog({
-      buttons: [
-        {
-          text: "実行",
-          click: function () {
-            return execute();
-          },
-        },
-        {
-          text: "プレビュー",
-          click: function () {
-            return preview();
-          },
-        },
-        {
-          text: "閉じる",
-          click: function () {
-            return skjDialog.dialog("close");
-          },
-        },
-      ],
-    });
-
-    skjDialog.dialog({
-      position: {
-        my: "top",
-        at: "top+5%",
-        of: window,
+    skjDialog.setButtons([
+      {
+        label: "実行",
+        variant: "progressive",
+        onClick: () => execute(),
       },
-    });
+      {
+        label: "プレビュー",
+        onClick: () => preview(),
+      },
+      {
+        label: "閉じる",
+        onClick: () => skjDialog.close(),
+      },
+    ]);
+
+    skjDialog.reposition();
   });
 }

@@ -6,11 +6,12 @@ import {
   SUMMARY_AD,
   SUMMARY_AD_ATTRACT,
 } from "@/constants";
+import { openDialog } from "@/dialog";
 import {
-  createPortletLink,
   createRowFunc,
   getImage,
   getOptionProperty,
+  takePortlet,
 } from "@/util";
 
 export async function initCsd() {
@@ -18,11 +19,7 @@ export async function initCsd() {
   const namespaceName = NAMESPACE_MAP.get(namespaceNumber);
   const revisionId = mw.config.get("wgRevisionId");
 
-  const csdPortlet = createPortletLink(
-    "即時削除",
-    "wks-csd",
-    "即時削除テンプレートを貼り付ける",
-  );
+  const csdPortlet = takePortlet("wks-csd");
   if (!csdPortlet) {
     console.warn(`${SCRIPT_NAME}: メニューの作成に失敗しました。`);
     return;
@@ -32,23 +29,15 @@ export async function initCsd() {
     e.preventDefault();
 
     const createRow = createRowFunc("csd");
-    const csdDialog = $("<div>");
-    csdDialog.css("max-height", "70vh").dialog({
-      dialogClass: "wks-csd-dialog",
-      title: `${SCRIPT_NAME} - 即時削除`,
-      resizable: false,
-      height: "auto",
-      width: "auto",
-      modal: true,
-      close: function () {
-        $(this).empty().dialog("destroy");
-      },
-    });
     const dialogContent = $("<div>")
       .prop("id", "wks-csd-dialog-content")
       .text("読み込み中")
       .append(getImage("load", "margin-left: 0.5em;"));
-    csdDialog.append(dialogContent);
+    const csdDialog = await openDialog({
+      title: `${SCRIPT_NAME} - 即時削除`,
+      dialogClass: "wks-csd-dialog",
+      content: dialogContent,
+    });
     const pageRes = await new mw.Api().post({
       action: "query",
       format: "json",
@@ -343,26 +332,20 @@ export async function initCsd() {
         });
         return;
       }
-      const previewDialog = $("<div>")
-        .css({
-          maxHeight: "70vh",
-          maxWidth: "80vw",
-        })
-        .dialog({
-          dialogClass: "wks-csd-dialog wks-csd-dialog-preview",
-          title: `${SCRIPT_NAME} - 即時削除プレビュー`,
-          height: "auto",
-          width: "auto",
-          modal: true,
-          close: function () {
-            $(this).empty().dialog("destroy");
-          },
-        });
+      const previewContentHolder = $("<div>").css({
+        maxHeight: "70vh",
+        maxWidth: "80vw",
+      });
+      const previewDialog = await openDialog({
+        title: `${SCRIPT_NAME} - 即時削除プレビュー`,
+        dialogClass: "wks-csd-dialog wks-csd-dialog-preview",
+        content: previewContentHolder,
+      });
       const previewContent = $("<div>")
         .prop("id", "wks-dialog-preview-content")
         .text("読み込み中")
         .append(getImage("load", "margin-left: 0.5em;"));
-      previewDialog.append(previewContent);
+      previewContentHolder.append(previewContent);
       const parseRes = await new mw.Api().post({
         action: "parse",
         title: mw.config.get("wgPageName"),
@@ -394,13 +377,7 @@ export async function initCsd() {
       previewContent.append(summaryPreview);
       previewContent.append(hr);
       previewContent.append(previewDiv);
-      previewDialog.dialog({
-        position: {
-          my: "center",
-          at: "center",
-          of: window,
-        },
-      });
+      previewDialog.reposition();
     };
 
     const execute = async () => {
@@ -423,7 +400,7 @@ export async function initCsd() {
         });
         if (editRes.edit.result === "Success") {
           mw.notify("ページの編集に成功しました。");
-          csdDialog.dialog("close");
+          csdDialog.close();
           window.location.reload();
         } else {
           mw.notify(
@@ -439,35 +416,22 @@ export async function initCsd() {
       }
     };
 
-    csdDialog.dialog({
-      buttons: [
-        {
-          text: "実行",
-          click: function () {
-            return execute();
-          },
-        },
-        {
-          text: "プレビュー",
-          click: function () {
-            return preview();
-          },
-        },
-        {
-          text: "閉じる",
-          click: function () {
-            return csdDialog.dialog("close");
-          },
-        },
-      ],
-    });
-
-    csdDialog.dialog({
-      position: {
-        my: "top",
-        at: "top+5%",
-        of: window,
+    csdDialog.setButtons([
+      {
+        label: "実行",
+        variant: "progressive",
+        onClick: () => execute(),
       },
-    });
+      {
+        label: "プレビュー",
+        onClick: () => preview(),
+      },
+      {
+        label: "閉じる",
+        onClick: () => csdDialog.close(),
+      },
+    ]);
+
+    csdDialog.reposition();
   });
 }

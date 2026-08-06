@@ -9,19 +9,110 @@ import {
   VERSION,
   VERSION_OPTIONS_KEY,
 } from "./constants";
-import { showDebugPage } from "./debug";
-import { initCsd } from "./modules/csd";
-import { initCsrd } from "./modules/csrd";
-import { initEditCount } from "./modules/editCount";
-import { initMi } from "./modules/mi";
-import { initRFP } from "./modules/rfp";
-import { initSkj } from "./modules/skj";
-import { initWarn } from "./modules/warn";
-import { initWikidata } from "./modules/wikidata";
 import { applyOptionMigrations } from "./option-migrations";
-import { showConfigPage } from "./preferences";
-import { getOptionProperty, getSavedOptions, loadLibrary } from "./util";
+import "./shared";
+import {
+  createPortletLink,
+  getOptionProperty,
+  getSavedOptions,
+  loadLibrary,
+} from "./util";
 import cmp from "semver-compare";
+
+const MODULE_BASE_PAGE = "利用者:鈴音雨/WKSpinner/modules/";
+const PAGE_BASE = "利用者:鈴音雨/WKSpinner/pages/";
+
+type ModuleExports = { init: () => void | Promise<void> };
+
+/** Portlet menu descriptors for modules that expose a menu link. */
+const PORTLET_MODULES: Record<
+  string,
+  { id: string; label: string; description: string }
+> = {
+  csd: {
+    id: "wks-csd",
+    label: "即時削除",
+    description: "即時削除テンプレートを貼り付ける",
+  },
+  mi: {
+    id: "wks-mi",
+    label: "問題",
+    description: "問題テンプレートを貼り付ける",
+  },
+  rfp: { id: "wks-rfp", label: "保護依頼", description: "保護依頼をする" },
+  skj: { id: "wks-skj", label: "削除依頼", description: "削除依頼をする" },
+  warn: {
+    id: "wks-warn",
+    label: "通知",
+    description: "ユーザーへ通知・警告を行う",
+  },
+};
+
+const moduleCache = new Map<string, ModuleExports>();
+
+function loadFrom(
+  base: string,
+  hookNs: string,
+  name: string,
+): Promise<ModuleExports> {
+  const cacheKey = `${hookNs}.${name}`;
+  const cached = moduleCache.get(cacheKey);
+  if (cached) {
+    return Promise.resolve(cached);
+  }
+  const ready = new Promise<ModuleExports>((resolve) => {
+    mw.hook(`wkspinner.${hookNs}.${name}`).add((exports: ModuleExports) => {
+      moduleCache.set(cacheKey, exports);
+      resolve(exports);
+    });
+  });
+  mw.loader.load(
+    mw.config.get("wgServer") +
+      mw.config.get("wgScript") +
+      "?action=raw&ctype=text/javascript&title=" +
+      mw.util.wikiUrlencode(base + name + ".js"),
+    "text/javascript",
+  );
+  return ready;
+}
+
+function loadModule(name: string): Promise<ModuleExports> {
+  return loadFrom(MODULE_BASE_PAGE, "module", name);
+}
+
+function loadPage(name: string): Promise<ModuleExports> {
+  return loadFrom(PAGE_BASE, "page", name);
+}
+
+async function runModule(name: string): Promise<void> {
+  const { init } = await loadModule(name);
+  await init();
+}
+
+async function runPage(name: string): Promise<void> {
+  const { init } = await loadPage(name);
+  await init();
+}
+
+/**
+ * Place the portlet link for a module synchronously, then eagerly load the
+ * module bundle in the background. A placeholder click handler is installed
+ * to swallow clicks until the module's init replaces it via `takePortlet`.
+ */
+function setupPortletModule(name: string): void {
+  const desc = PORTLET_MODULES[name];
+  if (!desc) {
+    return;
+  }
+  const portlet = createPortletLink(desc.label, desc.id, desc.description);
+  if (!portlet) {
+    console.warn(`${SCRIPT_NAME}: メニューの作成に失敗しました。(${name})`);
+    return;
+  }
+  // Swallow click until the module's init attaches the real handler.
+  portlet.addEventListener("click", (e) => e.preventDefault());
+  void runModule(name);
+}
 
 mw.loader.load(
   mw.config.get("wgServer") +
@@ -61,14 +152,14 @@ async function init() {
     mw.config.get("wgAction") === "view" &&
     mw.config.get("wgPageName") === CONFIG_PAGE_NAME
   ) {
-    await showConfigPage();
+    await runPage("preferences");
   }
 
   if (
     mw.config.get("wgAction") === "view" &&
     mw.config.get("wgPageName") === DEBUG_PAGE_NAME
   ) {
-    await showDebugPage();
+    await runPage("debug");
   }
 
   // モバイル無効設定
@@ -87,7 +178,7 @@ async function init() {
           mw.config.get("wgCanonicalSpecialPageName") === "Watchlist" ||
           mw.config.get("wgCanonicalSpecialPageName") === "Newpages"
         ) {
-          initEditCount();
+          await runModule("editCount");
         }
       }
     }
@@ -98,7 +189,7 @@ async function init() {
       getOptionProperty("editCount.enabled") === true &&
       !(isMobile && getOptionProperty("editCount.enableMobile") === false)
     ) {
-      initEditCount();
+      await runModule("editCount");
     }
   }
 
@@ -107,7 +198,7 @@ async function init() {
     mw.config.get("wgAction") === "view" &&
     getOptionProperty("wikidata.enabled") === true
   ) {
-    await initWikidata();
+    await runModule("wikidata");
   }
 
   if (getOptionProperty("useIndividualPortlet") === true && !isMobile) {
@@ -122,7 +213,7 @@ async function init() {
     getOptionProperty("csd.enabled") === true && // 無効でない
     !(isMobile && getOptionProperty("csd.enableMobile") === false)
   ) {
-    await initCsd();
+    setupPortletModule("csd");
   }
 
   // 即時版指定削除
@@ -131,7 +222,7 @@ async function init() {
     !(isMobile && getOptionProperty("csrd.enableMobile") === false) &&
     mw.config.get("wgAction") === "history"
   ) {
-    await initCsrd();
+    await runModule("csrd");
   }
 
   // 問題
@@ -140,7 +231,7 @@ async function init() {
     !(isMobile && getOptionProperty("mi.enableMobile") === false) &&
     (namespaceNumber === 0 || namespaceNumber === 2) // メインまたはユーザー
   ) {
-    await initMi();
+    setupPortletModule("mi");
   }
 
   // 削除依頼
@@ -148,7 +239,7 @@ async function init() {
     getOptionProperty("skj.enabled") === true && // 無効でない
     !(isMobile && getOptionProperty("skj.enableMobile") === false)
   ) {
-    await initSkj();
+    setupPortletModule("skj");
   }
 
   // ユーザーへの警告
@@ -157,7 +248,7 @@ async function init() {
     !(isMobile && getOptionProperty("warn.enableMobile") === false) &&
     (namespaceNumber === 2 || namespaceNumber === 3)
   ) {
-    await initWarn();
+    setupPortletModule("warn");
   }
 
   // 保護依頼
@@ -165,7 +256,7 @@ async function init() {
     getOptionProperty("rfp.enabled") === true && // 無効でない
     !(isMobile && getOptionProperty("rfp.enableMobile") === false)
   ) {
-    await initRFP();
+    setupPortletModule("rfp");
   }
 }
 

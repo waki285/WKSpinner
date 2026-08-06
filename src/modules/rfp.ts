@@ -1,12 +1,13 @@
 import { SCRIPT_NAME, SUMMARY_AD, SUMMARY_AD_ATTRACT } from "@/constants";
+import { openDialog } from "@/dialog";
 import {
-  createPortletLink,
   createRowFunc,
   getImage,
   getOptionProperty,
   lib,
   pageNameToNamespace,
   sleep,
+  takePortlet,
 } from "@/util";
 
 function getProtectSectionName() {
@@ -24,8 +25,7 @@ function getProtectSectionName() {
 }
 
 export async function initRFP() {
-  const rfpPortlet = createPortletLink("保護依頼", "wks-rfp", "保護依頼をする");
-
+  const rfpPortlet = takePortlet("wks-rfp");
   if (!rfpPortlet) {
     console.warn(`${SCRIPT_NAME}: メニューの作成に失敗しました。`);
     return;
@@ -35,20 +35,12 @@ export async function initRFP() {
     e.preventDefault();
 
     const createRow = createRowFunc("rfp");
-    const rfpDialog = $("<div>");
-    rfpDialog.css("max-height", "70vh").dialog({
-      dialogClass: "wks-rfp-dialog",
-      title: `${SCRIPT_NAME} - 保護依頼`,
-      resizable: false,
-      height: "auto",
-      width: "auto",
-      modal: true,
-      close: function () {
-        $(this).empty().dialog("destroy");
-      },
-    });
     const dialogContent = $("<div>").prop("id", "wks-rfp-dialog-content");
-    rfpDialog.append(dialogContent);
+    const rfpDialog = await openDialog({
+      title: `${SCRIPT_NAME} - 保護依頼`,
+      dialogClass: "wks-rfp-dialog",
+      content: dialogContent,
+    });
     dialogContent.empty();
     const dialogFieldset = $("<fieldset>");
     dialogFieldset.prop({
@@ -293,35 +285,23 @@ export async function initRFP() {
         return;
       }
 
-      const progressDialog = $("<div>")
-        .css({
-          maxHeight: "70vh",
-          maxWidth: "80vw",
-        })
-        .dialog({
-          dialogClass: "wks-rfp-dialog wks-rfp-dialog-preview",
-          title: `${SCRIPT_NAME} - 保護依頼`,
-          height: "auto",
-          width: "auto",
-          modal: true,
-          close: function () {
-            $(this).empty().dialog("destroy");
-          },
-        });
-
-      progressDialog.dialog({
-        position: {
-          my: "center",
-          at: "center",
-          of: window,
-        },
+      const progressContentHolder = $("<div>").css({
+        maxHeight: "70vh",
+        maxWidth: "80vw",
       });
+      const progressDialog = await openDialog({
+        title: `${SCRIPT_NAME} - 保護依頼`,
+        dialogClass: "wks-rfp-dialog wks-rfp-dialog-preview",
+        content: progressContentHolder,
+      });
+
+      progressDialog.reposition();
 
       const wipMessage = $("<p>")
         .addClass("wks-red")
         .css("font-weight", "bold")
         .text("注意: 保護依頼中はタブを閉じないでください！");
-      progressDialog.append(wipMessage);
+      progressContentHolder.append(wipMessage);
 
       const unloadFunc = (e: BeforeUnloadEvent) => {
         e.returnValue = "During the RFP progress!";
@@ -333,7 +313,7 @@ export async function initRFP() {
         .addClass("wks-inline")
         .append(getImage("load", ""))
         .append($("<span>").text("保護依頼中"));
-      progressDialog.append(progressDialogContentSubmitRFP);
+      progressContentHolder.append(progressDialogContentSubmitRFP);
 
       const pageName = "Wikipedia:保護依頼";
       const nft = await lib.Wikitext.newFromTitle(pageName);
@@ -375,16 +355,12 @@ export async function initRFP() {
               `保護依頼ページの編集に失敗しました: ${JSON.stringify(result.edit)}`,
             ),
           );
-          progressDialog.dialog({
-            buttons: [
-              {
-                text: "閉じる",
-                click: function () {
-                  return progressDialog.dialog("close");
-                },
-              },
-            ],
-          });
+          progressDialog.setButtons([
+            {
+              label: "閉じる",
+              onClick: () => progressDialog.close(),
+            },
+          ]);
           removeEventListener("beforeunload", unloadFunc);
           return;
         }
@@ -398,16 +374,12 @@ export async function initRFP() {
         );
 
         if (!$("#wks-rfp-dialog-template-cb").prop("checked")) {
-          progressDialog.dialog({
-            buttons: [
-              {
-                text: "閉じる",
-                click: function () {
-                  return progressDialog.dialog("close");
-                },
-              },
-            ],
-          });
+          progressDialog.setButtons([
+            {
+              label: "閉じる",
+              onClick: () => progressDialog.close(),
+            },
+          ]);
           removeEventListener("beforeunload", unloadFunc);
         } else {
           const progressDialogContentWait1 = $("<div>")
@@ -416,7 +388,7 @@ export async function initRFP() {
             .append(getImage("load", ""))
             .append($("<span>").text("5秒待機します..."));
 
-          progressDialog.append(progressDialogContentWait1);
+          progressContentHolder.append(progressDialogContentWait1);
 
           await sleep(5000);
 
@@ -438,7 +410,7 @@ export async function initRFP() {
           let success = 0;
           let failure = 0;
 
-          progressDialog.append(progressDialogContentTemplate);
+          progressContentHolder.append(progressDialogContentTemplate);
 
           const pageNames = pages.map(
             (pageNumber) =>
@@ -481,7 +453,7 @@ export async function initRFP() {
                     )}`,
                   ),
                 );
-                progressDialog.append(progressDialogContentTemplateFail);
+                progressContentHolder.append(progressDialogContentTemplateFail);
                 failure++;
               } else {
                 success++;
@@ -499,7 +471,7 @@ export async function initRFP() {
                   `保護依頼テンプレートの貼り付けに失敗しました: ${pageName}: ${e}`,
                 ),
               );
-              progressDialog.append(progressDialogContentTemplateFail);
+              progressContentHolder.append(progressDialogContentTemplateFail);
               failure++;
             } finally {
               progressDialogContentTemplate.empty();
@@ -513,16 +485,12 @@ export async function initRFP() {
             await sleep(3000);
           }
 
-          progressDialog.dialog({
-            buttons: [
-              {
-                text: "閉じる",
-                click: function () {
-                  return progressDialog.dialog("close");
-                },
-              },
-            ],
-          });
+          progressDialog.setButtons([
+            {
+              label: "閉じる",
+              onClick: () => progressDialog.close(),
+            },
+          ]);
           progressDialogContentTemplate.empty();
           progressDialogContentTemplate.append(getImage("check", ""));
           progressDialogContentTemplate.append(
@@ -538,16 +506,12 @@ export async function initRFP() {
         progressDialogContentSubmitRFP.append(
           $("<span>").html(`保護依頼ページの編集に失敗しました: ${e}`),
         );
-        progressDialog.dialog({
-          buttons: [
-            {
-              text: "閉じる",
-              click: function () {
-                return progressDialog.dialog("close");
-              },
-            },
-          ],
-        });
+        progressDialog.setButtons([
+          {
+            label: "閉じる",
+            onClick: () => progressDialog.close(),
+          },
+        ]);
         removeEventListener("beforeunload", unloadFunc);
         return;
       }
@@ -560,26 +524,20 @@ export async function initRFP() {
         return;
       }
       const pageName = "Wikipedia:保護依頼";
-      const previewDialog = $("<div>")
-        .css({
-          maxHeight: "70vh",
-          maxWidth: "80vw",
-        })
-        .dialog({
-          dialogClass: "wks-rfp-dialog wks-rfp-dialog-preview",
-          title: `${SCRIPT_NAME} - 保護依頼プレビュー`,
-          height: "auto",
-          width: "auto",
-          modal: true,
-          close: function () {
-            $(this).empty().dialog("destroy");
-          },
-        });
+      const previewContentHolder = $("<div>").css({
+        maxHeight: "70vh",
+        maxWidth: "80vw",
+      });
+      const previewDialog = await openDialog({
+        title: `${SCRIPT_NAME} - 保護依頼プレビュー`,
+        dialogClass: "wks-rfp-dialog wks-rfp-dialog-preview",
+        content: previewContentHolder,
+      });
       const previewContent = $("<div>")
         .prop("id", "wks-dialog-preview-content")
         .text("読み込み中")
         .append(getImage("load", "margin-left: 0.5em;"));
-      previewDialog.append(previewContent);
+      previewContentHolder.append(previewContent);
       const parseRes = await new mw.Api().post({
         action: "parse",
         title: pageName,
@@ -613,44 +571,25 @@ export async function initRFP() {
       previewContent.append(hr);
       previewContent.append(previewDiv);
 
-      previewDialog.dialog({
-        position: {
-          my: "top",
-          at: "top+5%",
-          of: window,
-        },
-      });
+      previewDialog.reposition();
     };
 
-    rfpDialog.dialog({
-      buttons: [
-        {
-          text: "実行",
-          click: function () {
-            return execute();
-          },
-        },
-        {
-          text: "プレビュー",
-          click: function () {
-            return preview();
-          },
-        },
-        {
-          text: "閉じる",
-          click: function () {
-            return rfpDialog.dialog("close");
-          },
-        },
-      ],
-    });
-
-    rfpDialog.dialog({
-      position: {
-        my: "top",
-        at: "top+5%",
-        of: window,
+    rfpDialog.setButtons([
+      {
+        label: "実行",
+        variant: "progressive",
+        onClick: () => execute(),
       },
-    });
+      {
+        label: "プレビュー",
+        onClick: () => preview(),
+      },
+      {
+        label: "閉じる",
+        onClick: () => rfpDialog.close(),
+      },
+    ]);
+
+    rfpDialog.reposition();
   });
 }

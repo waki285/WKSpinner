@@ -51,6 +51,18 @@ export async function showConfigPage() {
   );
   configArea.append(useIndividualPortletField.$element);
 
+  const useCodexModal = new OO.ui.CheckboxInputWidget({
+    value: "use-codex-modal",
+    selected: getOptionProperty("useCodexModal"),
+  });
+  const useCodexModalField = new OO.ui.FieldLayout(useCodexModal, {
+    label: "モダンなモーダルを使用する (β版)",
+    align: "inline",
+    help: "Codex を利用したダイアログに置き換えます。実験的機能です。",
+    helpInline: true,
+  });
+  configArea.append(useCodexModalField.$element);
+
   const versionNotifyOptionAll = new OO.ui.RadioOptionWidget({
     data: "all",
     label: "すべて",
@@ -592,6 +604,7 @@ export async function showConfigPage() {
       disableMobile: disableMobile.isSelected(),
       prefLinkInToolbar: prefLinkInToolbar.isSelected(),
       useIndividualPortlet: useIndividualPortlet.isSelected(),
+      useCodexModal: useCodexModal.isSelected(),
       versionNotify: (
         versionNotifySelect.findSelectedItem() as OO.ui.OptionWidget
       ).getData() as string,

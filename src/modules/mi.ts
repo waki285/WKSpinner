@@ -13,20 +13,21 @@ import {
 } from "@/constants";
 import {
   buildSelectedIssueTemplates,
+  extractIssueTemplates,
   formatIssueTemplateSummary,
   getIssueTemplateParamName,
   partitionMultipleIssueChoices,
+  replaceFirstAndRemoveOtherIssueTemplates,
+  type IssueTemplate,
 } from "@/issue-templates";
 import MI_DIALOG_STYLE from "@/styles/mi.css";
 import {
-  createPortletLink,
   createRowFunc,
-  extractIssueTemplates,
   getImage,
   getOptionProperty,
-  replaceFirstAndRemoveOtherIssueTemplates,
-  type IssueTemplate,
+  takePortlet,
 } from "@/util";
+import { openDialog } from "@/dialog";
 
 type IssueChoice = MIChoice | StandaloneIssueChoice;
 
@@ -38,12 +39,7 @@ const paramInputId = (choice: IssueChoice, param: IssueTemplateParam) =>
 export async function initMi() {
   const revisionId = mw.config.get("wgRevisionId");
 
-  const miPortlet = createPortletLink(
-    "問題",
-    "wks-mi",
-    "問題テンプレートを貼り付ける",
-  );
-
+  const miPortlet = takePortlet("wks-mi");
   if (!miPortlet) {
     console.warn(`${SCRIPT_NAME}: メニューの作成に失敗しました。`);
     return;
@@ -53,23 +49,16 @@ export async function initMi() {
     e.preventDefault();
 
     const createRow = createRowFunc("mi");
-    const miDialog = $("<div>");
-    miDialog.css("max-height", "70vh").dialog({
-      dialogClass: "wks-mi-dialog",
-      title: `${SCRIPT_NAME} - 問題`,
-      resizable: false,
-      height: "auto",
-      width: `${Math.max(280, Math.min(1180, window.innerWidth - 32))}px`,
-      modal: true,
-      close: function () {
-        $(this).empty().dialog("destroy");
-      },
-    });
     const dialogContent = $("<div>")
       .prop("id", "wks-mi-dialog-content")
       .text("読み込み中")
       .append(getImage("load", "margin-left: 0.5em;"));
-    miDialog.append(dialogContent);
+    const miDialog = await openDialog({
+      title: `${SCRIPT_NAME} - 問題`,
+      dialogClass: "wks-mi-dialog",
+      width: `${Math.max(280, Math.min(1180, window.innerWidth - 32))}px`,
+      content: dialogContent,
+    });
     const pageRes = await new mw.Api().post({
       action: "query",
       format: "json",
@@ -385,26 +374,20 @@ export async function initMi() {
         mw.notify(err, { type: "error" });
         return;
       }
-      const previewDialog = $("<div>")
-        .css({
-          maxHeight: "70vh",
-          maxWidth: "80vw",
-        })
-        .dialog({
-          dialogClass: "wks-mi-dialog wks-mi-dialog-preview",
-          title: `${SCRIPT_NAME} - 問題プレビュー`,
-          height: "auto",
-          width: "auto",
-          modal: true,
-          close: function () {
-            $(this).empty().dialog("destroy");
-          },
-        });
+      const previewContentHolder = $("<div>").css({
+        maxHeight: "70vh",
+        maxWidth: "80vw",
+      });
+      const previewDialog = await openDialog({
+        title: `${SCRIPT_NAME} - 問題プレビュー`,
+        dialogClass: "wks-mi-dialog wks-mi-dialog-preview",
+        content: previewContentHolder,
+      });
       const previewContent = $("<div>")
         .prop("id", "anr-dialog-preview-content")
         .text("読み込み中")
         .append(getImage("load", "margin-left: 0.5em;"));
-      previewDialog.append(previewContent);
+      previewContentHolder.append(previewContent);
       const parseRes = await new mw.Api().post({
         action: "parse",
         title: mw.config.get("wgPageName"),
@@ -435,13 +418,7 @@ export async function initMi() {
       previewContent.append(summaryPreview);
       previewContent.append(hr);
       previewContent.append(previewDiv);
-      previewDialog.dialog({
-        position: {
-          my: "center",
-          at: "center",
-          of: window,
-        },
-      });
+      previewDialog.reposition();
     };
 
     const execute = async () => {
@@ -457,7 +434,7 @@ export async function initMi() {
         });
         if (editRes.edit.result === "Success") {
           mw.notify("ページの編集に成功しました。");
-          miDialog.dialog("close");
+          miDialog.close();
           window.location.reload();
         } else {
           mw.notify(
@@ -471,35 +448,22 @@ export async function initMi() {
       }
     };
 
-    miDialog.dialog({
-      buttons: [
-        {
-          text: "実行",
-          click: function () {
-            return execute();
-          },
-        },
-        {
-          text: "プレビュー",
-          click: function () {
-            return preview();
-          },
-        },
-        {
-          text: "閉じる",
-          click: function () {
-            return miDialog.dialog("close");
-          },
-        },
-      ],
-    });
-
-    miDialog.dialog({
-      position: {
-        my: "top",
-        at: "top+5%",
-        of: window,
+    miDialog.setButtons([
+      {
+        label: "実行",
+        variant: "progressive",
+        onClick: () => execute(),
       },
-    });
+      {
+        label: "プレビュー",
+        onClick: () => preview(),
+      },
+      {
+        label: "閉じる",
+        onClick: () => miDialog.close(),
+      },
+    ]);
+
+    miDialog.reposition();
   });
 }

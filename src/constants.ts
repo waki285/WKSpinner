@@ -62,6 +62,7 @@ export type Options = {
   disableMobile: boolean;
   prefLinkInToolbar: boolean;
   useIndividualPortlet: boolean;
+  useCodexModal: boolean;
   versionNotify: string;
   timezone: string;
   historyTimeFormat: string;
@@ -129,6 +130,7 @@ export const DEFAULT_OPTIONS = {
   disableMobile: false,
   prefLinkInToolbar: true,
   useIndividualPortlet: false,
+  useCodexModal: false,
   versionNotify: "all",
   timezone: "UTC",
   historyTimeFormat:
