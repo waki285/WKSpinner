@@ -237,7 +237,8 @@ async function main() {
 
   let changed = 0;
   let skipped = 0;
-  for (const t of targets) {
+  for (let i = 0; i < targets.length; i++) {
+    const t = targets[i];
     const remote = await getRemoteSha1(t.title);
     const local = createHash("sha1").update(t.body, "utf8").digest("hex");
     if (remote === local) {
@@ -257,7 +258,7 @@ async function main() {
     }
     await editPage(t.title, t.body, csrf, SUMMARY);
     changed += 1;
-    if (changed < targets.length) {
+    if (i < targets.length - 1) {
       console.log(
         `  (waiting ${EDIT_INTERVAL_MS / 1000}s before next edit...)`,
       );
