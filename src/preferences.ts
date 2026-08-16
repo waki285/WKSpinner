@@ -330,206 +330,229 @@ export async function showConfigPage() {
       return () =>
         h("div", [
           h("h2", { style: "margin-top:0;" }, `${SCRIPT_NAME} 設定`),
-          h("div", { style: "display:flex;flex-direction:column;gap:0.5rem;" }, [
-            checkboxField(
-              options.disableMobile,
-              "モバイルでは全ての機能を無効にする (すべてのモバイル設定を上書きします)",
-            ),
-            checkboxField(
-              options.prefLinkInToolbar,
-              "この設定ページへのリンクをツールバーに配置する",
-            ),
-            checkboxField(
-              options.useIndividualPortlet,
-              "「その他」タブではなく、新たに「WK」というタブを作りそこに機能を配置",
-              "これはモバイルには効果がありません。",
-            ),
-            checkboxField(
-              options.useCodexModal,
-              "モダンなモーダルを使用する (β版)",
-              "Codex を利用したダイアログに置き換えます。実験的機能です。",
-            ),
-            radioField(options.versionNotify, "バージョンアップ通知", [
-              { value: "all", label: "すべて" },
-              { value: "minor", label: "メジャー・マイナーバージョンのみ" },
-              { value: "none", label: "通知しない" },
-            ]),
-            textField(
-              options.timezone,
-              "タイムゾーン",
-              "UTC",
-              "ウィキの個人設定で設定しているものと同じものを設定してください。即時版指定削除機能での時間をUTCに調節するために使用します。現時点ではUTCとJSTのみ使用可能です。",
-            ),
-            textField(
-              options.historyTimeFormat,
-              "履歴ページの日時正規表現",
-              "(\\d{4})年(\\d{1,2})月(\\d{1,2})日 \\((.)\\) (\\d{2}):(\\d{2})",
-              "履歴ページの日時を取得するための正規表現を設定します。ウィキの言語を日本語にしている限りここを修正する必要はありません。",
-            ),
-            panel("ウィキデータ説明表示", [
+          h(
+            "div",
+            { style: "display:flex;flex-direction:column;gap:0.5rem;" },
+            [
               checkboxField(
-                options.wikidataEnabled,
-                "PC版のページ見出しにウィキデータの日本語説明を表示する",
-              ),
-            ]),
-            panel("問題テンプレート貼り付け", [
-              checkboxField(options.miEnabled, "有効にする"),
-              checkboxField(options.miEnableMobile, "モバイルでも有効にする"),
-              textField(
-                options.miSummary,
-                "編集の要約デフォルト値",
-                "+{{$t}}",
-                "$t には最大5件のテンプレート名、$s1 には1件目のテンプレート名が入ります",
-              ),
-            ]),
-            panel("即時削除テンプレート貼り付け", [
-              checkboxField(options.csdEnabled, "有効にする"),
-              checkboxField(options.csdEnableMobile, "モバイルでも有効にする"),
-              textField(options.csdSummary, "編集の要約デフォルト値", "+sd"),
-            ]),
-            panel("即時版指定削除テンプレート貼り付け", [
-              checkboxField(options.csrdEnabled, "有効にする"),
-              checkboxField(options.csrdEnableMobile, "モバイルでも有効にする"),
-              textField(options.csrdSummary, "編集の要約デフォルト値", "+srd"),
-            ]),
-            panel("削除依頼提出", [
-              checkboxField(options.skjEnabled, "有効にする"),
-              checkboxField(options.skjEnableMobile, "モバイルでも有効にする"),
-              textField(
-                options.skjOpv,
-                "依頼者票デフォルト",
-                "{{AFD|削除}} 依頼者票。",
-              ),
-              textField(
-                options.skjSummaryTemplate,
-                "編集の要約 (Sakujoテンプレート貼り付け) デフォルト値",
-                "+Sakujo",
-              ),
-              textField(
-                options.skjSummarySubmit,
-                "編集の要約 (削除依頼ページ作成) デフォルト値",
-                "削除依頼",
-              ),
-              textField(
-                options.skjSummaryNote,
-                "編集の要約 (削除依頼ページ追記) デフォルト値",
-                "削除依頼の追加",
-                "$d には削除依頼ページが入ります (例: Wikipedia:削除依頼/ほげほげ 20240314) $p には削除依頼対象ページが入ります (例: ほげほげ) 三つの要約欄すべてに適用できます",
+                options.disableMobile,
+                "モバイルでは全ての機能を無効にする (すべてのモバイル設定を上書きします)",
               ),
               checkboxField(
-                options.skjSignReason,
-                "削除依頼理由にも署名する",
-                "削除依頼で、理由部分にも署名をします。この設定をした場合でも、依頼者票部分に署名します。",
+                options.prefLinkInToolbar,
+                "この設定ページへのリンクをツールバーに配置する",
               ),
-              h(
-                CdxField,
-                { isFieldset: true },
-                {
-                  label: () => "依頼者票プリセット",
-                  default: () => [
-                    h(
-                      CdxButton,
-                      {
-                        action: "progressive",
-                        weight: "normal",
-                        onClick: addPreset,
-                      },
-                      () => "プリセットを追加",
-                    ),
-                    ...presets.value.map((p, i) =>
+              checkboxField(
+                options.useIndividualPortlet,
+                "「その他」タブではなく、新たに「WK」というタブを作りそこに機能を配置",
+                "これはモバイルには効果がありません。",
+              ),
+              checkboxField(
+                options.useCodexModal,
+                "モダンなモーダルを使用する (β版)",
+                "Codex を利用したダイアログに置き換えます。実験的機能です。",
+              ),
+              radioField(options.versionNotify, "バージョンアップ通知", [
+                { value: "all", label: "すべて" },
+                { value: "minor", label: "メジャー・マイナーバージョンのみ" },
+                { value: "none", label: "通知しない" },
+              ]),
+              textField(
+                options.timezone,
+                "タイムゾーン",
+                "UTC",
+                "ウィキの個人設定で設定しているものと同じものを設定してください。即時版指定削除機能での時間をUTCに調節するために使用します。現時点ではUTCとJSTのみ使用可能です。",
+              ),
+              textField(
+                options.historyTimeFormat,
+                "履歴ページの日時正規表現",
+                "(\\d{4})年(\\d{1,2})月(\\d{1,2})日 \\((.)\\) (\\d{2}):(\\d{2})",
+                "履歴ページの日時を取得するための正規表現を設定します。ウィキの言語を日本語にしている限りここを修正する必要はありません。",
+              ),
+              panel("ウィキデータ説明表示", [
+                checkboxField(
+                  options.wikidataEnabled,
+                  "PC版のページ見出しにウィキデータの日本語説明を表示する",
+                ),
+              ]),
+              panel("問題テンプレート貼り付け", [
+                checkboxField(options.miEnabled, "有効にする"),
+                checkboxField(options.miEnableMobile, "モバイルでも有効にする"),
+                textField(
+                  options.miSummary,
+                  "編集の要約デフォルト値",
+                  "+{{$t}}",
+                  "$t には最大5件のテンプレート名、$s1 には1件目のテンプレート名が入ります",
+                ),
+              ]),
+              panel("即時削除テンプレート貼り付け", [
+                checkboxField(options.csdEnabled, "有効にする"),
+                checkboxField(
+                  options.csdEnableMobile,
+                  "モバイルでも有効にする",
+                ),
+                textField(options.csdSummary, "編集の要約デフォルト値", "+sd"),
+              ]),
+              panel("即時版指定削除テンプレート貼り付け", [
+                checkboxField(options.csrdEnabled, "有効にする"),
+                checkboxField(
+                  options.csrdEnableMobile,
+                  "モバイルでも有効にする",
+                ),
+                textField(
+                  options.csrdSummary,
+                  "編集の要約デフォルト値",
+                  "+srd",
+                ),
+              ]),
+              panel("削除依頼提出", [
+                checkboxField(options.skjEnabled, "有効にする"),
+                checkboxField(
+                  options.skjEnableMobile,
+                  "モバイルでも有効にする",
+                ),
+                textField(
+                  options.skjOpv,
+                  "依頼者票デフォルト",
+                  "{{AFD|削除}} 依頼者票。",
+                ),
+                textField(
+                  options.skjSummaryTemplate,
+                  "編集の要約 (Sakujoテンプレート貼り付け) デフォルト値",
+                  "+Sakujo",
+                ),
+                textField(
+                  options.skjSummarySubmit,
+                  "編集の要約 (削除依頼ページ作成) デフォルト値",
+                  "削除依頼",
+                ),
+                textField(
+                  options.skjSummaryNote,
+                  "編集の要約 (削除依頼ページ追記) デフォルト値",
+                  "削除依頼の追加",
+                  "$d には削除依頼ページが入ります (例: Wikipedia:削除依頼/ほげほげ 20240314) $p には削除依頼対象ページが入ります (例: ほげほげ) 三つの要約欄すべてに適用できます",
+                ),
+                checkboxField(
+                  options.skjSignReason,
+                  "削除依頼理由にも署名する",
+                  "削除依頼で、理由部分にも署名をします。この設定をした場合でも、依頼者票部分に署名します。",
+                ),
+                h(
+                  CdxField,
+                  { isFieldset: true },
+                  {
+                    label: () => "依頼者票プリセット",
+                    default: () => [
                       h(
-                        "div",
+                        CdxButton,
                         {
-                          style:
-                            "display:flex;gap:0.5rem;align-items:center;margin-top:0.5rem;",
+                          action: "progressive",
+                          weight: "normal",
+                          onClick: addPreset,
                         },
-                        [
-                          h(CdxTextInput, {
-                            modelValue: p.name,
-                            "onUpdate:modelValue": (v: string) => {
-                              p.name = v;
-                            },
-                            placeholder: "ボタンラベル",
-                          }),
-                          h(CdxTextInput, {
-                            modelValue: p.value,
-                            "onUpdate:modelValue": (v: string) => {
-                              p.value = v;
-                            },
-                            placeholder: "依頼者票",
-                          }),
-                          h(
-                            CdxButton,
-                            {
-                              action: "destructive",
-                              weight: "quiet",
-                              onClick: () => removePreset(i),
-                            },
-                            () => "削除",
-                          ),
-                        ],
+                        () => "プリセットを追加",
                       ),
-                    ),
-                  ],
-                },
-              ),
-            ]),
-            panel("編集回数表示", [
-              checkboxField(
-                options.ecEnabled,
-                "有効にする",
-                "有効にすると、最近の更新、新しいページでユーザー名の右に編集回数が表示されます。",
-              ),
-              checkboxField(options.ecEnableMobile, "モバイルでも有効にする"),
-            ]),
-            panel("ユーザーへの通知 (旧名称: 警告)", [
-              checkboxField(options.warnEnabled, "有効にする"),
-              checkboxField(options.warnEnableMobile, "モバイルでも有効にする"),
-              textField(
-                options.warnSummary,
-                "編集の要約デフォルト値",
-                "+$t",
-                "$t にはテンプレート名 (Test, ご自身の記事 etc.) が入ります",
-              ),
-            ]),
-            panel("保護依頼", [
-              checkboxField(options.rfpEnabled, "有効にする"),
-              checkboxField(options.rfpEnableMobile, "モバイルでも有効にする"),
-              textField(
-                options.rfpSummarySubmit,
-                "編集の要約 (保護依頼ページ編集) デフォルト値",
-                "保護依頼",
-                "$p には保護依頼対象ページのリンクの羅列が入ります",
-              ),
-              textField(
-                options.rfpSummaryTemplate,
-                "編集の要約 (保護依頼テンプレート貼り付け) デフォルト値",
-                "+保護依頼",
-              ),
-            ]),
-            h("div", { style: "display:flex;gap:0.5rem;margin-top:1rem;" }, [
-              h(
-                CdxButton,
-                {
-                  action: "progressive",
-                  weight: "primary",
-                  disabled: saving.value,
-                  onClick: save,
-                },
-                () => "保存",
-              ),
-              h(
-                CdxButton,
-                {
-                  action: "destructive",
-                  weight: "normal",
-                  disabled: saving.value,
-                  onClick: reset,
-                },
-                () => "設定をリセット",
-              ),
-            ]),
-          ]),
+                      ...presets.value.map((p, i) =>
+                        h(
+                          "div",
+                          {
+                            style:
+                              "display:flex;gap:0.5rem;align-items:center;margin-top:0.5rem;",
+                          },
+                          [
+                            h(CdxTextInput, {
+                              modelValue: p.name,
+                              "onUpdate:modelValue": (v: string) => {
+                                p.name = v;
+                              },
+                              placeholder: "ボタンラベル",
+                            }),
+                            h(CdxTextInput, {
+                              modelValue: p.value,
+                              "onUpdate:modelValue": (v: string) => {
+                                p.value = v;
+                              },
+                              placeholder: "依頼者票",
+                            }),
+                            h(
+                              CdxButton,
+                              {
+                                action: "destructive",
+                                weight: "quiet",
+                                onClick: () => removePreset(i),
+                              },
+                              () => "削除",
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  },
+                ),
+              ]),
+              panel("編集回数表示", [
+                checkboxField(
+                  options.ecEnabled,
+                  "有効にする",
+                  "有効にすると、最近の更新、新しいページでユーザー名の右に編集回数が表示されます。",
+                ),
+                checkboxField(options.ecEnableMobile, "モバイルでも有効にする"),
+              ]),
+              panel("ユーザーへの通知 (旧名称: 警告)", [
+                checkboxField(options.warnEnabled, "有効にする"),
+                checkboxField(
+                  options.warnEnableMobile,
+                  "モバイルでも有効にする",
+                ),
+                textField(
+                  options.warnSummary,
+                  "編集の要約デフォルト値",
+                  "+$t",
+                  "$t にはテンプレート名 (Test, ご自身の記事 etc.) が入ります",
+                ),
+              ]),
+              panel("保護依頼", [
+                checkboxField(options.rfpEnabled, "有効にする"),
+                checkboxField(
+                  options.rfpEnableMobile,
+                  "モバイルでも有効にする",
+                ),
+                textField(
+                  options.rfpSummarySubmit,
+                  "編集の要約 (保護依頼ページ編集) デフォルト値",
+                  "保護依頼",
+                  "$p には保護依頼対象ページのリンクの羅列が入ります",
+                ),
+                textField(
+                  options.rfpSummaryTemplate,
+                  "編集の要約 (保護依頼テンプレート貼り付け) デフォルト値",
+                  "+保護依頼",
+                ),
+              ]),
+              h("div", { style: "display:flex;gap:0.5rem;margin-top:1rem;" }, [
+                h(
+                  CdxButton,
+                  {
+                    action: "progressive",
+                    weight: "primary",
+                    disabled: saving.value,
+                    onClick: save,
+                  },
+                  () => "保存",
+                ),
+                h(
+                  CdxButton,
+                  {
+                    action: "destructive",
+                    weight: "normal",
+                    disabled: saving.value,
+                    onClick: reset,
+                  },
+                  () => "設定をリセット",
+                ),
+              ]),
+            ],
+          ),
         ]);
     },
   });

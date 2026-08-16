@@ -9,6 +9,48 @@ import {
 export const sleep = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
+export interface PageEditContext {
+  startTimestamp: string;
+  revisionId: number | null;
+  content: string | null;
+}
+
+export async function getPageEditContext(
+  title: string,
+  includeContent = false,
+): Promise<PageEditContext> {
+  const response = await new mw.Api().post({
+    action: "query",
+    format: "json",
+    prop: "revisions",
+    titles: title,
+    curtimestamp: 1,
+    formatversion: "2",
+    rvprop: includeContent ? "ids|content" : "ids",
+    ...(includeContent ? { rvslots: "main" } : {}),
+  });
+  const page = response.query.pages[0];
+  const revision = page?.revisions?.[0];
+
+  if (typeof response.curtimestamp !== "string") {
+    throw new Error("The API response did not include the current timestamp.");
+  }
+
+  if (page?.missing || !revision) {
+    return {
+      startTimestamp: response.curtimestamp,
+      revisionId: null,
+      content: null,
+    };
+  }
+
+  return {
+    startTimestamp: response.curtimestamp,
+    revisionId: revision.revid,
+    content: includeContent ? revision.slots.main.content : null,
+  };
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export let lib: any;
 

@@ -8,6 +8,7 @@ import { openDialog } from "@/dialog";
 import {
   createRowFunc,
   formatDate,
+  getPageEditContext,
   getImage,
   getOptionProperty,
   sleep,
@@ -101,8 +102,6 @@ export async function initCsrd() {
     .text("即時版指定削除 (WKSpinner)");
   $(".mw-history-compareselectedversions").first().append(btn);
 
-  const curRev = mw.config.get("wgCurRevisionId");
-
   $("#csrd-btn").on("click", async (e) => {
     e.preventDefault();
     if (opened) {
@@ -110,6 +109,10 @@ export async function initCsrd() {
     }
     opened = true;
 
+    const pageContextPromise = getPageEditContext(
+      mw.config.get("wgPageName"),
+      true,
+    );
     const box = $("<div>").prop({
       id: "csrd-box",
       class: "wks-box",
@@ -122,17 +125,12 @@ export async function initCsrd() {
       .text("読み込み中")
       .append(getImage("load", "margin-left: 0.5em;"));
     $("#csrd-box").append(dialogContent);
-    const pageRes = await new mw.Api().post({
-      action: "query",
-      format: "json",
-      prop: "revisions",
-      list: "",
-      titles: mw.config.get("wgPageName"),
-      formatversion: "2",
-      rvprop: "content",
-      rvslots: "main",
-    });
-    const pageContent = pageRes.query.pages[0].revisions[0].slots.main.content;
+    const pageContext = await pageContextPromise;
+    if (pageContext.revisionId === null || pageContext.content === null) {
+      dialogContent.empty().text("ページが存在しないため編集できません。");
+      return;
+    }
+    const pageContent = pageContext.content;
     dialogContent.empty();
 
     const createRow = createRowFunc("csrd");
@@ -403,7 +401,8 @@ export async function initCsrd() {
           text: getFinalContent(),
           summary: getFinalSummary(),
           formatversion: "2",
-          baserevid: curRev,
+          baserevid: pageContext.revisionId,
+          starttimestamp: pageContext.startTimestamp,
         });
         if (editRes.edit.result === "Success") {
           mw.notify("ページの編集に成功しました。");

@@ -77,17 +77,6 @@ export async function openDialog(
   const host = document.createElement("div");
   document.body.append(host);
   host.classList.add("wks-codex-dialog-host");
-  host.style.setProperty("--wks-codex-dialog-width", config.width ?? "auto");
-
-  // CdxDialog は既定で最大 32rem 程度に制限されるため、jQuery UI 互換の
-  // config.width を尊重できるよう host 配下でのみ上書きを効かせる。
-  if (!document.getElementById("wks-codex-dialog-styles")) {
-    const style = document.createElement("style");
-    style.id = "wks-codex-dialog-styles";
-    style.textContent =
-      ".wks-codex-dialog-host .cdx-dialog{max-width:calc(100vw - 2rem);width:var(--wks-codex-dialog-width,auto)}";
-    document.head.append(style);
-  }
 
   const buttonsRef = Vue.ref<DialogButton[]>(config.buttons ?? []);
   let closed = false;
@@ -128,6 +117,10 @@ export async function openDialog(
             useCloseButton: true,
             onClose: () => cleanup(),
             class: config.dialogClass ?? "",
+            style: {
+              maxWidth: "calc(100vw - 2rem)",
+              width: config.width ?? "auto",
+            },
           },
           {
             default: () =>

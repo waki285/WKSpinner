@@ -2,9 +2,9 @@ import { SCRIPT_NAME, SUMMARY_AD, SUMMARY_AD_ATTRACT } from "@/constants";
 import { openDialog } from "@/dialog";
 import {
   createRowFunc,
+  getPageEditContext,
   getImage,
   getOptionProperty,
-  lib,
   pageNameToNamespace,
   sleep,
   takePortlet,
@@ -34,6 +34,8 @@ export async function initRFP() {
   rfpPortlet.addEventListener("click", async (e) => {
     e.preventDefault();
 
+    const requestPageName = "Wikipedia:保護依頼";
+    const requestPageContextPromise = getPageEditContext(requestPageName);
     const createRow = createRowFunc("rfp");
     const dialogContent = $("<div>").prop("id", "wks-rfp-dialog-content");
     const rfpDialog = await openDialog({
@@ -41,6 +43,14 @@ export async function initRFP() {
       dialogClass: "wks-rfp-dialog",
       content: dialogContent,
     });
+    const requestPageContext = await requestPageContextPromise;
+    if (requestPageContext.revisionId === null) {
+      dialogContent.text("保護依頼ページが存在しないため編集できません。");
+      rfpDialog.setButtons([
+        { label: "閉じる", onClick: () => rfpDialog.close() },
+      ]);
+      return;
+    }
     dialogContent.empty();
     const dialogFieldset = $("<fieldset>");
     dialogFieldset.prop({
@@ -315,20 +325,27 @@ export async function initRFP() {
         .append($("<span>").text("保護依頼中"));
       progressContentHolder.append(progressDialogContentSubmitRFP);
 
-      const pageName = "Wikipedia:保護依頼";
-      const nft = await lib.Wikitext.newFromTitle(pageName);
-      const sections = nft.parseSections();
-
       try {
+        const pageName = requestPageName;
+        const parseResult = await new mw.Api().post({
+          action: "parse",
+          oldid: requestPageContext.revisionId,
+          prop: "sections",
+          formatversion: "2",
+        });
+        const section = parseResult.parse.sections.find(
+          ({ line }: { line: string }) =>
+            line.includes(getProtectSectionName()),
+        );
+        if (!section) {
+          throw new Error("保護依頼先の節が見つかりません。");
+        }
+
         const result = await new mw.Api().postWithEditToken({
           action: "edit",
           format: "json",
           title: pageName,
-          section: sections
-            .find((section: { title: string }) =>
-              section.title.includes(getProtectSectionName()),
-            )
-            .index.toString(),
+          section: section.index,
           summary:
             ($("#wks-rfp-dialog-summary-submit").val() as string).replaceAll(
               "$p",
@@ -345,6 +362,8 @@ export async function initRFP() {
           nocreate: 1,
           appendtext: `\n\n${getFinalContentRequest()}`,
           formatversion: "2",
+          baserevid: requestPageContext.revisionId,
+          starttimestamp: requestPageContext.startTimestamp,
         });
 
         if (result.edit.result !== "Success") {
@@ -436,6 +455,7 @@ export async function initRFP() {
                 prependtext: finalContent,
                 nocreate: true,
                 formatversion: "2",
+                starttimestamp: requestPageContext.startTimestamp,
               });
 
               if (result.edit.result !== "Success") {

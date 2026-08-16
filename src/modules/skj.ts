@@ -7,6 +7,7 @@ import {
 import { openDialog } from "@/dialog";
 import {
   createRowFunc,
+  getPageEditContext,
   getImage,
   getOptionProperty,
   sleep,
@@ -15,8 +16,6 @@ import {
 import { getPageIdPrivacyWarnings } from "@/skj-validation";
 
 export async function initSkj() {
-  const revisionId = mw.config.get("wgRevisionId");
-
   const skjPortlet = takePortlet("wks-skj");
   if (!skjPortlet) {
     console.warn(`${SCRIPT_NAME}: メニューの作成に失敗しました。`);
@@ -26,6 +25,10 @@ export async function initSkj() {
   skjPortlet.addEventListener("click", async (e) => {
     e.preventDefault();
 
+    const targetPageContextPromise = getPageEditContext(
+      mw.config.get("wgPageName"),
+      true,
+    );
     const createRow = createRowFunc("skj");
     const dialogContent = $("<div>")
       .prop("id", "wks-skj-dialog-content")
@@ -36,17 +39,8 @@ export async function initSkj() {
       dialogClass: "wks-skj-dialog",
       content: dialogContent,
     });
-    const [pageRes, existRFDPage] = await Promise.all([
-      new mw.Api().post({
-        action: "query",
-        format: "json",
-        prop: "revisions",
-        list: "",
-        titles: mw.config.get("wgPageName"),
-        formatversion: "2",
-        rvprop: "content",
-        rvslots: "main",
-      }),
+    const [targetPageContext, existRFDPage] = await Promise.all([
+      targetPageContextPromise,
       new mw.Api().post({
         action: "query",
         format: "json",
@@ -54,7 +48,17 @@ export async function initSkj() {
         formatversion: "2",
       }),
     ]);
-    const pageContent = pageRes.query.pages[0].revisions[0].slots.main.content;
+    if (
+      targetPageContext.revisionId === null ||
+      targetPageContext.content === null
+    ) {
+      dialogContent.empty().text("ページが存在しないため編集できません。");
+      skjDialog.setButtons([
+        { label: "閉じる", onClick: () => skjDialog.close() },
+      ]);
+      return;
+    }
+    const pageContent = targetPageContext.content;
     dialogContent.empty();
     const dialogFieldset = $("<fieldset>");
     dialogFieldset.prop({
@@ -478,7 +482,8 @@ export async function initSkj() {
               .replaceAll("$d", getPageName())
               .replaceAll("$p", mw.config.get("wgPageName")) + SUMMARY_AD,
           formatversion: "2",
-          baserevid: revisionId,
+          baserevid: targetPageContext.revisionId,
+          starttimestamp: targetPageContext.startTimestamp,
           notminor: 1,
         });
 
@@ -540,6 +545,7 @@ export async function initSkj() {
                 .replaceAll("$d", getPageName())
                 .replaceAll("$p", mw.config.get("wgPageName")) + SUMMARY_AD,
             formatversion: "2",
+            starttimestamp: targetPageContext.startTimestamp,
           });
 
           if (submitRes.edit.result !== "Success") {
@@ -594,24 +600,19 @@ export async function initSkj() {
             SKJ_REQUEST_PAGE_NAME +
             `ログ/${new Date().getFullYear()}年${new Date().getMonth() + 1}月${new Date().getDate()}日`;
 
-          const logPageRes = await new mw.Api().post({
-            action: "query",
-            format: "json",
-            prop: "revisions",
-            list: "",
-            titles: logPageName,
-            formatversion: "2",
-            rvprop: "content",
-            rvslots: "main",
-          });
-
-          const logPageContent =
-            logPageRes.query.pages[0].revisions[0].slots.main.content.replace(
+          try {
+            const logPageContext = await getPageEditContext(logPageName, true);
+            if (
+              logPageContext.revisionId === null ||
+              logPageContext.content === null
+            ) {
+              throw new Error("削除依頼ログが存在しません。");
+            }
+            const logPageContent = logPageContext.content.replace(
               /(\r\n|\n)+$/,
               "",
             );
 
-          try {
             const logPageEditRes = await new mw.Api().postWithEditToken({
               action: "edit",
               title: logPageName,
@@ -625,6 +626,8 @@ export async function initSkj() {
                   .replaceAll("$d", getPageName())
                   .replaceAll("$p", mw.config.get("wgPageName")) + SUMMARY_AD,
               formatversion: "2",
+              baserevid: logPageContext.revisionId,
+              starttimestamp: logPageContext.startTimestamp,
             });
 
             if (logPageEditRes.edit.result !== "Success") {

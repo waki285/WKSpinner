@@ -23,6 +23,7 @@ import {
 import MI_DIALOG_STYLE from "@/styles/mi.css";
 import {
   createRowFunc,
+  getPageEditContext,
   getImage,
   getOptionProperty,
   takePortlet,
@@ -37,8 +38,6 @@ const paramInputId = (choice: IssueChoice, param: IssueTemplateParam) =>
   `wks-mi-dialog-type-params-${choice.id}-${param.id}`;
 
 export async function initMi() {
-  const revisionId = mw.config.get("wgRevisionId");
-
   const miPortlet = takePortlet("wks-mi");
   if (!miPortlet) {
     console.warn(`${SCRIPT_NAME}: メニューの作成に失敗しました。`);
@@ -48,6 +47,10 @@ export async function initMi() {
   miPortlet.addEventListener("click", async (e) => {
     e.preventDefault();
 
+    const pageContextPromise = getPageEditContext(
+      mw.config.get("wgPageName"),
+      true,
+    );
     const createRow = createRowFunc("mi");
     const dialogContent = $("<div>")
       .prop("id", "wks-mi-dialog-content")
@@ -59,17 +62,15 @@ export async function initMi() {
       width: `${Math.max(280, Math.min(1180, window.innerWidth - 32))}px`,
       content: dialogContent,
     });
-    const pageRes = await new mw.Api().post({
-      action: "query",
-      format: "json",
-      prop: "revisions",
-      list: "",
-      titles: mw.config.get("wgPageName"),
-      formatversion: "2",
-      rvprop: "content",
-      rvslots: "main",
-    });
-    const pageContent = pageRes.query.pages[0].revisions[0].slots.main.content;
+    const pageContext = await pageContextPromise;
+    if (pageContext.revisionId === null || pageContext.content === null) {
+      dialogContent.empty().text("ページが存在しないため編集できません。");
+      miDialog.setButtons([
+        { label: "閉じる", onClick: () => miDialog.close() },
+      ]);
+      return;
+    }
+    const pageContent = pageContext.content;
 
     const extracted = extractIssueTemplates(pageContent);
 
@@ -430,7 +431,8 @@ export async function initMi() {
           text: getFinalContent(),
           summary: getFinalSummary(),
           formatversion: "2",
-          baserevid: revisionId,
+          baserevid: pageContext.revisionId,
+          starttimestamp: pageContext.startTimestamp,
         });
         if (editRes.edit.result === "Success") {
           mw.notify("ページの編集に成功しました。");
