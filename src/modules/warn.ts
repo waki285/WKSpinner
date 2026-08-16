@@ -3,8 +3,8 @@ import {
   SCRIPT_NAME,
   SUMMARY_AD,
   SUMMARY_AD_ATTRACT,
-  WARN_TEMPLATES,
 } from "@/constants";
+import { WARN_TEMPLATES } from "@/warn-templates";
 import {
   createRowFunc,
   getPageEditContext,

@@ -100,4 +100,11 @@ describe("replaceFirstAndRemoveOtherIssueTemplates", () => {
 
     expect(mergeIssueTemplates(input)).toBe(expected);
   });
+
+  it("preserves an existing deprecated issue template", () => {
+    const input = "{{有償の寄稿|date=2026年5月}}\nBODY";
+    const expected = `${MULTIPLE_ISSUES_TEMPLATE}${input}`;
+
+    expect(mergeIssueTemplates(input)).toBe(expected);
+  });
 });

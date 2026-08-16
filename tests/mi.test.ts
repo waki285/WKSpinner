@@ -35,7 +35,7 @@ describe("issue template definitions", () => {
   it("keeps standalone templates separate from multiple-issue choices", () => {
     const multipleIds = new Set<string>(MI_CHOICES.map(({ id }) => id));
 
-    expect(STANDALONE_ISSUE_CHOICES).toHaveLength(30);
+    expect(STANDALONE_ISSUE_CHOICES).toHaveLength(29);
     expect(
       STANDALONE_ISSUE_CHOICES.every(({ id }) => !multipleIds.has(id)),
     ).toBe(true);
@@ -65,6 +65,12 @@ describe("issue template definitions", () => {
     expect(
       STANDALONE_ISSUE_CHOICES.some((choice) => choice.name === name),
     ).toBe(false);
+  });
+
+  it("excludes the deprecated paid-contributions template", () => {
+    expect(STANDALONE_ISSUE_CHOICES.map(({ name }) => name)).not.toContain(
+      "有償の寄稿",
+    );
   });
 });
 
