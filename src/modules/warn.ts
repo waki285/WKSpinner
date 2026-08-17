@@ -7,7 +7,6 @@ import {
 import { WARN_TEMPLATES } from "@/warn-templates";
 import {
   createRowFunc,
-  getPageEditContext,
   getImage,
   getOptionProperty,
   takePortlet,
@@ -39,7 +38,6 @@ export async function initWarn() {
       );
     }
 
-    const talkPageContextPromise = getPageEditContext(talkPageName);
     const createRow = createRowFunc("warn");
     const dialogContent = $("<div>")
       .prop("id", "wks-warn-dialog-content")
@@ -50,7 +48,6 @@ export async function initWarn() {
       dialogClass: "wks-warn-dialog",
       content: dialogContent,
     });
-    const talkPageContext = await talkPageContextPromise;
     dialogContent.empty();
     const dialogFieldset = $("<fieldset>");
     dialogFieldset.prop({
@@ -352,32 +349,32 @@ export async function initWarn() {
 
       try {
         const editRes = await new mw.Api().postWithEditToken({
-          action: "edit",
-          title: talkPageName,
-          section: selectedTemplate?.hasTitle ? undefined : "new",
-          sectiontitle: selectedTemplate?.hasTitle
-            ? undefined
-            : $("#wks-warn-dialog-sectiontitle-input").val(),
-          text: selectedTemplate?.hasTitle ? undefined : getFinalContent(),
-          appendtext: selectedTemplate?.hasTitle
-            ? `\n\n${getFinalContent()}`
-            : undefined,
+          action: "discussiontoolsedit",
+          page: talkPageName,
+          uselang: "ja",
+          useskin: mw.config.get("skin"),
+          wikitext: getFinalContent(),
           summary: getFinalSummary(),
           formatversion: "2",
-          starttimestamp: talkPageContext.startTimestamp,
-          ...(talkPageContext.revisionId === null
-            ? { createonly: 1 }
-            : {
-                nocreate: 1,
-                baserevid: talkPageContext.revisionId,
-              }),
-          discussiontoolsautosubscribe: $(
-            "#wks-warn-dialog-subscribe-checkbox",
-          ).prop("checked")
+          paction: "addtopic",
+          dtenable: 1,
+          dttags:
+            "discussiontools,discussiontools-source,discussiontools-source-enhanced,discussiontools-newtopic",
+          sectiontitle: selectedTemplate?.hasTitle
+            ? ""
+            : $("#wks-warn-dialog-sectiontitle-input").val(),
+          allownosectiontitle: true,
+          autosubscribe: $("#wks-warn-dialog-subscribe-checkbox").prop(
+            "checked",
+          )
             ? "yes"
             : "no",
         });
-        if (editRes.edit?.result?.toLowerCase() === "success") {
+        if (
+          (
+            editRes.discussiontoolsedit?.result || editRes.edit?.result
+          )?.toLowerCase() === "success"
+        ) {
           mw.notify("ページの編集に成功しました。");
           warnDialog.close();
           window.location.href = mw.util.getUrl(talkPageName);
