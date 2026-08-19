@@ -106,6 +106,9 @@ export async function showConfigPage() {
     skjSummaryTemplate: Vue.ref(
       String(getOptionProperty("skj.default.summaryTemplate") ?? ""),
     ),
+    skjSummaryUfdTemplate: Vue.ref(
+      String(getOptionProperty("skj.default.summaryUfdTemplate") ?? ""),
+    ),
     skjSummarySubmit: Vue.ref(
       String(getOptionProperty("skj.default.summarySubmit") ?? ""),
     ),
@@ -185,6 +188,7 @@ export async function showConfigPage() {
         default: {
           opv: options.skjOpv.value || "",
           summaryTemplate: options.skjSummaryTemplate.value || "",
+          summaryUfdTemplate: options.skjSummaryUfdTemplate.value || "",
           summarySubmit: options.skjSummarySubmit.value || "",
           summaryNote: options.skjSummaryNote.value || "",
         },
@@ -420,6 +424,11 @@ export async function showConfigPage() {
                   options.skjSummaryTemplate,
                   "編集の要約 (Sakujoテンプレート貼り付け) デフォルト値",
                   "+Sakujo",
+                ),
+                textField(
+                  options.skjSummaryUfdTemplate,
+                  "編集の要約 (Ufdテンプレート貼り付け) デフォルト値",
+                  "+Ufd",
                 ),
                 textField(
                   options.skjSummarySubmit,

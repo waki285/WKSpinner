@@ -7,6 +7,9 @@ export const SCRIPT_NAME = "WKSpinner";
 export const SKJ_REQUEST_PAGE_NAME = DEV
   ? "利用者:鈴音雨/削除依頼テスト/"
   : "Wikipedia:削除依頼/";
+export const UFD_REQUEST_PAGE_NAME = DEV
+  ? "利用者:鈴音雨/利用者ページの削除依頼テスト"
+  : "Wikipedia:利用者ページの削除依頼";
 export const RFP_REQUEST_PAGE_NAMES = {
   protect: DEV ? "利用者:鈴音雨/保護依頼テスト" : "Wikipedia:保護依頼",
   unprotect: DEV
@@ -102,6 +105,7 @@ export type Options = {
     default: {
       opv: string;
       summaryTemplate: string;
+      summaryUfdTemplate: string;
       summarySubmit: string;
       summaryNote: string;
     };
@@ -171,6 +175,7 @@ export const DEFAULT_OPTIONS = {
     default: {
       opv: "",
       summaryTemplate: "+Sakujo",
+      summaryUfdTemplate: "+Ufd",
       summarySubmit: "削除依頼",
       summaryNote: "削除依頼の追加",
     },
