@@ -242,8 +242,7 @@ if (IS_DEBUG_BUNDLE) {
     banner: debugBanner,
     footer: debugFooter,
     plugins: [cssTextPlugin],
-    minify: false,
-    minifySyntax: true,
+    minify: true,
     sourcemap: false,
     define: {
       __WKSPINNER_BUNDLED_DEBUG__: "true",

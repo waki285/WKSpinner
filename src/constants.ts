@@ -7,6 +7,12 @@ export const SCRIPT_NAME = "WKSpinner";
 export const SKJ_REQUEST_PAGE_NAME = DEV
   ? "利用者:鈴音雨/削除依頼テスト/"
   : "Wikipedia:削除依頼/";
+export const RFP_REQUEST_PAGE_NAMES = {
+  protect: DEV ? "利用者:鈴音雨/保護依頼テスト" : "Wikipedia:保護依頼",
+  unprotect: DEV
+    ? "利用者:鈴音雨/保護解除依頼テスト"
+    : "Wikipedia:保護解除依頼",
+} as const;
 export const CONFIG_PAGE_NAME = "利用者:鈴音雨/WKSpinner/Preferences";
 export const DEBUG_PAGE_NAME = "利用者:鈴音雨/WKSpinner/Debug";
 export const OPTIONS_KEY = "userjs-wkspinner";

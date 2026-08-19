@@ -1,4 +1,9 @@
-import { SCRIPT_NAME, SUMMARY_AD, SUMMARY_AD_ATTRACT } from "@/constants";
+import {
+  RFP_REQUEST_PAGE_NAMES,
+  SCRIPT_NAME,
+  SUMMARY_AD,
+  SUMMARY_AD_ATTRACT,
+} from "@/constants";
 import { openDialog } from "@/dialog";
 import {
   formatPageProtectionStatus,
@@ -20,11 +25,11 @@ import {
 const REQUEST_MODES = {
   protect: {
     label: "保護依頼",
-    requestPageName: "Wikipedia:保護依頼",
+    requestPageName: RFP_REQUEST_PAGE_NAMES.protect,
   },
   unprotect: {
     label: "保護解除依頼",
-    requestPageName: "Wikipedia:保護解除依頼",
+    requestPageName: RFP_REQUEST_PAGE_NAMES.unprotect,
   },
 } as const;
 
@@ -192,8 +197,8 @@ export async function initRFP() {
       .text("ページを追加");
     dialogAddPage.append(dialogAddPageBtn);
 
-    dialogFieldset.append(dialogPageNames);
     dialogFieldset.append(dialogProtectionStatus);
+    dialogFieldset.append(dialogPageNames);
     dialogFieldset.append(dialogAddPage);
 
     dialogAddPageBtn.on("click", () => {
