@@ -1,0 +1,11 @@
+import "./modules/csd.entry";
+import "./modules/csrd.entry";
+import "./modules/editCount.entry";
+import "./modules/mi.entry";
+import "./modules/rfp.entry";
+import "./modules/skj.entry";
+import "./modules/warn.entry";
+import "./modules/wikidata.entry";
+import "./preferences.entry";
+import "./debug.entry";
+import "./index";

@@ -7,6 +7,7 @@ import { minify } from "terser";
 const version = JSON.parse(readFileSync("./package.json", "utf-8")).version;
 
 const IS_DEV = process.env.NODE_ENV === "development";
+const IS_DEBUG_BUNDLE = process.argv.includes("--debug");
 
 const MODULE_NAMES = [
   "csd",
@@ -123,7 +124,7 @@ const cssTextPlugin = {
       const source = readFileSync(path, "utf-8");
       const { code } = await transform(source, {
         loader: "css",
-        minify: !IS_DEV,
+        minify: !IS_DEV && !IS_DEBUG_BUNDLE,
       });
       return {
         contents: `export default ${JSON.stringify(code.trim())};`,
@@ -149,6 +150,9 @@ const commonOptions = {
   write: false,
   external: ["vue", "@wikimedia/codex"],
   charset: "utf8",
+  define: {
+    __WKSPINNER_BUNDLED_DEBUG__: "false",
+  },
 };
 
 const coreBanner = {
@@ -157,6 +161,19 @@ const coreBanner = {
 
 const coreFooter = {
   js: "/* jshint ignore:end */\n//</nowiki>",
+};
+
+const debugBanner = {
+  js: `// *************************
+// WKSpinner bundled debug build
+// @version ${version}
+// *************************
+/* global mw, $, OO */
+`,
+};
+
+const debugFooter = {
+  js: "//# sourceURL=WKSpinner-debug.js",
 };
 
 // Module banners intentionally omit the version so that version bumps
@@ -210,9 +227,29 @@ async function buildEntry(options) {
   if (!generated) {
     throw new Error("entry produced no output");
   }
-  const minified = await postMinify(generated.text);
+  const minified = options.minify
+    ? await postMinify(generated.text)
+    : generated.text;
   mkdirSync(dirname(outfile), { recursive: true });
   writeFileSync(outfile, minified);
+}
+
+if (IS_DEBUG_BUNDLE) {
+  await buildEntry({
+    ...commonOptions,
+    entryPoints: ["./src/debug-bundle.entry.ts"],
+    outfile: "./dist/debug.js",
+    banner: debugBanner,
+    footer: debugFooter,
+    plugins: [cssTextPlugin],
+    minify: false,
+    minifySyntax: true,
+    sourcemap: false,
+    define: {
+      __WKSPINNER_BUNDLED_DEBUG__: "true",
+    },
+  });
+  process.exit(0);
 }
 
 // Core bundle — includes all shared modules and registers them on globalThis.

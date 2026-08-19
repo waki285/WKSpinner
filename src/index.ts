@@ -19,6 +19,8 @@ import {
 } from "./util";
 import cmp from "semver-compare";
 
+declare const __WKSPINNER_BUNDLED_DEBUG__: boolean;
+
 const MODULE_BASE_PAGE = "利用者:鈴音雨/WKSpinner/modules/";
 const PAGE_BASE = "利用者:鈴音雨/WKSpinner/pages/";
 
@@ -70,13 +72,15 @@ function loadFrom(
       resolve(exports);
     });
   });
-  mw.loader.load(
-    mw.config.get("wgServer") +
-      mw.config.get("wgScript") +
-      "?action=raw&ctype=text/javascript&title=" +
-      mw.util.wikiUrlencode(base + name + ".js"),
-    "text/javascript",
-  );
+  if (!__WKSPINNER_BUNDLED_DEBUG__) {
+    mw.loader.load(
+      mw.config.get("wgServer") +
+        mw.config.get("wgScript") +
+        "?action=raw&ctype=text/javascript&title=" +
+        mw.util.wikiUrlencode(base + name + ".js"),
+      "text/javascript",
+    );
+  }
   return ready;
 }
 
