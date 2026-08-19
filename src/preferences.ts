@@ -511,7 +511,7 @@ export async function showConfigPage() {
                   "$t にはテンプレート名 (Test, ご自身の記事 etc.) が入ります",
                 ),
               ]),
-              panel("保護依頼", [
+              panel("保護依頼/保護解除依頼", [
                 checkboxField(options.rfpEnabled, "有効にする"),
                 checkboxField(
                   options.rfpEnableMobile,
@@ -519,9 +519,9 @@ export async function showConfigPage() {
                 ),
                 textField(
                   options.rfpSummarySubmit,
-                  "編集の要約 (保護依頼ページ編集) デフォルト値",
-                  "保護依頼",
-                  "$p には保護依頼対象ページのリンクの羅列が入ります",
+                  "編集の要約 (依頼ページ編集) デフォルト値",
+                  "+$p",
+                  "$p には依頼対象ページのリンクの羅列が入ります",
                 ),
                 textField(
                   options.rfpSummaryTemplate,

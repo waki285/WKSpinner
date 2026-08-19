@@ -1,6 +1,13 @@
 import { SCRIPT_NAME, SUMMARY_AD, SUMMARY_AD_ATTRACT } from "@/constants";
 import { openDialog } from "@/dialog";
 import {
+  formatPageProtectionStatus,
+  getDefaultProtectionRequestMode,
+  hasActiveProtection,
+  type PageProtectionStatus,
+  type ProtectionRequestMode,
+} from "@/rfp";
+import {
   createRowFunc,
   getPageEditContext,
   getImage,
@@ -10,7 +17,48 @@ import {
   takePortlet,
 } from "@/util";
 
-function getProtectSectionName() {
+const REQUEST_MODES = {
+  protect: {
+    label: "保護依頼",
+    requestPageName: "Wikipedia:保護依頼",
+  },
+  unprotect: {
+    label: "保護解除依頼",
+    requestPageName: "Wikipedia:保護解除依頼",
+  },
+} as const;
+
+type ProtectionQueryResponse = {
+  query?: {
+    pages?: Array<{
+      title?: string;
+      missing?: boolean;
+      protection?: PageProtectionStatus["protections"];
+    }>;
+  };
+};
+
+async function getPageProtectionStatus(
+  title: string,
+): Promise<PageProtectionStatus> {
+  const response = (await new mw.Api().get({
+    action: "query",
+    format: "json",
+    prop: "info",
+    inprop: "protection",
+    titles: title,
+    formatversion: "2",
+  })) as ProtectionQueryResponse;
+  const page = response.query?.pages?.[0];
+
+  return {
+    title: page?.title ?? title,
+    missing: page?.missing === true,
+    protections: page?.protection ?? [],
+  };
+}
+
+function getRequestSectionName() {
   const date = new Date();
   let kikan: string;
   const day = date.getDate();
@@ -34,30 +82,73 @@ export async function initRFP() {
   rfpPortlet.addEventListener("click", async (e) => {
     e.preventDefault();
 
-    const requestPageName = "Wikipedia:保護依頼";
-    const requestPageContextPromise = getPageEditContext(requestPageName);
+    const initialPageName = mw.config.get("wgPageName");
+    const requestPageContextsPromise = Promise.all([
+      getPageEditContext(REQUEST_MODES.protect.requestPageName),
+      getPageEditContext(REQUEST_MODES.unprotect.requestPageName),
+    ]).then(([protect, unprotect]) => ({ protect, unprotect }));
+    const initialProtectionStatusPromise = getPageProtectionStatus(
+      initialPageName,
+    ).catch(() => null);
     const createRow = createRowFunc("rfp");
-    const dialogContent = $("<div>").prop("id", "wks-rfp-dialog-content");
+    const dialogContent = $("<div>")
+      .prop("id", "wks-rfp-dialog-content")
+      .text("読み込み中")
+      .append(getImage("load", "margin-left: 0.5em;"));
     const rfpDialog = await openDialog({
-      title: `${SCRIPT_NAME} - 保護依頼`,
+      title: `${SCRIPT_NAME} - 保護依頼 / 保護解除依頼`,
       dialogClass: "wks-rfp-dialog",
       content: dialogContent,
     });
-    const requestPageContext = await requestPageContextPromise;
-    if (requestPageContext.revisionId === null) {
-      dialogContent.text("保護依頼ページが存在しないため編集できません。");
+    const [requestPageContexts, initialProtectionStatus] = await Promise.all([
+      requestPageContextsPromise,
+      initialProtectionStatusPromise,
+    ]);
+    if (
+      requestPageContexts.protect.revisionId === null &&
+      requestPageContexts.unprotect.revisionId === null
+    ) {
+      dialogContent.text("依頼ページが存在しないため編集できません。");
       rfpDialog.setButtons([
         { label: "閉じる", onClick: () => rfpDialog.close() },
       ]);
       return;
     }
+    const initialMode = initialProtectionStatus
+      ? getDefaultProtectionRequestMode(initialProtectionStatus)
+      : "protect";
     dialogContent.empty();
     const dialogFieldset = $("<fieldset>");
-    dialogFieldset.prop({
-      id: "wks-rfp-dialog-optionfield",
-      innerHTML: "<legend>保護依頼の提出</legend>",
-    });
+    dialogFieldset.prop("id", "wks-rfp-dialog-optionfield");
+    const dialogLegend = $("<legend>").text(
+      `${REQUEST_MODES[initialMode].label}の提出`,
+    );
+    dialogFieldset.append(dialogLegend);
     dialogContent.append(dialogFieldset);
+
+    const dialogModeRow = createRow("mode").addClass("wks-inline");
+    for (const mode of ["protect", "unprotect"] as const) {
+      const id = `wks-rfp-dialog-mode-${mode}`;
+      dialogModeRow.append(
+        $("<input>").prop({
+          id,
+          name: "wks-rfp-dialog-mode",
+          type: "radio",
+          value: mode,
+          checked: mode === initialMode,
+        }),
+        $("<label>")
+          .prop("for", id)
+          .text(mode === "protect" ? "保護を依頼" : "保護解除を依頼"),
+      );
+    }
+    dialogFieldset.append(dialogModeRow);
+
+    const getSelectedMode = (): ProtectionRequestMode =>
+      $("input[name='wks-rfp-dialog-mode']:checked").val() === "unprotect"
+        ? "unprotect"
+        : "protect";
+
     const pages = [1];
     const dialogPageNames = createRow("page-names");
     const dialogPageNameRow1 = createRow("page-name-1")
@@ -76,11 +167,24 @@ export async function initRFP() {
         type: "text",
         placeholder: "ページ名",
         class: "wks-input-full",
-        value: mw.config.get("wgPageName"),
+        value: initialPageName,
       }),
     );
 
     dialogPageNames.append(dialogPageNameRow1);
+
+    const dialogProtectionStatus = createRow("current-status")
+      .addClass("wks-inline")
+      .append(
+        $("<span>").text("現在の状況:").addClass("wks-shrink-0"),
+        $("<span>")
+          .prop("id", "wks-rfp-dialog-current-status")
+          .text(
+            initialProtectionStatus
+              ? formatPageProtectionStatus(initialProtectionStatus)
+              : "保護状態を取得できませんでした",
+          ),
+      );
 
     const dialogAddPage = createRow("add-page").addClass("wks-inline");
     const dialogAddPageBtn = $("<button>")
@@ -89,6 +193,7 @@ export async function initRFP() {
     dialogAddPage.append(dialogAddPageBtn);
 
     dialogFieldset.append(dialogPageNames);
+    dialogFieldset.append(dialogProtectionStatus);
     dialogFieldset.append(dialogAddPage);
 
     dialogAddPageBtn.on("click", () => {
@@ -127,6 +232,37 @@ export async function initRFP() {
       dialogPageNameRow.append(dialogRemovePageBtn);
 
       dialogPageNames.append(dialogPageNameRow);
+    });
+
+    let protectionStatusRequestId = 0;
+    const refreshProtectionStatus = async () => {
+      const requestId = ++protectionStatusRequestId;
+      const pageName = String(
+        $("#wks-rfp-dialog-page-name-1-input").val() ?? "",
+      ).trim();
+      const status = $("#wks-rfp-dialog-current-status");
+      if (!pageName) {
+        status.text("ページ名を入力してください");
+        return null;
+      }
+
+      status.text("確認中...");
+      try {
+        const result = await getPageProtectionStatus(pageName);
+        if (requestId === protectionStatusRequestId) {
+          status.text(formatPageProtectionStatus(result));
+        }
+        return result;
+      } catch {
+        if (requestId === protectionStatusRequestId) {
+          status.text("保護状態を取得できませんでした");
+        }
+        return null;
+      }
+    };
+
+    $("#wks-rfp-dialog-page-name-1-input").on("change", () => {
+      void refreshProtectionStatus();
     });
 
     const dialogTemplateRow = createRow("template").addClass("wks-inline");
@@ -170,14 +306,13 @@ export async function initRFP() {
         .html("理由 (署名不要)")
         .prop("for", "wks-rfp-dialog-desc-input"),
     );
-    dialogDescRow.append(
-      $("<textarea>").prop({
-        id: "wks-rfp-dialog-desc-input",
-        placeholder:
-          "[[LTA:HOGE]]によって荒らしが断続的に行われているため、半保護を依頼します。",
-        class: "wks-input-full",
-      }),
-    );
+    const dialogDescInput = $("<textarea>").prop({
+      id: "wks-rfp-dialog-desc-input",
+      placeholder:
+        "[[LTA:HOGE]]によって荒らしが断続的に行われているため、半保護を依頼します。",
+      class: "wks-input-full",
+    });
+    dialogDescRow.append(dialogDescInput);
     dialogFieldset.append(dialogDescRow);
 
     const dialogSummaries = createRow("summaries");
@@ -224,10 +359,35 @@ export async function initRFP() {
     dialogSummaries.append(summarySubmit);
     dialogFieldset.append(dialogSummaries);
 
+    const updateModeFields = () => {
+      const mode = getSelectedMode();
+      const isProtect = mode === "protect";
+      dialogLegend.text(`${REQUEST_MODES[mode].label}の提出`);
+      dialogTemplateRow.toggle(isProtect);
+      summaryTemplate.toggle(isProtect);
+      dialogDescInput.prop(
+        "placeholder",
+        isProtect
+          ? "[[LTA:HOGE]]によって荒らしが断続的に行われているため、半保護を依頼します。"
+          : "ノートで合意が形成されたため、保護解除を依頼します。",
+      );
+    };
+    dialogModeRow.on("change", () => {
+      updateModeFields();
+    });
+    updateModeFields();
+
     const getFinalContentPrepend = (namespace: number, _header: string) =>
       `${
         namespace === 10 ? "<noinclude>" : ""
       }{{保護依頼}}${namespace === 10 ? "</noinclude>" : "\n"}`;
+
+    const getPageNames = () =>
+      pages.map((pageNumber) =>
+        String(
+          $(`#wks-rfp-dialog-page-name-${pageNumber}-input`).val() ?? "",
+        ).trim(),
+      );
 
     const getFinalContentRequest = () =>
       `==== ${$("#wks-rfp-dialog-header-input").val()} ====\n${
@@ -268,15 +428,55 @@ export async function initRFP() {
                 .join("\n") + "\n"
       }${$("#wks-rfp-dialog-desc-input").val()} --~~~~`;
 
-    const checkParams = () => {
+    const checkParams = async () => {
       const errList = $("<ul>");
+      const pageNames = getPageNames();
 
-      if (!$("#wks-rfp-dialog-page-name-1-input").val()) {
+      if (pageNames.some((pageName) => !pageName)) {
         errList.append($("<li>").text("ページ名を入力してください。"));
       }
 
       if (!$("#wks-rfp-dialog-desc-input").val()) {
         errList.append($("<li>").text("理由を入力してください。"));
+      }
+
+      const mode = getSelectedMode();
+      if (requestPageContexts[mode].revisionId === null) {
+        errList.append(
+          $("<li>").text(
+            `${REQUEST_MODES[mode].requestPageName}が存在しません。`,
+          ),
+        );
+      }
+
+      if (mode === "unprotect" && !errList.children().length) {
+        try {
+          const statuses = await Promise.all(
+            pageNames.map((pageName) => getPageProtectionStatus(pageName)),
+          );
+          protectionStatusRequestId++;
+          const firstStatus = statuses[0];
+          if (firstStatus) {
+            $("#wks-rfp-dialog-current-status").text(
+              formatPageProtectionStatus(firstStatus),
+            );
+          }
+          statuses.forEach((status, index) => {
+            if (!hasActiveProtection(status)) {
+              errList.append(
+                $("<li>").text(
+                  `${pageNames[index]}は保護されていないため、保護解除を依頼できません。`,
+                ),
+              );
+            }
+          });
+        } catch {
+          errList.append(
+            $("<li>").text(
+              "保護状態を取得できなかったため、保護解除を依頼できません。",
+            ),
+          );
+        }
       }
 
       if (errList.children().length) {
@@ -289,18 +489,21 @@ export async function initRFP() {
     };
 
     const execute = async () => {
-      const err = checkParams();
+      const err = await checkParams();
       if (err !== true) {
         mw.notify(err, { type: "error" });
         return;
       }
+      const mode = getSelectedMode();
+      const requestMode = REQUEST_MODES[mode];
+      const requestPageContext = requestPageContexts[mode];
 
       const progressContentHolder = $("<div>").css({
         maxHeight: "70vh",
         maxWidth: "80vw",
       });
       const progressDialog = await openDialog({
-        title: `${SCRIPT_NAME} - 保護依頼`,
+        title: `${SCRIPT_NAME} - ${requestMode.label}`,
         dialogClass: "wks-rfp-dialog wks-rfp-dialog-preview",
         content: progressContentHolder,
       });
@@ -310,7 +513,7 @@ export async function initRFP() {
       const wipMessage = $("<p>")
         .addClass("wks-red")
         .css("font-weight", "bold")
-        .text("注意: 保護依頼中はタブを閉じないでください！");
+        .text(`注意: ${requestMode.label}中はタブを閉じないでください！`);
       progressContentHolder.append(wipMessage);
 
       const unloadFunc = (e: BeforeUnloadEvent) => {
@@ -322,11 +525,11 @@ export async function initRFP() {
         .prop("id", "wks-dialog-progress-submit-rfp")
         .addClass("wks-inline")
         .append(getImage("load", ""))
-        .append($("<span>").text("保護依頼中"));
+        .append($("<span>").text(`${requestMode.label}中`));
       progressContentHolder.append(progressDialogContentSubmitRFP);
 
       try {
-        const pageName = requestPageName;
+        const pageName = requestMode.requestPageName;
         const parseResult = await new mw.Api().post({
           action: "parse",
           oldid: requestPageContext.revisionId,
@@ -335,10 +538,10 @@ export async function initRFP() {
         });
         const section = parseResult.parse.sections.find(
           ({ line }: { line: string }) =>
-            line.includes(getProtectSectionName()),
+            line.includes(getRequestSectionName()),
         );
         if (!section) {
-          throw new Error("保護依頼先の節が見つかりません。");
+          throw new Error(`${requestMode.label}先の節が見つかりません。`);
         }
 
         const result = await new mw.Api().postWithEditToken({
@@ -349,13 +552,7 @@ export async function initRFP() {
           summary:
             ($("#wks-rfp-dialog-summary-submit").val() as string).replaceAll(
               "$p",
-              pages
-                .map(
-                  (pageNumber) =>
-                    $(
-                      "#wks-rfp-dialog-page-name-" + pageNumber + "-input",
-                    ).val() as string,
-                )
+              getPageNames()
                 .map((x) => `[[特別:PageHistory/${x}|${x}]]`)
                 .join(", "),
             ) + SUMMARY_AD,
@@ -371,7 +568,7 @@ export async function initRFP() {
           progressDialogContentSubmitRFP.append(getImage("cross", ""));
           progressDialogContentSubmitRFP.append(
             $("<span>").html(
-              `保護依頼ページの編集に失敗しました: ${JSON.stringify(result.edit)}`,
+              `${requestMode.label}ページの編集に失敗しました: ${JSON.stringify(result.edit)}`,
             ),
           );
           progressDialog.setButtons([
@@ -388,11 +585,14 @@ export async function initRFP() {
         progressDialogContentSubmitRFP.append(getImage("check", ""));
         progressDialogContentSubmitRFP.append(
           $("<span>").html(
-            `保護依頼ページの編集に成功しました: <a href="/wiki/${pageName}">${pageName}</a>`,
+            `${requestMode.label}ページの編集に成功しました: <a href="/wiki/${pageName}">${pageName}</a>`,
           ),
         );
 
-        if (!$("#wks-rfp-dialog-template-cb").prop("checked")) {
+        if (
+          mode === "unprotect" ||
+          !$("#wks-rfp-dialog-template-cb").prop("checked")
+        ) {
           progressDialog.setButtons([
             {
               label: "閉じる",
@@ -431,12 +631,7 @@ export async function initRFP() {
 
           progressContentHolder.append(progressDialogContentTemplate);
 
-          const pageNames = pages.map(
-            (pageNumber) =>
-              $(
-                "#wks-rfp-dialog-page-name-" + pageNumber + "-input",
-              ).val() as string,
-          );
+          const pageNames = getPageNames();
 
           for (const pageName of pageNames) {
             const header = $("#wks-rfp-dialog-header-input").val() as string;
@@ -524,7 +719,9 @@ export async function initRFP() {
         progressDialogContentSubmitRFP.empty();
         progressDialogContentSubmitRFP.append(getImage("cross", ""));
         progressDialogContentSubmitRFP.append(
-          $("<span>").html(`保護依頼ページの編集に失敗しました: ${e}`),
+          $("<span>").html(
+            `${requestMode.label}ページの編集に失敗しました: ${e}`,
+          ),
         );
         progressDialog.setButtons([
           {
@@ -538,18 +735,20 @@ export async function initRFP() {
     };
 
     const preview = async () => {
-      const err = checkParams();
+      const err = await checkParams();
       if (err !== true) {
         mw.notify(err, { type: "error" });
         return;
       }
-      const pageName = "Wikipedia:保護依頼";
+      const mode = getSelectedMode();
+      const requestMode = REQUEST_MODES[mode];
+      const pageName = requestMode.requestPageName;
       const previewContentHolder = $("<div>").css({
         maxHeight: "70vh",
         maxWidth: "80vw",
       });
       const previewDialog = await openDialog({
-        title: `${SCRIPT_NAME} - 保護依頼プレビュー`,
+        title: `${SCRIPT_NAME} - ${requestMode.label}プレビュー`,
         dialogClass: "wks-rfp-dialog wks-rfp-dialog-preview",
         content: previewContentHolder,
       });
@@ -563,8 +762,14 @@ export async function initRFP() {
         title: pageName,
         text: getFinalContentRequest(),
         summary:
-          (($("#wks-rfp-dialog-summary-template").val() as string) ||
-            "+保護依頼") + SUMMARY_AD,
+          (
+            ($("#wks-rfp-dialog-summary-submit").val() as string) || "+$p"
+          ).replaceAll(
+            "$p",
+            getPageNames()
+              .map((x) => `[[特別:PageHistory/${x}|${x}]]`)
+              .join(", "),
+          ) + SUMMARY_AD,
         prop: "text|modules|jsconfigvars",
         pst: true,
         disablelimitreport: true,

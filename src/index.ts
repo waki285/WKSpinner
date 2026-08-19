@@ -39,7 +39,11 @@ const PORTLET_MODULES: Record<
     label: "問題",
     description: "問題テンプレートを貼り付ける",
   },
-  rfp: { id: "wks-rfp", label: "保護依頼", description: "保護依頼をする" },
+  rfp: {
+    id: "wks-rfp",
+    label: "保護(解)依頼",
+    description: "保護・保護解除を依頼する",
+  },
   skj: { id: "wks-skj", label: "削除依頼", description: "削除依頼をする" },
   warn: {
     id: "wks-warn",
