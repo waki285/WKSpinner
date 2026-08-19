@@ -1,5 +1,6 @@
 // @ts-check
 import { readFileSync, existsSync } from "fs";
+import { runReleaseCheck } from "./release-check.mjs";
 
 // Minimal .env loader (no external deps)
 if (existsSync(".env")) {
@@ -231,6 +232,7 @@ async function editPage(title, text, csrf, summary) {
 }
 
 async function main() {
+  await runReleaseCheck();
   const targets = collect();
 
   console.log("[info] Logging in...");

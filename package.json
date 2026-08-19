@@ -7,6 +7,7 @@
     "test": "vitest run",
     "build": "node build.mjs",
     "build:debug": "node build.mjs --debug",
+    "deploy:check": "node release-check.mjs",
     "deploy": "node deploy.mjs",
     "deploy:apply": "node deploy.mjs --yes",
     "lint": "eslint . && prettier --check . && tsc"
