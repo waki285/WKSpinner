@@ -874,8 +874,7 @@ export const WARN_TEMPLATES = [
   {
     name: "二次資料提示のお願い",
     description: "一次資料に依存した投稿への二次資料の提示依頼",
-    hasTitle: false,
-    defaultTitle: "二次資料を提示してください",
+    hasTitle: true,
     params: [warnInput("投稿が行われたページ", "1", false, "ほげほげ")],
     category: "出典・検証可能性",
   },
@@ -925,7 +924,8 @@ export const WARN_TEMPLATES = [
   {
     name: "削除依頼タグ除去",
     description: "削除依頼タグの除去に対する注意",
-    hasTitle: true,
+    hasTitle: false,
+    defaultTitle: "削除依頼タグの除去について",
     params: [
       {
         type: "input",
@@ -940,7 +940,8 @@ export const WARN_TEMPLATES = [
   {
     name: "不当な即時削除タグ除去",
     description: "即時削除タグの不当な除去の繰り返しに対する注意",
-    hasTitle: true,
+    hasTitle: false,
+    defaultTitle: "即時削除タグの除去について",
     params: [
       {
         type: "input",
