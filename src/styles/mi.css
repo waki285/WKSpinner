@@ -29,9 +29,46 @@
 }
 
 .wks-mi-template-main {
+  position: relative;
   display: flex;
   align-items: baseline;
   gap: 0.375rem;
+}
+
+.wks-mi-template-main > label {
+  text-decoration: underline dotted;
+  text-underline-offset: 0.15em;
+  cursor: help;
+}
+
+.wks-mi-template-tooltip {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 0.25rem);
+  left: 1.5rem;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(30rem, calc(100vw - 4rem));
+  padding: 0.5rem 0.625rem;
+  color: var(--color-base, #202122);
+  background: var(--background-color-base, #f8f9fa);
+  border: 1px solid var(--border-color-base, #a2a9b1);
+  border-radius: 0.125rem;
+  box-shadow: 0 2px 8px rgb(32 33 34 / 20%);
+  font-size: 0.875rem;
+  font-weight: normal;
+  line-height: 1.5;
+  white-space: normal;
+  pointer-events: none;
+}
+
+.wks-mi-template-tooltip[hidden] {
+  display: none;
+}
+
+.wks-mi-template-column:last-child .wks-mi-template-tooltip {
+  right: 0;
+  left: auto;
 }
 
 .wks-mi-template-params {
@@ -56,5 +93,10 @@
 @media (max-width: 800px) {
   #wks-mi-dialog-type {
     grid-template-columns: 1fr;
+  }
+
+  .wks-mi-template-column:last-child .wks-mi-template-tooltip {
+    right: auto;
+    left: 1.5rem;
   }
 }

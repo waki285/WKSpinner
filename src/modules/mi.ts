@@ -20,6 +20,7 @@ import {
   replaceFirstAndRemoveOtherIssueTemplates,
   type IssueTemplate,
 } from "@/issue-templates";
+import { ISSUE_TEMPLATE_TOOLTIP_TEXTS } from "@/issue-template-tooltips";
 import MI_DIALOG_STYLE from "@/styles/mi.css";
 import {
   createRowFunc,
@@ -36,6 +37,9 @@ const checkboxId = (choice: IssueChoice) => `wks-mi-dialog-type-${choice.id}`;
 
 const paramInputId = (choice: IssueChoice, param: IssueTemplateParam) =>
   `wks-mi-dialog-type-params-${choice.id}-${param.id}`;
+
+const tooltipId = (choice: IssueChoice) =>
+  `wks-mi-dialog-type-tooltip-${choice.id}`;
 
 export async function initMi() {
   const miPortlet = takePortlet("wks-mi");
@@ -109,21 +113,41 @@ export async function initMi() {
         })
         .attr("data-date", template?.date ?? "");
       main.append(checkbox);
-      main.append(
-        $("<label>")
-          .text(
-            template
-              ? `${choice.name}${
-                  isDubious
-                    ? " (特殊なパラメーターが指定されているため WKSpinner で変更できません)"
-                    : template.date
-                      ? ` (${template.date})`
-                      : ""
-                }`
-              : choice.name,
-          )
-          .prop("for", checkboxId(choice)),
-      );
+      const label = $("<label>")
+        .text(
+          template
+            ? `${choice.name}${
+                isDubious
+                  ? " (特殊なパラメーターが指定されているため WKSpinner で変更できません)"
+                  : template.date
+                    ? ` (${template.date})`
+                    : ""
+              }`
+            : choice.name,
+        )
+        .prop({
+          for: checkboxId(choice),
+          tabIndex: 0,
+        })
+        .attr("aria-describedby", tooltipId(choice));
+      const tooltip = $("<span>")
+        .prop({
+          id: tooltipId(choice),
+          hidden: true,
+        })
+        .attr("role", "tooltip")
+        .addClass("wks-mi-template-tooltip")
+        .text(
+          ISSUE_TEMPLATE_TOOLTIP_TEXTS[
+            choice.id as keyof typeof ISSUE_TEMPLATE_TOOLTIP_TEXTS
+          ],
+        );
+      const showTooltip = () => tooltip.prop("hidden", false);
+      const hideTooltip = () => tooltip.prop("hidden", true);
+      label
+        .on("mouseenter focusin", showTooltip)
+        .on("mouseleave focusout", hideTooltip);
+      main.append(label, tooltip);
       div.append(main);
       if (choice.params.length) {
         const paramsId = `${checkboxId(choice)}-params`;

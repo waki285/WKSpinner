@@ -1562,18 +1562,6 @@ export const STANDALONE_ISSUE_CHOICES = [
         placeholder: "英語",
         required: false,
       },
-      {
-        name: "種類",
-        id: "kind",
-        type: "select",
-        singleName: null,
-        position: 3,
-        choices: [
-          { name: "未指定", id: "null" },
-          { name: "節", id: "section" },
-        ],
-        required: false,
-      },
     ],
   },
   {

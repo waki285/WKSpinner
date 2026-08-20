@@ -106,14 +106,14 @@ describe("buildSingleIssueTemplate", () => {
     ).toBe("{{No footnotes|BLP=yes|date=2026年8月}}");
   });
 
-  it("preserves empty positional arguments before a later argument", () => {
+  it("only writes the source language for Rough translation", () => {
     expect(
       buildSingleIssueTemplate(
         standalone("rough-translation"),
-        { "source-language": "英語", kind: "section" },
+        { "source-language": "英語" },
         "2026年8月",
       ),
-    ).toBe("{{Rough translation|英語||節}}");
+    ).toBe("{{Rough translation|英語}}");
   });
 
   it("writes parameters that are only available on the standalone form", () => {
