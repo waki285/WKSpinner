@@ -1,0 +1,302 @@
+.wks-watchlist-users {
+  max-width: 100%;
+}
+
+.wks-watchlist-users-tools {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+}
+
+.wks-watchlist-users-filters {
+  margin: 0 0 1rem;
+  background: var(--background-color-neutral-subtle, #f8f9fa);
+  border: 1px solid var(--border-color-base, #a2a9b1);
+}
+
+.wks-watchlist-users-filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 0.75rem 0.375rem;
+}
+
+.wks-watchlist-users-filter-hide {
+  padding: 0;
+  color: var(--color-progressive, #36c);
+  background: transparent;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.wks-watchlist-users-filter-hide:hover {
+  text-decoration: underline;
+}
+
+.wks-watchlist-users-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  min-height: 1.75rem;
+  padding: 0.25rem 0.75rem 0.625rem;
+}
+
+.wks-watchlist-users-filter-chip,
+.wks-watchlist-users-filter-chip-static {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 1.5rem;
+  padding: 0.125rem 0.5rem;
+  color: var(--color-base, #202122);
+  background: var(--background-color-base, #f8f9fa);
+  border: 1px solid var(--border-color-base, #a2a9b1);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+.wks-watchlist-users-filter-chip {
+  cursor: pointer;
+}
+
+.wks-watchlist-users-filter-chip:hover {
+  background: var(--background-color-interactive-subtle--hover, #eaecf0);
+  border-color: var(--border-color-interactive, #72777d);
+}
+
+.wks-watchlist-users-filter-chip-remove {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.wks-watchlist-users-filter-details {
+  border-top: 1px solid var(--border-color-base, #a2a9b1);
+}
+
+.wks-watchlist-users-filter-details > summary {
+  display: flex;
+  align-items: center;
+  min-height: 2.25rem;
+  padding: 0 0.625rem;
+  list-style: none;
+  cursor: pointer;
+}
+
+.wks-watchlist-users-filter-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.wks-watchlist-users-filter-details > summary:hover {
+  background: var(--background-color-interactive-subtle--hover, #eaecf0);
+}
+
+.wks-watchlist-users-filter-menu-icon {
+  margin-right: 0.5rem;
+  font-size: 1.125rem;
+}
+
+.wks-watchlist-users-filter-hint {
+  margin-left: 0.5rem;
+  color: var(--color-subtle, #54595d);
+}
+
+.wks-watchlist-users-filter-settings-summary {
+  margin-left: auto;
+  padding-left: 0.75rem;
+  font-weight: 700;
+}
+
+.wks-watchlist-users-filter-panel {
+  padding: 0.75rem;
+  background: var(--background-color-base, #f8f9fa);
+  border-top: 1px solid var(--border-color-muted, #c8ccd1);
+}
+
+.wks-watchlist-users-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(10rem, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.wks-watchlist-users-field > label,
+.wks-watchlist-users-field-label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 700;
+}
+
+.wks-watchlist-users-field select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2rem;
+  padding: 0.25rem 2rem 0.25rem 0.5rem;
+  color: var(--color-base, #202122);
+  background-color: var(--background-color-base, #f8f9fa);
+  border: 1px solid var(--border-color-base, #72777d);
+  border-radius: 0.125rem;
+  font: inherit;
+}
+
+.wks-watchlist-users-field select:focus,
+.wks-watchlist-users-filters input:focus-visible,
+.wks-watchlist-users-filter-chip:focus-visible,
+.wks-watchlist-users-filter-hide:focus-visible,
+.wks-watchlist-users-filter-details > summary:focus-visible,
+.wks-watchlist-users-submit:focus-visible {
+  outline: 2px solid var(--border-color-progressive--focus, #36c);
+  outline-offset: 1px;
+}
+
+.wks-watchlist-users-namespace-options,
+.wks-watchlist-users-radio-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  margin-top: 0.375rem;
+}
+
+.wks-watchlist-users-check {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  font-weight: 400;
+}
+
+.wks-watchlist-users-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.wks-watchlist-users-submit {
+  min-height: 2rem;
+  padding: 0.3125rem 0.75rem;
+  color: var(--color-inverted-fixed, #f8f9fa);
+  background: var(--background-color-progressive, #36c);
+  border: 1px solid var(--border-color-progressive, #36c);
+  border-radius: 0.125rem;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.wks-watchlist-users-submit:hover {
+  background: var(--background-color-progressive--hover, #2a4b8d);
+  border-color: var(--border-color-progressive--hover, #2a4b8d);
+}
+
+.wks-watchlist-users-submit:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.wks-watchlist-users-status {
+  min-height: 1.5rem;
+  margin: 0.75rem 0 0.5rem;
+  color: var(--color-subtle, #54595d);
+}
+
+#mw-content-text .wks-watchlist-users-date {
+  margin: 1.25rem 0 0.375rem;
+  padding: 0;
+  border: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.wks-watchlist-users-list {
+  margin: 0;
+  padding-left: 2rem;
+  list-style: disc;
+}
+
+.wks-watchlist-users-entry {
+  margin: 0.125rem 0;
+  line-height: 1.55;
+}
+
+.wks-watchlist-users-links,
+.wks-watchlist-users-time,
+.wks-watchlist-users-flags,
+.wks-watchlist-users-size {
+  white-space: nowrap;
+}
+
+.wks-watchlist-users-time {
+  display: inline-block;
+  min-width: 2.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.wks-watchlist-users-flags abbr {
+  margin-right: 0.25rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.wks-watchlist-users-size {
+  font-variant-numeric: tabular-nums;
+}
+
+.wks-watchlist-users-size-large {
+  font-weight: 700;
+}
+
+.wks-watchlist-users-message {
+  padding: 0.75rem 1rem;
+  background: var(--background-color-neutral-subtle, #f8f9fa);
+  border: 1px solid var(--border-color-muted, #c8ccd1);
+}
+
+.wks-watchlist-users-message-error {
+  background: var(--background-color-error-subtle, #fee7e6);
+  border-color: var(--border-color-error, #b32424);
+}
+
+.wks-watchlist-users-skeleton {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wks-watchlist-users-skeleton li {
+  width: min(48rem, 90%);
+  height: 0.875rem;
+  margin: 0.75rem 0;
+  background: var(--background-color-interactive-subtle, #eaecf0);
+  border-radius: 0.125rem;
+}
+
+.wks-watchlist-users-skeleton li:nth-child(2n) {
+  width: min(39rem, 75%);
+}
+
+@media (max-width: 720px) {
+  .wks-watchlist-users-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wks-watchlist-users-filter-hint {
+    display: none;
+  }
+
+  .wks-watchlist-users-filter-settings-summary {
+    max-width: 45%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .wks-watchlist-users-entry {
+    margin-bottom: 0.625rem;
+  }
+
+  .wks-watchlist-users-comment,
+  .wks-watchlist-users-tags {
+    display: block;
+    margin-left: 0;
+  }
+}

@@ -41,7 +41,7 @@ const MODULE_NAMES = [
   "wikidata",
 ];
 
-const PAGE_NAMES = ["preferences", "debug"];
+const PAGE_NAMES = ["preferences", "debug", "watchlistUsers"];
 
 const APPLY = process.argv.includes("--yes");
 const EDIT_INTERVAL_MS = 20000;

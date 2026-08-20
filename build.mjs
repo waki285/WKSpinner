@@ -24,7 +24,7 @@ const MODULE_NAMES = [
 // only fetched when the user actually visits the corresponding wiki page, so
 // keeping them out of the core bundle drastically reduces the page weight of
 // ordinary article views.
-const PAGE_NAMES = ["preferences", "debug"];
+const PAGE_NAMES = ["preferences", "debug", "watchlistUsers"];
 
 // ---------------------------------------------------------------------------
 // Shared-module externalisation plugin

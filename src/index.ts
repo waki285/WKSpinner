@@ -8,6 +8,7 @@ import {
   SCRIPT_NAME,
   VERSION,
   VERSION_OPTIONS_KEY,
+  WATCHLIST_USERS_PAGE_NAME,
 } from "./constants";
 import { applyOptionMigrations } from "./option-migrations";
 import "./shared";
@@ -139,6 +140,9 @@ async function init() {
   }
 
   const isMobile = mw.config.get("skin") === "minerva";
+  const isWatchlistUsersPage =
+    mw.config.get("wgAction") === "view" &&
+    mw.config.get("wgPageName") === WATCHLIST_USERS_PAGE_NAME;
 
   if (getOptionProperty("prefLinkInToolbar")) {
     const el = mw.util.addPortletLink(
@@ -170,6 +174,10 @@ async function init() {
     await runPage("debug");
   }
 
+  if (isWatchlistUsersPage) {
+    await runPage("watchlistUsers");
+  }
+
   // モバイル無効設定
   if (getOptionProperty("disableMobile") === true && isMobile) {
     return;
@@ -192,18 +200,22 @@ async function init() {
     }
     return;
   }
-  if (mw.config.get("wgAction") === "history") {
+  if (mw.config.get("wgAction") === "history" || isWatchlistUsersPage) {
     if (
       getOptionProperty("editCount.enabled") === true &&
       !(isMobile && getOptionProperty("editCount.enableMobile") === false)
     ) {
       await runModule("editCount");
+      if (isWatchlistUsersPage) {
+        mw.hook("wikipage.content").fire($(".wks-watchlist-users-results"));
+      }
     }
   }
 
   if (
     !isMobile &&
     mw.config.get("wgAction") === "view" &&
+    !isWatchlistUsersPage &&
     getOptionProperty("wikidata.enabled") === true
   ) {
     await runModule("wikidata");

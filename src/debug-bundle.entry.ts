@@ -8,4 +8,5 @@ import "./modules/warn.entry";
 import "./modules/wikidata.entry";
 import "./preferences.entry";
 import "./debug.entry";
+import "./watchlistUsers.entry";
 import "./index";
