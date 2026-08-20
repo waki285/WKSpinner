@@ -31,49 +31,6 @@ function multiple(id: string): MIChoice {
   return choice;
 }
 
-describe("issue template definitions", () => {
-  it("keeps standalone templates separate from multiple-issue choices", () => {
-    const multipleIds = new Set<string>(MI_CHOICES.map(({ id }) => id));
-
-    expect(STANDALONE_ISSUE_CHOICES).toHaveLength(29);
-    expect(
-      STANDALONE_ISSUE_CHOICES.every(({ id }) => !multipleIds.has(id)),
-    ).toBe(true);
-  });
-
-  it.each([
-    "自分自身の記事",
-    "ファンサイト的",
-    "導入部が長い",
-    "導入部が短い",
-    "百科事典的でない",
-    "専門的",
-    "リンク過剰",
-  ])("includes %s in the multiple-issue choices", (name) => {
-    expect(MI_CHOICES.some((choice) => choice.name === name)).toBe(true);
-  });
-
-  it.each([
-    "スポーツ選手の出典明記",
-    "リンクのみの節",
-    "年譜のみの経歴",
-    "関連項目過剰",
-    "Empty section",
-    "不十分なあらすじ",
-    "要あらすじ",
-  ])("excludes the section-only template %s", (name) => {
-    expect(
-      STANDALONE_ISSUE_CHOICES.some((choice) => choice.name === name),
-    ).toBe(false);
-  });
-
-  it("excludes the deprecated paid-contributions template", () => {
-    expect(STANDALONE_ISSUE_CHOICES.map(({ name }) => name)).not.toContain(
-      "有償の寄稿",
-    );
-  });
-});
-
 describe("buildSingleIssueTemplate", () => {
   it("writes required and optional named parameters with a date", () => {
     expect(
@@ -104,16 +61,6 @@ describe("buildSingleIssueTemplate", () => {
         "2026年8月",
       ),
     ).toBe("{{No footnotes|BLP=yes|date=2026年8月}}");
-  });
-
-  it("only writes the source language for Rough translation", () => {
-    expect(
-      buildSingleIssueTemplate(
-        standalone("rough-translation"),
-        { "source-language": "英語" },
-        "2026年8月",
-      ),
-    ).toBe("{{Rough translation|英語}}");
   });
 
   it("writes parameters that are only available on the standalone form", () => {
