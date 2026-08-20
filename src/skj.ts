@@ -4,6 +4,96 @@ export type DeletionRequestMarks = {
   revision: boolean;
 };
 
+type RedirectQueryResponse = {
+  query?: {
+    redirects?: { from: string; to: string; tofragment?: string }[];
+  };
+};
+
+export async function fetchCurrentRedirectTarget(api: mw.Api, title: string) {
+  const response = (await api.get({
+    action: "query",
+    titles: title,
+    redirects: 1,
+    formatversion: "2",
+  })) as RedirectQueryResponse;
+  const redirect = response.query?.redirects?.[0];
+  if (!redirect) {
+    return null;
+  }
+  return `${redirect.to}${redirect.tofragment ? `#${redirect.tofragment}` : ""}`;
+}
+
+export function getRedirectDeletionRequestSectionHeading(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  }).formatToParts(date);
+  const year = Number(parts.find(({ type }) => type === "year")?.value);
+  const month = Number(parts.find(({ type }) => type === "month")?.value);
+  const day = Number(parts.find(({ type }) => type === "day")?.value);
+  const rangeStart = day >= 26 ? 26 : Math.floor((day - 1) / 5) * 5 + 1;
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const rangeEnd = rangeStart === 26 ? lastDay : rangeStart + 4;
+  return `${year}年${month}月${rangeStart}日 - ${rangeEnd}日新規依頼`;
+}
+
+function getTemplateArgument(value: string, position: number) {
+  return value.includes("=") ? `${position}=${value}` : value;
+}
+
+export function getRedirectDeletionRequestText(
+  source: string,
+  target: string,
+  reason: string,
+  requesterVote: string,
+) {
+  const normalizedReason = reason
+    .replace(/--~~~~\s*$/u, "")
+    .replace(/~~~~\s*$/u, "")
+    .trim();
+  return `* {{RFD|${getTemplateArgument(source, 1)}|${getTemplateArgument(target, 2)}}} - ${requesterVote.trim()} ${normalizedReason} --~~~~`;
+}
+
+export function appendRedirectDeletionRequest(
+  pageContent: string,
+  sectionHeading: string,
+  requestText: string,
+) {
+  const headingPattern = new RegExp(
+    `^===\\s*${sectionHeading.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")}\\s*===\\s*$`,
+    "mu",
+  );
+  const headingMatch = headingPattern.exec(pageContent);
+  if (!headingMatch) {
+    throw new Error(`受付ページに「${sectionHeading}」節がありません。`);
+  }
+  const sectionStart = headingMatch.index + headingMatch[0].length;
+  const nextHeading = /^===\s*.+?\s*===\s*$/gmu;
+  nextHeading.lastIndex = sectionStart;
+  const nextHeadingMatch = nextHeading.exec(pageContent);
+  const sectionEnd = nextHeadingMatch?.index ?? pageContent.length;
+  const newline = pageContent.includes("\r\n") ? "\r\n" : "\n";
+  const before = pageContent.slice(0, sectionEnd).replace(/\s+$/u, "");
+  const after = pageContent.slice(sectionEnd);
+  return `${before}${newline}${newline}${requestText.trim()}${newline}${
+    after ? newline : ""
+  }${after}`;
+}
+
+export function hasRedirectDeletionRequest(
+  requestPageContent: string,
+  source: string,
+) {
+  const normalizedSource = normalizePageReference(source);
+  const requestPattern = /\{\{\s*RFD\s*\|\s*(?:1\s*=\s*)?([^|}\n]+)/giu;
+  return [...requestPageContent.matchAll(requestPattern)].some(
+    (match) => normalizePageReference(match[1] ?? "") === normalizedSource,
+  );
+}
+
 export function isUserPageDeletionNamespace(namespaceNumber: number): boolean {
   return namespaceNumber === 2 || namespaceNumber === 3;
 }

@@ -1,14 +1,97 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
+  appendRedirectDeletionRequest,
+  fetchCurrentRedirectTarget,
   getDeletionRequestReason,
+  getRedirectDeletionRequestSectionHeading,
+  getRedirectDeletionRequestText,
   getUserPageDeletionReference,
   getUserPageDeletionRequestSection,
   getUserPageDeletionRequestText,
   getUserPageDeletionSectionTitle,
   hasUserPageDeletionRequest,
+  hasRedirectDeletionRequest,
   isUserPageDeletionNamespace,
 } from "../src/skj";
+
+describe("redirect deletion requests", () => {
+  it("detects the current target including a section fragment", async () => {
+    const get = vi.fn().mockResolvedValue({
+      query: {
+        redirects: [{ from: "転送元", to: "転送先", tofragment: "節" }],
+      },
+    });
+
+    await expect(
+      fetchCurrentRedirectTarget({ get } as unknown as mw.Api, "転送元"),
+    ).resolves.toBe("転送先#節");
+    expect(get).toHaveBeenCalledWith(
+      expect.objectContaining({ titles: "転送元", redirects: 1 }),
+    );
+  });
+
+  it("returns null for a non-redirect", async () => {
+    const get = vi.fn().mockResolvedValue({ query: { pages: [{}] } });
+    await expect(
+      fetchCurrentRedirectTarget({ get } as unknown as mw.Api, "記事"),
+    ).resolves.toBeNull();
+  });
+
+  it.each([
+    ["2026-08-05T14:59:59Z", "2026年8月1日 - 5日新規依頼"],
+    ["2026-08-05T15:00:00Z", "2026年8月6日 - 10日新規依頼"],
+    ["2026-02-27T15:00:00Z", "2026年2月26日 - 28日新規依頼"],
+  ])("selects the JST request section for %s", (timestamp, expected) => {
+    expect(getRedirectDeletionRequestSectionHeading(new Date(timestamp))).toBe(
+      expected,
+    );
+  });
+
+  it("formats an RFD request and protects positional arguments", () => {
+    expect(
+      getRedirectDeletionRequestText(
+        "転送=元",
+        "転送=先",
+        "方針のケースに該当。--~~~~",
+        "（削除） 依頼者票。",
+      ),
+    ).toBe(
+      "* {{RFD|1=転送=元|2=転送=先}} - （削除） 依頼者票。 方針のケースに該当。 --~~~~",
+    );
+  });
+
+  it("appends a request inside the current period section", () => {
+    const content = `== リダイレクトの削除依頼 ==
+=== 2026年8月16日 - 20日新規依頼 ===
+* 既存依頼
+
+=== 2026年8月21日 - 25日新規依頼 ===
+`;
+    expect(
+      appendRedirectDeletionRequest(
+        content,
+        "2026年8月16日 - 20日新規依頼",
+        "* 新規依頼",
+      ),
+    ).toContain("* 既存依頼\n\n* 新規依頼\n\n=== 2026年8月21日");
+  });
+
+  it("rejects a missing period section", () => {
+    expect(() =>
+      appendRedirectDeletionRequest("== 受付 ==", "存在しない節", "* 依頼"),
+    ).toThrow("受付ページに「存在しない節」節がありません。");
+  });
+
+  it("detects an existing RFD request across underscore differences", () => {
+    expect(
+      hasRedirectDeletionRequest(
+        "* {{RFD|1=転送_元|転送先}} - 理由",
+        "転送 元",
+      ),
+    ).toBe(true);
+  });
+});
 
 describe("isUserPageDeletionNamespace", () => {
   it.each([2, 3])("accepts namespace %i", (namespaceNumber) => {

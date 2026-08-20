@@ -1,4 +1,5 @@
 import {
+  RFD_REQUEST_PAGE_NAME,
   SCRIPT_NAME,
   SKJ_REQUEST_PAGE_NAME,
   SUMMARY_AD,
@@ -16,12 +17,17 @@ import {
 } from "@/util";
 import { getPageIdPrivacyWarnings } from "@/skj-validation";
 import {
+  appendRedirectDeletionRequest,
+  fetchCurrentRedirectTarget,
   getDeletionRequestReason,
+  getRedirectDeletionRequestSectionHeading,
+  getRedirectDeletionRequestText,
   getUserPageDeletionReference,
   getUserPageDeletionRequestSection,
   getUserPageDeletionRequestText,
   getUserPageDeletionSectionTitle,
   hasUserPageDeletionRequest,
+  hasRedirectDeletionRequest,
   isUserPageDeletionNamespace,
 } from "@/skj";
 
@@ -40,6 +46,9 @@ export async function initSkj() {
     const isUserPageDeletion = isUserPageDeletionNamespace(
       Number(mw.config.get("wgNamespaceNumber")),
     );
+    const redirectTargetPromise = isUserPageDeletion
+      ? Promise.resolve(null)
+      : fetchCurrentRedirectTarget(new mw.Api(), targetPageName);
     const targetPageContextPromise = getPageEditContext(targetPageName, true);
     const existRFDPagePromise = isUserPageDeletion
       ? Promise.resolve(null)
@@ -59,10 +68,12 @@ export async function initSkj() {
       dialogClass: "wks-skj-dialog",
       content: dialogContent,
     });
-    const [targetPageContext, existRFDPage] = await Promise.all([
-      targetPageContextPromise,
-      existRFDPagePromise,
-    ]);
+    const [targetPageContext, existRFDPage, initialRedirectTarget] =
+      await Promise.all([
+        targetPageContextPromise,
+        existRFDPagePromise,
+        redirectTargetPromise,
+      ]);
     if (
       targetPageContext.revisionId === null ||
       targetPageContext.content === null
@@ -76,11 +87,42 @@ export async function initSkj() {
     const pageContent = targetPageContext.content;
     dialogContent.empty();
     const dialogFieldset = $("<fieldset>");
-    dialogFieldset.prop({
-      id: "wks-skj-dialog-optionfield",
-      innerHTML: `<legend>${isUserPageDeletion ? "利用者ページの削除依頼" : "削除依頼"}の提出</legend>`,
-    });
+    dialogFieldset.prop("id", "wks-skj-dialog-optionfield");
+    const dialogLegend = $("<legend>").text(
+      `${isUserPageDeletion ? "利用者ページの削除依頼" : "削除依頼"}の提出`,
+    );
+    dialogFieldset.append(dialogLegend);
     dialogContent.append(dialogFieldset);
+
+    const hasRedirectMode = initialRedirectTarget !== null;
+    if (hasRedirectMode) {
+      const dialogModeRow = createRow("mode").addClass("wks-inline");
+      for (const mode of ["standard", "redirect"] as const) {
+        const id = `wks-skj-dialog-mode-${mode}`;
+        dialogModeRow.append(
+          $("<input>").prop({
+            id,
+            name: "wks-skj-dialog-mode",
+            type: "radio",
+            value: mode,
+            checked: mode === "standard",
+          }),
+          $("<label>")
+            .prop("for", id)
+            .text(
+              mode === "standard" ? "通常の削除依頼" : "リダイレクトの削除依頼",
+            ),
+        );
+      }
+      dialogFieldset.append(dialogModeRow);
+    }
+
+    const getSelectedMode = (): "standard" | "redirect" =>
+      hasRedirectMode &&
+      $("input[name='wks-skj-dialog-mode']:checked").val() === "redirect"
+        ? "redirect"
+        : "standard";
+    const isRedirectDeletion = () => getSelectedMode() === "redirect";
     const dialogPageNameRow = createRow("page-name");
     dialogPageNameRow.append(
       $("<label>")
@@ -159,7 +201,8 @@ export async function initSkj() {
     dialogFieldset.append(dialogBlankRow);
     dialogFieldset.append(dialogUseIdRow);
 
-    dialogFieldset.append($("<hr>").addClass("wks-hr"));
+    const dialogOptionsSeparator = $("<hr>").addClass("wks-hr");
+    dialogFieldset.append(dialogOptionsSeparator);
 
     const dialogMarkRights = createRow("mark-rights").addClass("wks-inline");
     dialogMarkRights.append(
@@ -199,7 +242,8 @@ export async function initSkj() {
     dialogFieldset.append(dialogMarkEmer);
     dialogFieldset.append(dialogMarkRev);
 
-    dialogFieldset.append($("<hr>").addClass("wks-hr"));
+    const dialogMarksSeparator = $("<hr>").addClass("wks-hr");
+    dialogFieldset.append(dialogMarksSeparator);
 
     const dialogDescRow = createRow("desc");
     dialogDescRow.append(
@@ -251,12 +295,11 @@ export async function initSkj() {
         .addClass("wks-shrink-0"),
     );
     const summaryTemplate = $("<div>").addClass("wks-inline");
-    summaryTemplate.append(
-      $("<label>")
-        .text(`${isUserPageDeletion ? "Ufd" : "Sakujo"}貼り付け: `)
-        .prop("for", "wks-skj-dialog-summary-template")
-        .addClass("wks-shrink-0"),
-    );
+    const summaryTemplateLabel = $("<label>")
+      .text(`${isUserPageDeletion ? "Ufd" : "Sakujo"}貼り付け: `)
+      .prop("for", "wks-skj-dialog-summary-template")
+      .addClass("wks-shrink-0");
+    summaryTemplate.append(summaryTemplateLabel);
     summaryTemplate.append(
       $("<input>").prop({
         id: "wks-skj-dialog-summary-template",
@@ -272,12 +315,11 @@ export async function initSkj() {
     );
     dialogSummaries.append(summaryTemplate);
     const summarySubmit = $("<div>").addClass("wks-inline");
-    summarySubmit.append(
-      $("<label>")
-        .text(isUserPageDeletion ? "依頼ページへの追記: " : "依頼ページ作成: ")
-        .prop("for", "wks-skj-dialog-summary-submit")
-        .addClass("wks-shrink-0"),
-    );
+    const summarySubmitLabel = $("<label>")
+      .text(isUserPageDeletion ? "依頼ページへの追記: " : "依頼ページ作成: ")
+      .prop("for", "wks-skj-dialog-summary-submit")
+      .addClass("wks-shrink-0");
+    summarySubmit.append(summarySubmitLabel);
     summarySubmit.append(
       $("<input>").prop({
         id: "wks-skj-dialog-summary-submit",
@@ -316,6 +358,58 @@ export async function initSkj() {
       },
     );
 
+    const opvValues = {
+      standard: String($("#wks-skj-dialog-opv-input").val() ?? ""),
+      redirect: "（削除） 依頼者票。",
+    };
+    let previousMode = getSelectedMode();
+    const updateModeFields = () => {
+      const mode = getSelectedMode();
+      opvValues[previousMode] = String(
+        $("#wks-skj-dialog-opv-input").val() ?? "",
+      );
+      $("#wks-skj-dialog-opv-input").val(opvValues[mode]);
+      previousMode = mode;
+
+      const redirect = mode === "redirect";
+      dialogLegend.text(
+        `${redirect ? "リダイレクトの削除依頼" : isUserPageDeletion ? "利用者ページの削除依頼" : "削除依頼"}の提出`,
+      );
+      dialogPageNameRow.toggle(!redirect);
+      dialogCRRow.toggle(!redirect);
+      dialogBlankRow.toggle(!redirect);
+      dialogUseIdRow.toggle(!redirect);
+      dialogMarkRights.toggle(!redirect);
+      dialogMarkEmer.toggle(!redirect);
+      dialogMarkRev.toggle(!redirect);
+      dialogOptionsSeparator.toggle(!redirect);
+      dialogMarksSeparator.toggle(!redirect);
+      preset.toggle(!redirect);
+      summaryTemplate.toggle(!redirect);
+      summaryNote.toggle(!isUserPageDeletion && !redirect);
+      summarySubmitLabel.text(
+        redirect
+          ? "受付ページへの追記: "
+          : isUserPageDeletion
+            ? "依頼ページへの追記: "
+            : "依頼ページ作成: ",
+      );
+      $("#wks-skj-dialog-summary-submit").prop(
+        "placeholder",
+        redirect ? "リダイレクトの削除依頼" : "削除依頼",
+      );
+      $("#wks-skj-dialog-desc-input").prop(
+        "placeholder",
+        redirect
+          ? "リダイレクト削除の方針のどのケースに該当するかを含め、理由を入力してください。"
+          : isUserPageDeletion
+            ? "ケースB-2、プライバシー侵害のおそれ。～～～"
+            : "ケースI-1、特筆性なし。〜〜〜",
+      );
+    };
+    $("input[name='wks-skj-dialog-mode']").on("change", updateModeFields);
+    updateModeFields();
+
     // 第一タプル: prependtext か text か (true なら text, false なら prependtext)
     // forceText を true にすると text になる
     const getFinalContentPrepend = (forceText = false) =>
@@ -346,6 +440,17 @@ export async function initSkj() {
 
     const getFinalContentRequest = () => {
       const reasonRaw = String($("#wks-skj-dialog-desc-input").val() ?? "");
+      if (isRedirectDeletion()) {
+        if (!initialRedirectTarget) {
+          throw new Error("現在の転送先を取得できません。");
+        }
+        return getRedirectDeletionRequestText(
+          targetPageName,
+          initialRedirectTarget,
+          reasonRaw,
+          String($("#wks-skj-dialog-opv-input").val() ?? ""),
+        );
+      }
       const signReason = getOptionProperty("skj.signReason") === true;
       const reasonField = getDeletionRequestReason(reasonRaw, signReason);
       if (isUserPageDeletion) {
@@ -366,7 +471,11 @@ export async function initSkj() {
     const checkParams = () => {
       const errList = $("<ul>");
 
-      if (!isUserPageDeletion && !$("#wks-skj-dialog-page-name-input").val()) {
+      if (
+        !isUserPageDeletion &&
+        !isRedirectDeletion() &&
+        !$("#wks-skj-dialog-page-name-input").val()
+      ) {
         errList.append($("<li>").text("ページ名を入力してください。"));
       }
 
@@ -378,31 +487,39 @@ export async function initSkj() {
         errList.append($("<li>").text("依頼者票を入力してください。"));
       }
 
-      const privacyWarnings = getPageIdPrivacyWarnings({
-        usePageId: Boolean($("#wks-skj-dialog-use-id-cb").prop("checked")),
-        requestPageName: isUserPageDeletion
-          ? UFD_REQUEST_PAGE_NAME
-          : String($("#wks-skj-dialog-page-name-input").val() ?? ""),
-        targetPageName,
-        summaries: [
-          {
-            label: `${isUserPageDeletion ? "Ufd" : "Sakujo"}貼り付け`,
-            value: String($("#wks-skj-dialog-summary-template").val() ?? ""),
-          },
-          {
-            label: isUserPageDeletion ? "依頼ページへの追記" : "依頼ページ作成",
-            value: String($("#wks-skj-dialog-summary-submit").val() ?? ""),
-          },
-          ...(isUserPageDeletion
-            ? []
-            : [
-                {
-                  label: "ログへの追記",
-                  value: String($("#wks-skj-dialog-summary-note").val() ?? ""),
-                },
-              ]),
-        ],
-      });
+      const privacyWarnings = isRedirectDeletion()
+        ? []
+        : getPageIdPrivacyWarnings({
+            usePageId: Boolean($("#wks-skj-dialog-use-id-cb").prop("checked")),
+            requestPageName: isUserPageDeletion
+              ? UFD_REQUEST_PAGE_NAME
+              : String($("#wks-skj-dialog-page-name-input").val() ?? ""),
+            targetPageName,
+            summaries: [
+              {
+                label: `${isUserPageDeletion ? "Ufd" : "Sakujo"}貼り付け`,
+                value: String(
+                  $("#wks-skj-dialog-summary-template").val() ?? "",
+                ),
+              },
+              {
+                label: isUserPageDeletion
+                  ? "依頼ページへの追記"
+                  : "依頼ページ作成",
+                value: String($("#wks-skj-dialog-summary-submit").val() ?? ""),
+              },
+              ...(isUserPageDeletion
+                ? []
+                : [
+                    {
+                      label: "ログへの追記",
+                      value: String(
+                        $("#wks-skj-dialog-summary-note").val() ?? "",
+                      ),
+                    },
+                  ]),
+            ],
+          });
       for (const warning of privacyWarnings) {
         errList.append($("<li>").text(warning));
       }
@@ -618,10 +735,134 @@ export async function initSkj() {
       finish();
     };
 
+    const executeRedirectDeletion = async () => {
+      const progressContentHolder = $("<div>").css({
+        maxHeight: "70vh",
+        maxWidth: "80vw",
+      });
+      const progressDialog = await openDialog({
+        title: `${SCRIPT_NAME} - リダイレクトの削除依頼`,
+        dialogClass: "wks-mi-dialog wks-mi-dialog-preview",
+        content: progressContentHolder,
+      });
+      const wipMessage = $("<p>")
+        .addClass("wks-red")
+        .css("font-weight", "bold")
+        .text("注意: 削除依頼中はタブを閉じないでください！");
+      const progress = $("<div>")
+        .addClass("wks-inline")
+        .append(getImage("load", ""), $("<span>").text("現在の状態を確認中"));
+      progressContentHolder.append(wipMessage, progress);
+      progressDialog.reposition();
+
+      const unloadFunc = (event: BeforeUnloadEvent) => {
+        event.returnValue = "During the redirect deletion request!";
+      };
+      addEventListener("beforeunload", unloadFunc);
+      const finish = () => {
+        removeEventListener("beforeunload", unloadFunc);
+        progressDialog.setButtons([
+          { label: "閉じる", onClick: () => progressDialog.close() },
+        ]);
+      };
+
+      try {
+        const currentRedirectTarget = await fetchCurrentRedirectTarget(
+          new mw.Api(),
+          targetPageName,
+        );
+        if (!currentRedirectTarget) {
+          throw new Error(
+            "ダイアログを開いた後に対象ページがリダイレクトではなくなりました。",
+          );
+        }
+        if (currentRedirectTarget !== initialRedirectTarget) {
+          throw new Error(
+            "ダイアログを開いた後に転送先が変更されました。内容を確認してやり直してください。",
+          );
+        }
+
+        const requestPageContext = await getPageEditContext(
+          RFD_REQUEST_PAGE_NAME,
+          true,
+        );
+        if (
+          requestPageContext.revisionId === null ||
+          requestPageContext.content === null
+        ) {
+          throw new Error(`${RFD_REQUEST_PAGE_NAME}が存在しません。`);
+        }
+        if (
+          hasRedirectDeletionRequest(requestPageContext.content, targetPageName)
+        ) {
+          throw new Error("同じ対象の削除依頼がすでに存在します。");
+        }
+
+        const sectionHeading = getRedirectDeletionRequestSectionHeading(
+          new Date(requestPageContext.startTimestamp),
+        );
+        const updatedContent = appendRedirectDeletionRequest(
+          requestPageContext.content,
+          sectionHeading,
+          getFinalContentRequest(),
+        );
+        progress
+          .empty()
+          .append(getImage("load", ""), $("<span>").text("受付ページへ追記中"));
+        const result = await new mw.Api().postWithEditToken({
+          action: "edit",
+          title: RFD_REQUEST_PAGE_NAME,
+          nocreate: 1,
+          text: updatedContent,
+          summary:
+            (
+              String($("#wks-skj-dialog-summary-submit").val() ?? "") ||
+              "リダイレクトの削除依頼"
+            )
+              .replaceAll("$d", RFD_REQUEST_PAGE_NAME)
+              .replaceAll("$p", targetPageName) + SUMMARY_AD,
+          formatversion: "2",
+          baserevid: requestPageContext.revisionId,
+          starttimestamp: requestPageContext.startTimestamp,
+          notminor: 1,
+        });
+        if (result.edit.result !== "Success") {
+          throw new Error("Conflict?");
+        }
+        progress.empty().append(
+          getImage("check", ""),
+          $("<span>").append(
+            "リダイレクトの削除依頼へ追記しました。(",
+            $("<a>")
+              .prop({
+                href: mw.util.getUrl(RFD_REQUEST_PAGE_NAME),
+                target: "_blank",
+              })
+              .text("リンク"),
+            ")",
+          ),
+        );
+      } catch (error) {
+        progress
+          .empty()
+          .append(
+            getImage("cross", ""),
+            $("<span>").text(`依頼の提出に失敗しました。(${String(error)})`),
+          );
+      } finally {
+        finish();
+      }
+    };
+
     const execute = async () => {
       const err = checkParams();
       if (err !== true) {
         mw.notify(err, { type: "error" });
+        return;
+      }
+
+      if (isRedirectDeletion()) {
+        await executeRedirectDeletion();
         return;
       }
 
@@ -944,6 +1185,59 @@ export async function initSkj() {
       const err = checkParams();
       if (err !== true) {
         mw.notify(err, { type: "error" });
+        return;
+      }
+      if (isRedirectDeletion()) {
+        const previewContent = $("<div>")
+          .text("読み込み中")
+          .append(getImage("load", "margin-left: 0.5em;"));
+        const previewDialog = await openDialog({
+          title: `${SCRIPT_NAME} - リダイレクトの削除依頼プレビュー`,
+          dialogClass: "wks-skj-dialog wks-skj-dialog-preview",
+          content: previewContent,
+        });
+        try {
+          const summary =
+            (
+              String($("#wks-skj-dialog-summary-submit").val() ?? "") ||
+              "リダイレクトの削除依頼"
+            )
+              .replaceAll("$d", RFD_REQUEST_PAGE_NAME)
+              .replaceAll("$p", targetPageName) + SUMMARY_AD;
+          const parseResult = await new mw.Api().post({
+            action: "parse",
+            title: RFD_REQUEST_PAGE_NAME,
+            text: getFinalContentRequest(),
+            summary,
+            prop: "text|modules|jsconfigvars",
+            pst: true,
+            disablelimitreport: true,
+            disableeditsection: true,
+            disabletoc: true,
+            contentmodel: "wikitext",
+            formatversion: "2",
+          });
+          if (parseResult.parse.modules.length) {
+            mw.loader.load(parseResult.parse.modules);
+          }
+          if (parseResult.parse.modulestyles.length) {
+            mw.loader.load(parseResult.parse.modulestyles);
+          }
+          previewContent.empty().append(
+            $("<div>")
+              .html("編集の要約: " + parseResult.parse.parsedsummary)
+              .prop("id", "wks-skj-dialog-preview-summary"),
+            $("<hr>").addClass("wks-hr"),
+            $("<div>")
+              .html(parseResult.parse.text)
+              .addClass("wks-dialog-preview-div"),
+          );
+        } catch (error) {
+          previewContent
+            .empty()
+            .text(`プレビューの取得に失敗しました。(${String(error)})`);
+        }
+        previewDialog.reposition();
         return;
       }
       const pageName = isUserPageDeletion

@@ -10,6 +10,9 @@ export const SKJ_REQUEST_PAGE_NAME = DEV
 export const UFD_REQUEST_PAGE_NAME = DEV
   ? "利用者:鈴音雨/利用者ページの削除依頼テスト"
   : "Wikipedia:利用者ページの削除依頼";
+export const RFD_REQUEST_PAGE_NAME = DEV
+  ? "利用者:鈴音雨/リダイレクトの削除依頼テスト"
+  : "Wikipedia:リダイレクトの削除依頼/受付";
 export const RFP_REQUEST_PAGE_NAMES = {
   protect: DEV ? "利用者:鈴音雨/保護依頼テスト" : "Wikipedia:保護依頼",
   unprotect: DEV
