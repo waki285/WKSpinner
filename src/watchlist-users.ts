@@ -2,12 +2,13 @@ import { WATCHLIST_USERS_PAGE_NAME } from "./constants";
 import WATCHLIST_USERS_STYLE from "./styles/watchlist-users.css";
 import {
   calculateWatchlistExpiryDays,
+  fetchContributionPageInfo,
   fetchTagDisplayNames,
   fetchTagHelpPages,
   fetchUserContributions,
-  fetchWatchedPageInfo,
   fetchWatchedUserNames,
   getNamespaceFilterIds,
+  type ContributionPageInfo,
   type ContributionFilterMode,
   type UserContribution,
 } from "./watchlist-users-data";
@@ -26,7 +27,7 @@ type ViewOptions = {
 type ContributionRenderContext = {
   api: mw.Api;
   canRollback: boolean;
-  watchedPages: ReadonlyMap<number, string | null>;
+  pageInfo: ReadonlyMap<string, ContributionPageInfo>;
   tagDisplayNames: ReadonlyMap<string, string>;
   tagHelpPages: ReadonlyMap<string, string>;
 };
@@ -531,7 +532,6 @@ function createContributionActions(
   if (contribution.top && context.canRollback) {
     const rollback = $("<a>")
       .prop("href", "#")
-      .addClass("mw-rollback-link")
       .text("巻き戻し")
       .on("click", async (event) => {
         event.preventDefault();
@@ -563,10 +563,13 @@ function createContributionActions(
     hasAction = true;
   }
 
-  const thanks = createLink(
-    "感謝",
-    `Special:Thanks/${contribution.revid}`,
-  ).addClass("mw-thanks-thank-link");
+  const thanks = createLink("感謝", `Special:Thanks/${contribution.revid}`)
+    .addClass("mw-thanks-thank-link")
+    .attr({
+      role: "button",
+      "data-revision-id": contribution.revid,
+      "data-recipient-gender": "unknown",
+    });
   if (hasAction) {
     actions.append(" | ");
   }
@@ -581,7 +584,8 @@ function createContributionEntry(
   const entry = $("<li>").addClass(
     "wks-watchlist-users-entry mw-changeslist-line mw-changeslist-edit",
   );
-  if (context.watchedPages.has(contribution.pageid)) {
+  const pageInfo = context.pageInfo.get(contribution.title);
+  if (pageInfo?.watched) {
     entry.addClass("mw-changeslist-line-watched");
   }
   const links = $("<span>")
@@ -596,11 +600,18 @@ function createContributionEntry(
       createLink("履歴", contribution.title, { action: "history" }),
       ")",
     );
-  const title = createLink(contribution.title, contribution.title).addClass(
-    "mw-changeslist-title",
-  );
+  const title = createLink(
+    contribution.title,
+    contribution.title,
+    pageInfo?.missing ? { action: "edit", redlink: 1 } : undefined,
+  ).addClass("mw-changeslist-title");
+  if (pageInfo?.missing) {
+    title
+      .addClass("new")
+      .prop("title", `${contribution.title} (ページが存在しません)`);
+  }
   const titleContainer = $("<span>").addClass("mw-title").append(title);
-  const watchlistExpiry = context.watchedPages.get(contribution.pageid);
+  const watchlistExpiry = pageInfo?.watchlistExpiry;
   const userNamespace = String(
     (mw.config.get("wgFormattedNamespaces") as Record<string, string>)["2"] ??
       "利用者",
@@ -613,6 +624,9 @@ function createContributionEntry(
     contribution.user,
     `${userNamespace}:${contribution.user}`,
   ).addClass("mw-userlink");
+  if (mw.util.isTemporaryUser(contribution.user)) {
+    user.addClass("mw-tempuserlink");
+  }
   const userLinks = $("<span>")
     .addClass("wks-watchlist-users-user")
     .append(
@@ -790,7 +804,11 @@ function updateUrl(options: ViewOptions) {
 }
 
 export async function showWatchlistUsersPage() {
+  if (!mw.config.exists("thanks-confirmation-required")) {
+    mw.config.set("thanks-confirmation-required", true);
+  }
   await mw.loader.using([
+    "ext.thanks.corethank",
     "mediawiki.interface.helpers.styles",
     "mediawiki.special.changeslist",
     "mediawiki.special.changeslist.watchlistexpiry",
@@ -899,12 +917,12 @@ export async function showWatchlistUsersPage() {
       const contributionTags = [
         ...new Set(contributions.flatMap(({ tags }) => tags ?? [])),
       ];
-      const [userRights, watchedPages, tagDisplayNames, tagHelpPages] =
+      const [userRights, pageInfo, tagDisplayNames, tagHelpPages] =
         await Promise.all([
           userRightsPromise,
-          fetchWatchedPageInfo(
+          fetchContributionPageInfo(
             api,
-            contributions.map(({ pageid }) => pageid),
+            contributions.map(({ title }) => title),
           ),
           contributionTags.length
             ? (tagDisplayNamesPromise ??= fetchTagDisplayNames(api))
@@ -927,7 +945,7 @@ export async function showWatchlistUsersPage() {
         renderContributions(results, contributions, {
           api,
           canRollback: userRights.includes("rollback"),
-          watchedPages,
+          pageInfo,
           tagDisplayNames,
           tagHelpPages,
         });

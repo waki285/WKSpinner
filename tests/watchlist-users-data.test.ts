@@ -3,10 +3,10 @@ import { describe, expect, it, vi } from "vitest";
 import {
   calculateWatchlistExpiryDays,
   extractWatchedUserNames,
+  fetchContributionPageInfo,
   fetchTagDisplayNames,
   fetchTagHelpPages,
   fetchUserContributions,
-  fetchWatchedPageInfo,
   fetchWatchedUserNames,
   getNamespaceFilterIds,
   mergeContributions,
@@ -139,44 +139,62 @@ describe("contribution aggregation", () => {
 });
 
 describe("watched contribution pages", () => {
-  it("returns watched page IDs with their optional expiry", async () => {
+  it("returns existence and watch state by page title", async () => {
     const get = vi.fn().mockResolvedValue({
       query: {
         pages: [
           {
+            title: "記事A",
             pageid: 10,
             watched: true,
             watchlistexpiry: "2026-08-27T12:00:00Z",
           },
-          { pageid: 20 },
-          { pageid: 30, watched: true },
+          { title: "削除済み記事", missing: true, watched: true },
+          { title: "記事B", pageid: 30 },
         ],
       },
     });
 
     await expect(
-      fetchWatchedPageInfo({ get } as unknown as mw.Api, [10, 20, 30, 10, 0]),
+      fetchContributionPageInfo({ get } as unknown as mw.Api, [
+        "記事A",
+        "削除済み記事",
+        "記事B",
+        "記事A",
+        "",
+      ]),
     ).resolves.toEqual(
       new Map([
-        [10, "2026-08-27T12:00:00Z"],
-        [30, null],
+        [
+          "記事A",
+          {
+            missing: false,
+            watched: true,
+            watchlistExpiry: "2026-08-27T12:00:00Z",
+          },
+        ],
+        [
+          "削除済み記事",
+          { missing: true, watched: true, watchlistExpiry: null },
+        ],
+        ["記事B", { missing: false, watched: false, watchlistExpiry: null }],
       ]),
     );
     expect(get).toHaveBeenCalledWith({
       action: "query",
-      pageids: "10|20|30",
+      titles: "記事A|削除済み記事|記事B",
       prop: "info",
       inprop: "watched",
       formatversion: "2",
     });
   });
 
-  it("queries page IDs in batches of 50", async () => {
+  it("queries page titles in batches of 50", async () => {
     const get = vi.fn().mockResolvedValue({ query: { pages: [] } });
 
-    await fetchWatchedPageInfo(
+    await fetchContributionPageInfo(
       { get } as unknown as mw.Api,
-      Array.from({ length: 51 }, (_, index) => index + 1),
+      Array.from({ length: 51 }, (_, index) => `記事${index + 1}`),
     );
 
     expect(get).toHaveBeenCalledTimes(2);

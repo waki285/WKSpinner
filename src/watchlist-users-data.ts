@@ -53,11 +53,18 @@ type UserContribsResponse = {
 type PageInfoResponse = {
   query?: {
     pages?: {
-      pageid?: number;
+      title: string;
+      missing?: boolean;
       watched?: boolean;
       watchlistexpiry?: string;
     }[];
   };
+};
+
+export type ContributionPageInfo = {
+  missing: boolean;
+  watched: boolean;
+  watchlistExpiry: string | null;
 };
 
 type TagsResponse = {
@@ -224,36 +231,36 @@ export function calculateWatchlistExpiryDays(expiry: string, now = new Date()) {
   return remainingDays < 1 ? 0 : Math.floor(remainingDays);
 }
 
-export async function fetchWatchedPageInfo(
+export async function fetchContributionPageInfo(
   api: mw.Api,
-  pageIds: readonly number[],
+  pageTitles: readonly string[],
 ) {
-  const uniquePageIds = [
-    ...new Set(
-      pageIds.filter((pageId) => Number.isSafeInteger(pageId) && pageId > 0),
-    ),
+  const uniquePageTitles = [
+    ...new Set(pageTitles.map((title) => title.trim()).filter(Boolean)),
   ];
   const responses = await Promise.all(
-    chunks(uniquePageIds, 50).map(
+    chunks(uniquePageTitles, 50).map(
       async (batch) =>
         (await api.get({
           action: "query",
-          pageids: batch.join("|"),
+          titles: batch.join("|"),
           prop: "info",
           inprop: "watched",
           formatversion: "2",
         })) as PageInfoResponse,
     ),
   );
-  const watchedPages = new Map<number, string | null>();
+  const pageInfo = new Map<string, ContributionPageInfo>();
   for (const response of responses) {
     for (const page of response.query?.pages ?? []) {
-      if (page.watched === true && page.pageid !== undefined) {
-        watchedPages.set(page.pageid, page.watchlistexpiry ?? null);
-      }
+      pageInfo.set(page.title, {
+        missing: page.missing === true,
+        watched: page.watched === true,
+        watchlistExpiry: page.watchlistexpiry ?? null,
+      });
     }
   }
-  return watchedPages;
+  return pageInfo;
 }
 
 export async function fetchTagDisplayNames(api: mw.Api) {
