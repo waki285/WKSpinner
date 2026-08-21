@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  calculateWatchlistExpiryDays,
   extractWatchedUserNames,
   fetchTagDisplayNames,
   fetchTagHelpPages,
   fetchUserContributions,
+  fetchWatchedPageInfo,
   fetchWatchedUserNames,
   getNamespaceFilterIds,
   mergeContributions,
@@ -133,6 +135,57 @@ describe("contribution aggregation", () => {
     expect(get).toHaveBeenCalledWith(
       expect.objectContaining({ ucuser: "Example|Another" }),
     );
+  });
+});
+
+describe("watched contribution pages", () => {
+  it("returns watched page IDs with their optional expiry", async () => {
+    const get = vi.fn().mockResolvedValue({
+      query: {
+        pages: [
+          {
+            pageid: 10,
+            watched: true,
+            watchlistexpiry: "2026-08-27T12:00:00Z",
+          },
+          { pageid: 20 },
+          { pageid: 30, watched: true },
+        ],
+      },
+    });
+
+    await expect(
+      fetchWatchedPageInfo({ get } as unknown as mw.Api, [10, 20, 30, 10, 0]),
+    ).resolves.toEqual(
+      new Map([
+        [10, "2026-08-27T12:00:00Z"],
+        [30, null],
+      ]),
+    );
+    expect(get).toHaveBeenCalledWith({
+      action: "query",
+      pageids: "10|20|30",
+      prop: "info",
+      inprop: "watched",
+      formatversion: "2",
+    });
+  });
+
+  it("queries page IDs in batches of 50", async () => {
+    const get = vi.fn().mockResolvedValue({ query: { pages: [] } });
+
+    await fetchWatchedPageInfo(
+      { get } as unknown as mw.Api,
+      Array.from({ length: 51 }, (_, index) => index + 1),
+    );
+
+    expect(get).toHaveBeenCalledTimes(2);
+  });
+
+  it("calculates expiry days with MediaWiki's whole-day behavior", () => {
+    const now = new Date("2026-08-21T12:00:00Z");
+    expect(calculateWatchlistExpiryDays("2026-08-23T11:59:59Z", now)).toBe(1);
+    expect(calculateWatchlistExpiryDays("2026-08-22T11:59:59Z", now)).toBe(0);
   });
 });
 

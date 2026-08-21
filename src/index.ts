@@ -179,7 +179,17 @@ async function init() {
     await runPage("debug");
   }
 
+  const showEditCountOnCurrentDevice = !(
+    isMobile && getOptionProperty("editCount.enableMobile") === false
+  );
+
   if (isWatchlistUsersPage) {
+    if (
+      getOptionProperty("editCount.enabled") === true &&
+      showEditCountOnCurrentDevice
+    ) {
+      await runModule("editCount");
+    }
     await runPage("watchlistUsers");
   }
 
@@ -205,15 +215,12 @@ async function init() {
     }
     return;
   }
-  if (mw.config.get("wgAction") === "history" || isWatchlistUsersPage) {
+  if (mw.config.get("wgAction") === "history") {
     if (
       getOptionProperty("editCount.enabled") === true &&
-      !(isMobile && getOptionProperty("editCount.enableMobile") === false)
+      showEditCountOnCurrentDevice
     ) {
       await runModule("editCount");
-      if (isWatchlistUsersPage) {
-        mw.hook("wikipage.content").fire($(".wks-watchlist-users-results"));
-      }
     }
   }
 

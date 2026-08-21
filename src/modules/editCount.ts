@@ -1,10 +1,21 @@
 // Thanks: MarkAdmins
 
 import { REDLINK_REGEX } from "@/constants";
+import { updateExistingEditCount } from "@/edit-count";
 
 let processed = false;
 
 const savedCounts = new Map<string, number>();
+
+function setEditCount(anchor: HTMLAnchorElement, editCount: number) {
+  if (updateExistingEditCount(anchor, editCount)) {
+    return;
+  }
+  const span = document.createElement("span");
+  span.classList.add("wks-editcount");
+  span.textContent = `(${editCount})`;
+  anchor.append(span);
+}
 
 function appendEditCount(content: JQuery<HTMLElement>) {
   if (!processed) content = mw.util.$content || content;
@@ -58,12 +69,7 @@ function appendEditCount(content: JQuery<HTMLElement>) {
 
     if (savedCounts.has(username)) {
       const editCount = savedCounts.get(username) as number;
-      if (!a.children[1]?.classList.contains("wks-editcount")) {
-        const span = document.createElement("span");
-        span.classList.add("wks-editcount");
-        span.textContent = `(${editCount})`;
-        a.append(span);
-      }
+      setEditCount(a, editCount);
       continue;
     }
 
@@ -136,11 +142,7 @@ function appendEditCount(content: JQuery<HTMLElement>) {
       if (typeof editCount !== "number") continue;
 
       savedCounts.set(username, editCount);
-
-      const span = document.createElement("span");
-      span.classList.add("wks-editcount");
-      span.textContent = `(${editCount})`;
-      a.append(span);
+      setEditCount(a, editCount);
     }
   });
 }

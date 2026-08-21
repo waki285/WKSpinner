@@ -1,9 +1,11 @@
 import { WATCHLIST_USERS_PAGE_NAME } from "./constants";
 import WATCHLIST_USERS_STYLE from "./styles/watchlist-users.css";
 import {
+  calculateWatchlistExpiryDays,
   fetchTagDisplayNames,
   fetchTagHelpPages,
   fetchUserContributions,
+  fetchWatchedPageInfo,
   fetchWatchedUserNames,
   getNamespaceFilterIds,
   type ContributionFilterMode,
@@ -24,6 +26,7 @@ type ViewOptions = {
 type ContributionRenderContext = {
   api: mw.Api;
   canRollback: boolean;
+  watchedPages: ReadonlyMap<number, string | null>;
   tagDisplayNames: ReadonlyMap<string, string>;
   tagHelpPages: ReadonlyMap<string, string>;
 };
@@ -464,6 +467,34 @@ function createSizeDifference(sizediff?: number) {
   return size;
 }
 
+function createWatchlistExpiryIcon(expiry: string) {
+  const daysLeft = calculateWatchlistExpiryDays(expiry);
+  const titleMessage = mw.message(
+    daysLeft < 1
+      ? "watchlist-expiring-hours-full-text"
+      : "watchlist-expiring-days-full-text",
+    daysLeft,
+  );
+  const ariaMessage = mw.message("watchlist-expires-in-aria-label");
+  const widget = new OO.ui.IconWidget({
+    icon: "clock",
+    title: titleMessage.exists()
+      ? titleMessage.text()
+      : daysLeft < 1
+        ? "ウォッチ期間の残りは数時間です"
+        : `ウォッチ期間の残りは${daysLeft}日です`,
+    classes: ["mw-changesList-watchlistExpiry"],
+  });
+  widget.$element.attr({
+    role: "img",
+    "aria-label": ariaMessage.exists()
+      ? ariaMessage.text()
+      : "期限付きウォッチ",
+    "data-days-left": daysLeft,
+  });
+  return widget.$element;
+}
+
 function getTagHelpHref(helpPage: string) {
   return /^(?:https?:)?\/\//i.test(helpPage) || helpPage.startsWith("/")
     ? helpPage
@@ -550,6 +581,9 @@ function createContributionEntry(
   const entry = $("<li>").addClass(
     "wks-watchlist-users-entry mw-changeslist-line mw-changeslist-edit",
   );
+  if (context.watchedPages.has(contribution.pageid)) {
+    entry.addClass("mw-changeslist-line-watched");
+  }
   const links = $("<span>")
     .addClass("wks-watchlist-users-links")
     .append(
@@ -565,6 +599,8 @@ function createContributionEntry(
   const title = createLink(contribution.title, contribution.title).addClass(
     "mw-changeslist-title",
   );
+  const titleContainer = $("<span>").addClass("mw-title").append(title);
+  const watchlistExpiry = context.watchedPages.get(contribution.pageid);
   const userNamespace = String(
     (mw.config.get("wgFormattedNamespaces") as Record<string, string>)["2"] ??
       "利用者",
@@ -594,8 +630,19 @@ function createContributionEntry(
     $("<span>").addClass("mw-changeslist-separator"),
     " ",
     createFlags(contribution),
-    title,
-    $("<span>").addClass("mw-changeslist-separator--semicolon"),
+    titleContainer,
+  );
+  if (watchlistExpiry) {
+    entry.append(
+      " ",
+      createWatchlistExpiryIcon(watchlistExpiry),
+      " ",
+      $("<span>").addClass("mw-changeslist-separator"),
+    );
+  } else {
+    entry.append($("<span>").addClass("mw-changeslist-separator--semicolon"));
+  }
+  entry.append(
     " ",
     $("<span>")
       .addClass("wks-watchlist-users-time")
@@ -746,6 +793,8 @@ export async function showWatchlistUsersPage() {
   await mw.loader.using([
     "mediawiki.interface.helpers.styles",
     "mediawiki.special.changeslist",
+    "mediawiki.special.changeslist.watchlistexpiry",
+    "oojs-ui-core",
   ]);
   mw.loader.addStyleTag(WATCHLIST_USERS_STYLE);
   const namespaces = getAvailableNamespaces();
@@ -850,19 +899,24 @@ export async function showWatchlistUsersPage() {
       const contributionTags = [
         ...new Set(contributions.flatMap(({ tags }) => tags ?? [])),
       ];
-      const [userRights, tagDisplayNames, tagHelpPages] = await Promise.all([
-        userRightsPromise,
-        contributionTags.length
-          ? (tagDisplayNamesPromise ??= fetchTagDisplayNames(api))
-          : Promise.resolve(new Map<string, string>()),
-        contributionTags.length
-          ? fetchTagHelpPages(
-              api,
-              contributionTags,
-              String(mw.config.get("wgContentLanguage")),
-            )
-          : Promise.resolve(new Map<string, string>()),
-      ]);
+      const [userRights, watchedPages, tagDisplayNames, tagHelpPages] =
+        await Promise.all([
+          userRightsPromise,
+          fetchWatchedPageInfo(
+            api,
+            contributions.map(({ pageid }) => pageid),
+          ),
+          contributionTags.length
+            ? (tagDisplayNamesPromise ??= fetchTagDisplayNames(api))
+            : Promise.resolve(new Map<string, string>()),
+          contributionTags.length
+            ? fetchTagHelpPages(
+                api,
+                contributionTags,
+                String(mw.config.get("wgContentLanguage")),
+              )
+            : Promise.resolve(new Map<string, string>()),
+        ]);
       if (currentRequest !== requestNumber) {
         return;
       }
@@ -873,6 +927,7 @@ export async function showWatchlistUsersPage() {
         renderContributions(results, contributions, {
           api,
           canRollback: userRights.includes("rollback"),
+          watchedPages,
           tagDisplayNames,
           tagHelpPages,
         });

@@ -50,6 +50,16 @@ type UserContribsResponse = {
   query?: { usercontribs?: UserContribution[] };
 };
 
+type PageInfoResponse = {
+  query?: {
+    pages?: {
+      pageid?: number;
+      watched?: boolean;
+      watchlistexpiry?: string;
+    }[];
+  };
+};
+
 type TagsResponse = {
   continue?: { tgcontinue?: string };
   query?: {
@@ -206,6 +216,44 @@ export async function fetchUserContributions(
   );
 
   return mergeContributions(groups, filters.limit);
+}
+
+export function calculateWatchlistExpiryDays(expiry: string, now = new Date()) {
+  const remainingDays =
+    (new Date(expiry).getTime() - now.getTime()) / 86_400_000;
+  return remainingDays < 1 ? 0 : Math.floor(remainingDays);
+}
+
+export async function fetchWatchedPageInfo(
+  api: mw.Api,
+  pageIds: readonly number[],
+) {
+  const uniquePageIds = [
+    ...new Set(
+      pageIds.filter((pageId) => Number.isSafeInteger(pageId) && pageId > 0),
+    ),
+  ];
+  const responses = await Promise.all(
+    chunks(uniquePageIds, 50).map(
+      async (batch) =>
+        (await api.get({
+          action: "query",
+          pageids: batch.join("|"),
+          prop: "info",
+          inprop: "watched",
+          formatversion: "2",
+        })) as PageInfoResponse,
+    ),
+  );
+  const watchedPages = new Map<number, string | null>();
+  for (const response of responses) {
+    for (const page of response.query?.pages ?? []) {
+      if (page.watched === true && page.pageid !== undefined) {
+        watchedPages.set(page.pageid, page.watchlistexpiry ?? null);
+      }
+    }
+  }
+  return watchedPages;
 }
 
 export async function fetchTagDisplayNames(api: mw.Api) {
