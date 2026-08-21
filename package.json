@@ -18,21 +18,21 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/jquery": "^4.0.1",
-    "@types/node": "^26.1.2",
+    "@types/node": "^26.2.0",
     "@types/oojs": "^7.0.7",
     "@types/oojs-ui": "^0.50.0",
     "@types/semver-compare": "^1.0.3",
-    "@typescript-eslint/eslint-plugin": "^8.66.0",
-    "@typescript-eslint/parser": "^8.66.0",
+    "@typescript-eslint/eslint-plugin": "^8.67.0",
+    "@typescript-eslint/parser": "^8.67.0",
     "@typescript/native": "npm:typescript@^7.0.2",
-    "esbuild": "^0.28.1",
-    "eslint": "^10.8.0",
-    "globals": "^17.9.0",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.8.1",
+    "globals": "^17.11.0",
     "prettier": "^3.9.6",
-    "terser": "^5.49.1",
+    "terser": "^5.50.0",
     "types-mediawiki": "^2.1.0",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   },
   "dependencies": {
     "semver-compare": "^1.0.0"
