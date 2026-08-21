@@ -30,6 +30,48 @@
   flex-shrink: 0;
 }
 
+.wks-skj-rfd-pages-row,
+.wks-skj-rfd-pages {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.wks-skj-rfd-pages {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.wks-skj-rfd-page {
+  display: flex;
+  align-items: stretch;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  gap: 0.25rem;
+}
+
+.wks-skj-rfd-page-fields {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  width: 100%;
+  gap: 0.5rem;
+}
+
+.wks-skj-rfd-page-name {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.wks-skj-rfd-page-options {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
 .wks-dialog-preview-div {
   background: white;
   padding: 0.5rem;

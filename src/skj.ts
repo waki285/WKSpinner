@@ -10,6 +10,34 @@ type RedirectQueryResponse = {
   };
 };
 
+export type RedirectDeletionRequestItem = {
+  source: string;
+  target: string;
+  revisionId: number;
+  hideTarget: boolean;
+  hideSource: boolean;
+};
+
+export type RedirectDeletionSummaryItem = Pick<
+  RedirectDeletionRequestItem,
+  "source" | "hideSource"
+>;
+
+export function expandRedirectDeletionSummaryPageNames(
+  summary: string,
+  items: RedirectDeletionSummaryItem[],
+): string {
+  const pageNames = items.map((item) =>
+    item.hideSource ? "非公開のリダイレクト" : item.source,
+  );
+  const linkedPageNames = items.map((item) =>
+    item.hideSource ? "非公開のリダイレクト" : `[[${item.source}]]`,
+  );
+  return summary
+    .replaceAll("[[$p]]", linkedPageNames.join("、"))
+    .replaceAll("$p", pageNames.join("、"));
+}
+
 export async function fetchCurrentRedirectTarget(api: mw.Api, title: string) {
   const response = (await api.get({
     action: "query",
@@ -45,8 +73,7 @@ function getTemplateArgument(value: string, position: number) {
 }
 
 export function getRedirectDeletionRequestText(
-  source: string,
-  target: string,
+  items: RedirectDeletionRequestItem[],
   reason: string,
   requesterVote: string,
 ) {
@@ -54,7 +81,21 @@ export function getRedirectDeletionRequestText(
     .replace(/--~~~~\s*$/u, "")
     .replace(/~~~~\s*$/u, "")
     .trim();
-  return `* {{RFD|${getTemplateArgument(source, 1)}|${getTemplateArgument(target, 2)}}} - ${requesterVote.trim()} ${normalizedReason} --~~~~`;
+  const requestLines = items.map((item) => {
+    if (item.hideSource) {
+      return `* {{Oldid|${item.revisionId}}}`;
+    }
+    if (item.hideTarget) {
+      return `* {{リダイレクト|${getTemplateArgument(item.source, 1)}}}`;
+    }
+    return `* {{RFD|${getTemplateArgument(item.source, 1)}|${getTemplateArgument(item.target, 2)}}}`;
+  });
+  const requestComment = `${[requesterVote.trim(), normalizedReason]
+    .filter(Boolean)
+    .join(" ")} --~~~~`;
+  return items.length === 1
+    ? `${requestLines[0]} - ${requestComment}`
+    : `${requestLines.join("\n")}\n** ${requestComment}`;
 }
 
 export function appendRedirectDeletionRequest(
@@ -86,11 +127,28 @@ export function appendRedirectDeletionRequest(
 export function hasRedirectDeletionRequest(
   requestPageContent: string,
   source: string,
+  revisionId?: number,
 ) {
   const normalizedSource = normalizePageReference(source);
-  const requestPattern = /\{\{\s*RFD\s*\|\s*(?:1\s*=\s*)?([^|}\n]+)/giu;
-  return [...requestPageContent.matchAll(requestPattern)].some(
-    (match) => normalizePageReference(match[1] ?? "") === normalizedSource,
+  const requestPatterns = [
+    /\{\{\s*RFD\s*\|\s*(?:1\s*=\s*)?([^|}\n]+)/giu,
+    /\{\{\s*リダイレクト\s*\|\s*(?:1\s*=\s*)?([^|}\n]+)/giu,
+  ];
+  if (
+    requestPatterns.some((pattern) =>
+      [...requestPageContent.matchAll(pattern)].some(
+        (match) => normalizePageReference(match[1] ?? "") === normalizedSource,
+      ),
+    )
+  ) {
+    return true;
+  }
+  if (revisionId === undefined) {
+    return false;
+  }
+  const revisionPattern = /(?:[?&]oldid\s*=|\{\{\s*oldid\s*\|\s*)(\d+)/giu;
+  return [...requestPageContent.matchAll(revisionPattern)].some(
+    (match) => Number(match[1]) === revisionId,
   );
 }
 

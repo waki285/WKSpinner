@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   appendRedirectDeletionRequest,
+  expandRedirectDeletionSummaryPageNames,
   fetchCurrentRedirectTarget,
   getDeletionRequestReason,
   getRedirectDeletionRequestSectionHeading,
@@ -16,6 +17,33 @@ import {
 } from "../src/skj";
 
 describe("redirect deletion requests", () => {
+  it("expands each visible page into a separate summary link", () => {
+    expect(
+      expandRedirectDeletionSummaryPageNames("削除依頼 ([[$p]])", [
+        { source: "転送元1", hideSource: false },
+        { source: "転送元2", hideSource: false },
+      ]),
+    ).toBe("削除依頼 ([[転送元1]]、[[転送元2]])");
+  });
+
+  it("does not expose or link a hidden redirect title in the summary", () => {
+    expect(
+      expandRedirectDeletionSummaryPageNames("削除依頼 ([[$p]])", [
+        { source: "公開する転送元", hideSource: false },
+        { source: "伏せる転送元", hideSource: true },
+      ]),
+    ).toBe("削除依頼 ([[公開する転送元]]、非公開のリダイレクト)");
+  });
+
+  it("keeps plain $p summary settings unlinked", () => {
+    expect(
+      expandRedirectDeletionSummaryPageNames("削除依頼 ($p)", [
+        { source: "転送元1", hideSource: false },
+        { source: "伏せる転送元", hideSource: true },
+      ]),
+    ).toBe("削除依頼 (転送元1、非公開のリダイレクト)");
+  });
+
   it("detects the current target including a section fragment", async () => {
     const get = vi.fn().mockResolvedValue({
       query: {
@@ -51,14 +79,104 @@ describe("redirect deletion requests", () => {
   it("formats an RFD request and protects positional arguments", () => {
     expect(
       getRedirectDeletionRequestText(
-        "転送=元",
-        "転送=先",
+        [
+          {
+            source: "転送=元",
+            target: "転送=先",
+            revisionId: 123,
+            hideTarget: false,
+            hideSource: false,
+          },
+        ],
         "方針のケースに該当。--~~~~",
         "（削除） 依頼者票。",
       ),
     ).toBe(
       "* {{RFD|1=転送=元|2=転送=先}} - （削除） 依頼者票。 方針のケースに該当。 --~~~~",
     );
+  });
+
+  it("formats a multiple-page request with one shared vote and reason", () => {
+    expect(
+      getRedirectDeletionRequestText(
+        [
+          {
+            source: "転送元1",
+            target: "転送先1",
+            revisionId: 123,
+            hideTarget: false,
+            hideSource: false,
+          },
+          {
+            source: "転送元2",
+            target: "転送先2",
+            revisionId: 456,
+            hideTarget: false,
+            hideSource: false,
+          },
+        ],
+        "共通の理由。",
+        "（全削除） 依頼者票。",
+      ),
+    ).toBe(
+      "* {{RFD|転送元1|転送先1}}\n* {{RFD|転送元2|転送先2}}\n** （全削除） 依頼者票。 共通の理由。 --~~~~",
+    );
+  });
+
+  it("accepts a combined requester vote and reason", () => {
+    expect(
+      getRedirectDeletionRequestText(
+        [
+          {
+            source: "転送元",
+            target: "転送先",
+            revisionId: 123,
+            hideTarget: false,
+            hideSource: false,
+          },
+        ],
+        "{{AFD|削除}} 依頼者票。一意でなく、混乱を招くため。",
+        "",
+      ),
+    ).toBe(
+      "* {{RFD|転送元|転送先}} - {{AFD|削除}} 依頼者票。一意でなく、混乱を招くため。 --~~~~",
+    );
+  });
+
+  it("hides only the redirect target with Template:リダイレクト", () => {
+    expect(
+      getRedirectDeletionRequestText(
+        [
+          {
+            source: "転送=元",
+            target: "伏せる転送先",
+            revisionId: 123,
+            hideTarget: true,
+            hideSource: false,
+          },
+        ],
+        "理由。",
+        "（削除） 依頼者票。",
+      ),
+    ).toBe("* {{リダイレクト|1=転送=元}} - （削除） 依頼者票。 理由。 --~~~~");
+  });
+
+  it("hides an inappropriate redirect title with Template:Oldid", () => {
+    expect(
+      getRedirectDeletionRequestText(
+        [
+          {
+            source: "伏せるページ名",
+            target: "転送先",
+            revisionId: 123456789,
+            hideTarget: false,
+            hideSource: true,
+          },
+        ],
+        "理由。",
+        "（緊急削除） 依頼者票。",
+      ),
+    ).toBe("* {{Oldid|123456789}} - （緊急削除） 依頼者票。 理由。 --~~~~");
   });
 
   it("appends a request inside the current period section", () => {
@@ -89,6 +207,24 @@ describe("redirect deletion requests", () => {
         "* {{RFD|1=転送_元|転送先}} - 理由",
         "転送 元",
       ),
+    ).toBe(true);
+  });
+
+  it("detects a target-hidden request", () => {
+    expect(
+      hasRedirectDeletionRequest(
+        "* {{リダイレクト|1=転送_元}} - 理由",
+        "転送 元",
+      ),
+    ).toBe(true);
+  });
+
+  it.each([
+    "* [https://ja.wikipedia.org/w/index.php?oldid=123456789 こちらのリダイレクト]",
+    "* {{oldid|123456789|こちらのリダイレクト}}",
+  ])("detects a title-hidden request by revision ID", (content) => {
+    expect(
+      hasRedirectDeletionRequest(content, "伏せられたページ", 123456789),
     ).toBe(true);
   });
 });

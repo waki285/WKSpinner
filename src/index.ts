@@ -19,6 +19,7 @@ import {
   loadLibrary,
 } from "./util";
 import cmp from "semver-compare";
+import BUNDLED_STYLE from "../styles/WKSpinner.css";
 
 declare const __WKSPINNER_BUNDLED_DEBUG__: boolean;
 
@@ -123,13 +124,17 @@ function setupPortletModule(name: string): void {
   void runModule(name);
 }
 
-mw.loader.load(
-  mw.config.get("wgServer") +
-    mw.config.get("wgScript") +
-    "?action=raw&ctype=text/css&title=" +
-    mw.util.wikiUrlencode("利用者:鈴音雨/WKSpinner.css"),
-  "text/css",
-);
+if (__WKSPINNER_BUNDLED_DEBUG__) {
+  mw.loader.addStyleTag(BUNDLED_STYLE);
+} else {
+  mw.loader.load(
+    mw.config.get("wgServer") +
+      mw.config.get("wgScript") +
+      "?action=raw&ctype=text/css&title=" +
+      mw.util.wikiUrlencode("利用者:鈴音雨/WKSpinner.css"),
+    "text/css",
+  );
+}
 
 async function init() {
   const groups = mw.config.get("wgUserGroups", []);

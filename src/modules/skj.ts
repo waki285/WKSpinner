@@ -18,6 +18,7 @@ import {
 import { getPageIdPrivacyWarnings } from "@/skj-validation";
 import {
   appendRedirectDeletionRequest,
+  expandRedirectDeletionSummaryPageNames,
   fetchCurrentRedirectTarget,
   getDeletionRequestReason,
   getRedirectDeletionRequestSectionHeading,
@@ -29,6 +30,7 @@ import {
   hasUserPageDeletionRequest,
   hasRedirectDeletionRequest,
   isUserPageDeletionNamespace,
+  type RedirectDeletionRequestItem,
 } from "@/skj";
 
 export async function initSkj() {
@@ -40,6 +42,7 @@ export async function initSkj() {
 
   skjPortlet.addEventListener("click", async (e) => {
     e.preventDefault();
+    await mw.loader.using("mediawiki.Title");
 
     const targetPageName = String(mw.config.get("wgPageName"));
     const targetPageId = Number(mw.config.get("wgArticleId"));
@@ -164,6 +167,204 @@ export async function initSkj() {
     if (!isUserPageDeletion) {
       dialogFieldset.append(dialogPageNameRow);
     }
+
+    let nextRedirectPageId = 1;
+    const redirectPageIds: number[] = [];
+    const dialogRedirectPagesRow = createRow("redirect-pages").addClass(
+      "wks-skj-rfd-pages-row",
+    );
+    dialogRedirectPagesRow.append($("<label>").text("対象ページ"));
+    const redirectPages = $("<div>").addClass("wks-skj-rfd-pages");
+    dialogRedirectPagesRow.append(redirectPages);
+
+    const addRedirectPageRow = (pageName = "", targetPage = "") => {
+      const id = nextRedirectPageId++;
+      const row = $("<div>").addClass("wks-skj-rfd-page");
+      const pageInputId = `wks-skj-dialog-redirect-page-${id}-input`;
+      const targetInputId = `wks-skj-dialog-redirect-page-${id}-target-input`;
+      const hideTargetId = `wks-skj-dialog-redirect-page-${id}-hide-target`;
+      const hideSourceId = `wks-skj-dialog-redirect-page-${id}-hide-source`;
+      const pageInput = $("<input>")
+        .prop({
+          id: pageInputId,
+          type: "text",
+          placeholder: "転送元",
+          value: pageName,
+        })
+        .addClass("wks-skj-rfd-page-name");
+      const targetInput = $("<input>")
+        .prop({
+          id: targetInputId,
+          type: "text",
+          placeholder: "転送先",
+          value: targetPage,
+        })
+        .addClass("wks-skj-rfd-page-name");
+      let targetRequestId = 0;
+      const fetchTargetButton = $("<button>")
+        .prop("type", "button")
+        .text("自動取得")
+        .addClass("wks-shrink-0")
+        .on("click", async () => {
+          const source = String(pageInput.val() ?? "").trim();
+          if (!source) {
+            mw.notify("転送元を入力してください。", { type: "error" });
+            return;
+          }
+          const requestId = ++targetRequestId;
+          fetchTargetButton.prop("disabled", true).text("取得中");
+          try {
+            const target = await fetchCurrentRedirectTarget(
+              new mw.Api(),
+              source,
+            );
+            if (requestId !== targetRequestId) {
+              return;
+            }
+            if (String(pageInput.val() ?? "").trim() !== source) {
+              mw.notify(
+                "取得中に転送元が変更されたため、転送先を反映しませんでした。",
+                { type: "warn" },
+              );
+              return;
+            }
+            if (!target) {
+              throw new Error("存在するリダイレクトではありません。");
+            }
+            targetInput.val(target);
+          } catch (error) {
+            if (requestId === targetRequestId) {
+              mw.notify(`転送先を取得できませんでした。(${String(error)})`, {
+                type: "error",
+              });
+            }
+          } finally {
+            if (requestId === targetRequestId) {
+              fetchTargetButton.prop("disabled", false).text("自動取得");
+            }
+          }
+        });
+      const hideTarget = $("<input>").prop({
+        id: hideTargetId,
+        type: "checkbox",
+      });
+      const hideSource = $("<input>").prop({
+        id: hideSourceId,
+        type: "checkbox",
+      });
+      hideSource.on("change", () => {
+        const checked = Boolean(hideSource.prop("checked"));
+        hideTarget.prop({
+          checked: checked || hideTarget.prop("checked"),
+          disabled: checked,
+        });
+      });
+      const pageOptions = $("<span>")
+        .addClass("wks-inline wks-shrink-0 wks-skj-rfd-page-options")
+        .append(
+          $("<span>")
+            .addClass("wks-inline wks-shrink-0")
+            .append(
+              hideTarget,
+              $("<label>").prop("for", hideTargetId).text("転送先伏せ"),
+            ),
+          $("<span>")
+            .addClass("wks-inline wks-shrink-0")
+            .append(
+              hideSource,
+              $("<label>").prop("for", hideSourceId).text("転送元も伏せ"),
+            ),
+        );
+      if (redirectPageIds.length > 0) {
+        pageOptions.append(
+          $("<button>")
+            .prop("type", "button")
+            .text("削除")
+            .addClass("wks-shrink-0")
+            .on("click", () => {
+              targetRequestId++;
+              row.remove();
+              redirectPageIds.splice(redirectPageIds.indexOf(id), 1);
+            }),
+        );
+      }
+      const pageFields = $("<div>")
+        .addClass("wks-skj-rfd-page-fields")
+        .append(pageInput, targetInput, fetchTargetButton);
+      row.append(pageFields, pageOptions);
+      redirectPageIds.push(id);
+      redirectPages.append(row);
+    };
+    addRedirectPageRow(targetPageName, initialRedirectTarget ?? "");
+    const dialogAddRedirectPageRow = createRow("add-redirect-page");
+    dialogAddRedirectPageRow.append(
+      $("<button>")
+        .prop("type", "button")
+        .text("ページを追加")
+        .on("click", () => addRedirectPageRow()),
+    );
+    dialogFieldset.append(dialogRedirectPagesRow, dialogAddRedirectPageRow);
+
+    type RedirectPageSelection = Pick<
+      RedirectDeletionRequestItem,
+      "source" | "target" | "hideTarget" | "hideSource"
+    >;
+    const getRedirectPageSelections = (): RedirectPageSelection[] =>
+      redirectPageIds.map((id) => ({
+        source: String(
+          $(`#wks-skj-dialog-redirect-page-${id}-input`).val() ?? "",
+        ).trim(),
+        target: String(
+          $(`#wks-skj-dialog-redirect-page-${id}-target-input`).val() ?? "",
+        ).trim(),
+        hideTarget: Boolean(
+          $(`#wks-skj-dialog-redirect-page-${id}-hide-target`).prop("checked"),
+        ),
+        hideSource: Boolean(
+          $(`#wks-skj-dialog-redirect-page-${id}-hide-source`).prop("checked"),
+        ),
+      }));
+
+    const normalizeRedirectPageName = (pageName: string) =>
+      mw.Title.newFromText(pageName)?.getPrefixedText() ??
+      pageName.replaceAll("_", " ").trim();
+
+    const normalizeRedirectTarget = (target: string) => {
+      const [pageName = "", ...fragmentParts] = target.split("#");
+      const fragment = fragmentParts.join("#").replaceAll("_", " ").trim();
+      return `${normalizeRedirectPageName(pageName)}${fragment ? `#${fragment}` : ""}`;
+    };
+
+    const resolveRedirectPageSelections = async (
+      selections: RedirectPageSelection[],
+    ): Promise<RedirectDeletionRequestItem[]> =>
+      Promise.all(
+        selections.map(async (selection) => {
+          const [currentTarget, context] = await Promise.all([
+            fetchCurrentRedirectTarget(new mw.Api(), selection.source),
+            getPageEditContext(selection.source),
+          ]);
+          if (!currentTarget || context.revisionId === null) {
+            throw new Error(
+              `「${selection.source}」は存在するリダイレクトではありません。`,
+            );
+          }
+          if (
+            normalizeRedirectTarget(currentTarget) !==
+            normalizeRedirectTarget(selection.target)
+          ) {
+            throw new Error(
+              `「${selection.source}」の転送先が入力内容と異なります。自動取得して確認してください。`,
+            );
+          }
+          return {
+            ...selection,
+            target: currentTarget,
+            revisionId: context.revisionId,
+          };
+        }),
+      );
+
     const dialogCRRow = createRow("cr").addClass("wks-inline");
     dialogCRRow.append(
       $("<input>").prop({ id: "wks-skj-dialog-cr-cb", type: "checkbox" }),
@@ -246,9 +447,10 @@ export async function initSkj() {
     dialogFieldset.append(dialogMarksSeparator);
 
     const dialogDescRow = createRow("desc");
-    dialogDescRow.append(
-      $("<label>").html("理由").prop("for", "wks-skj-dialog-desc-input"),
-    );
+    const dialogDescLabel = $("<label>")
+      .html("理由")
+      .prop("for", "wks-skj-dialog-desc-input");
+    dialogDescRow.append(dialogDescLabel);
     dialogDescRow.append(
       $("<textarea>").prop({
         id: "wks-skj-dialog-desc-input",
@@ -261,19 +463,16 @@ export async function initSkj() {
     dialogFieldset.append(dialogDescRow);
 
     const dialogOPVRow = createRow("opv");
-    dialogOPVRow.append(
-      $("<label>")
-        .html("依頼者票 (署名不要)")
-        .prop("for", "wks-skj-dialog-opv-input"),
-    );
-    dialogOPVRow.append(
-      $("<input>").prop({
-        id: "wks-skj-dialog-opv-input",
-        placeholder: "{{AFD|削除}} 依頼者票。",
-        style: "width: 100%;",
-        value: getOptionProperty("skj.default.opv") || "",
-      }),
-    );
+    const dialogOPVLabel = $("<label>")
+      .html("依頼者票 (署名不要)")
+      .prop("for", "wks-skj-dialog-opv-input");
+    const dialogOPVInput = $("<input>").prop({
+      id: "wks-skj-dialog-opv-input",
+      placeholder: "{{AFD|削除}} 依頼者票。",
+      style: "width: 100%;",
+      value: getOptionProperty("skj.default.opv") || "",
+    });
+    dialogOPVRow.append(dialogOPVLabel, dialogOPVInput);
     const preset = $("<div>").addClass("wks-inline");
     preset.html(
       `プリセット: ${getOptionProperty("skj.opvPresets")
@@ -350,24 +549,46 @@ export async function initSkj() {
     summaryNote.toggle(!isUserPageDeletion);
     dialogFieldset.append(dialogSummaries);
 
+    let redirectPresetValue = "{{AFD|削除}} 依頼者票。";
+    const opvValues = {
+      standard: String($("#wks-skj-dialog-opv-input").val() ?? ""),
+      redirect: "",
+    };
+    const reasonValues = {
+      standard: String($("#wks-skj-dialog-desc-input").val() ?? ""),
+      redirect: "",
+    };
     getOptionProperty("skj.opvPresets").forEach(
       (x: { name: string; value: string }, i: number) => {
         $(`#wks-skj-preset-id${i}`).on("click", () => {
-          $("#wks-skj-dialog-opv-input").val(x.value);
+          if (!isRedirectDeletion()) {
+            $("#wks-skj-dialog-opv-input").val(x.value);
+            return;
+          }
+          const current = String(
+            $("#wks-skj-dialog-desc-input").val() ?? "",
+          ).trim();
+          const reason = current.startsWith(redirectPresetValue)
+            ? current.slice(redirectPresetValue.length).trimStart()
+            : current;
+          redirectPresetValue = x.value;
+          $("#wks-skj-dialog-desc-input").val(
+            [redirectPresetValue, reason].filter(Boolean).join(" "),
+          );
         });
       },
     );
 
-    const opvValues = {
-      standard: String($("#wks-skj-dialog-opv-input").val() ?? ""),
-      redirect: "（削除） 依頼者票。",
-    };
     let previousMode = getSelectedMode();
     const updateModeFields = () => {
       const mode = getSelectedMode();
+      reasonValues[previousMode] = String(
+        $("#wks-skj-dialog-desc-input").val() ?? "",
+      );
       opvValues[previousMode] = String(
         $("#wks-skj-dialog-opv-input").val() ?? "",
       );
+      $("#wks-skj-dialog-desc-input").val(reasonValues[mode]);
       $("#wks-skj-dialog-opv-input").val(opvValues[mode]);
       previousMode = mode;
 
@@ -376,6 +597,8 @@ export async function initSkj() {
         `${redirect ? "リダイレクトの削除依頼" : isUserPageDeletion ? "利用者ページの削除依頼" : "削除依頼"}の提出`,
       );
       dialogPageNameRow.toggle(!redirect);
+      dialogRedirectPagesRow.toggle(redirect);
+      dialogAddRedirectPageRow.toggle(redirect);
       dialogCRRow.toggle(!redirect);
       dialogBlankRow.toggle(!redirect);
       dialogUseIdRow.toggle(!redirect);
@@ -384,7 +607,9 @@ export async function initSkj() {
       dialogMarkRev.toggle(!redirect);
       dialogOptionsSeparator.toggle(!redirect);
       dialogMarksSeparator.toggle(!redirect);
-      preset.toggle(!redirect);
+      dialogDescLabel.text(redirect ? "理由・依頼者票" : "理由");
+      dialogOPVLabel.toggle(!redirect);
+      dialogOPVInput.toggle(!redirect);
       summaryTemplate.toggle(!redirect);
       summaryNote.toggle(!isUserPageDeletion && !redirect);
       summarySubmitLabel.text(
@@ -401,7 +626,7 @@ export async function initSkj() {
       $("#wks-skj-dialog-desc-input").prop(
         "placeholder",
         redirect
-          ? "リダイレクト削除の方針のどのケースに該当するかを含め、理由を入力してください。"
+          ? "{{AFD|削除}} 依頼者票。一意でなく、混乱を招くため。～～～"
           : isUserPageDeletion
             ? "ケースB-2、プライバシー侵害のおそれ。～～～"
             : "ケースI-1、特筆性なし。〜〜〜",
@@ -438,18 +663,15 @@ export async function initSkj() {
         }`,
       ] as const;
 
-    const getFinalContentRequest = () => {
+    const getFinalContentRequest = (
+      redirectItems?: RedirectDeletionRequestItem[],
+    ) => {
       const reasonRaw = String($("#wks-skj-dialog-desc-input").val() ?? "");
       if (isRedirectDeletion()) {
-        if (!initialRedirectTarget) {
-          throw new Error("現在の転送先を取得できません。");
+        if (!redirectItems) {
+          throw new Error("リダイレクトの状態を取得できません。");
         }
-        return getRedirectDeletionRequestText(
-          targetPageName,
-          initialRedirectTarget,
-          reasonRaw,
-          String($("#wks-skj-dialog-opv-input").val() ?? ""),
-        );
+        return getRedirectDeletionRequestText(redirectItems, reasonRaw, "");
       }
       const signReason = getOptionProperty("skj.signReason") === true;
       const reasonField = getDeletionRequestReason(reasonRaw, signReason);
@@ -471,6 +693,47 @@ export async function initSkj() {
     const checkParams = () => {
       const errList = $("<ul>");
 
+      if (isRedirectDeletion()) {
+        const selections = getRedirectPageSelections();
+        selections.forEach((selection, index) => {
+          if (!selection.source) {
+            errList.append(
+              $("<li>").text(`${index + 1}件目の転送元を入力してください。`),
+            );
+          }
+          if (!selection.target) {
+            errList.append(
+              $("<li>").text(`${index + 1}件目の転送先を入力してください。`),
+            );
+          }
+        });
+        const normalizedSources = selections
+          .map(({ source }) => normalizeRedirectPageName(source))
+          .filter(Boolean);
+        if (new Set(normalizedSources).size !== normalizedSources.length) {
+          errList.append(
+            $("<li>").text("同じ対象ページが複数回入力されています。"),
+          );
+        }
+        selections.forEach((selection, index) => {
+          const title = mw.Title.newFromText(selection.source);
+          if (selection.source && !title) {
+            errList.append(
+              $("<li>").text(`${index + 1}件目のページ名が不正です。`),
+            );
+          } else if (
+            title &&
+            isUserPageDeletionNamespace(title.getNamespaceId())
+          ) {
+            errList.append(
+              $("<li>").text(
+                `${index + 1}件目は利用者ページの削除依頼を使用してください。`,
+              ),
+            );
+          }
+        });
+      }
+
       if (
         !isUserPageDeletion &&
         !isRedirectDeletion() &&
@@ -479,11 +742,20 @@ export async function initSkj() {
         errList.append($("<li>").text("ページ名を入力してください。"));
       }
 
-      if (!$("#wks-skj-dialog-desc-input").val()) {
-        errList.append($("<li>").text("理由を入力してください。"));
+      const reasonValue = String(
+        $("#wks-skj-dialog-desc-input").val() ?? "",
+      ).trim();
+      if (!reasonValue) {
+        errList.append(
+          $("<li>").text(
+            isRedirectDeletion()
+              ? "理由・依頼者票を入力してください。"
+              : "理由を入力してください。",
+          ),
+        );
       }
 
-      if (!$("#wks-skj-dialog-opv-input").val()) {
+      if (!isRedirectDeletion() && !$("#wks-skj-dialog-opv-input").val()) {
         errList.append($("<li>").text("依頼者票を入力してください。"));
       }
 
@@ -767,18 +1039,20 @@ export async function initSkj() {
       };
 
       try {
-        const currentRedirectTarget = await fetchCurrentRedirectTarget(
-          new mw.Api(),
-          targetPageName,
+        const selections = getRedirectPageSelections();
+        const redirectItems = await resolveRedirectPageSelections(selections);
+        const initialPage = redirectItems.find(
+          ({ source }) =>
+            normalizeRedirectPageName(source) ===
+            normalizeRedirectPageName(targetPageName),
         );
-        if (!currentRedirectTarget) {
+        if (
+          initialPage &&
+          (initialPage.target !== initialRedirectTarget ||
+            initialPage.revisionId !== targetPageContext.revisionId)
+        ) {
           throw new Error(
-            "ダイアログを開いた後に対象ページがリダイレクトではなくなりました。",
-          );
-        }
-        if (currentRedirectTarget !== initialRedirectTarget) {
-          throw new Error(
-            "ダイアログを開いた後に転送先が変更されました。内容を確認してやり直してください。",
+            "ダイアログを開いた後に対象ページが変更されました。内容を確認してやり直してください。",
           );
         }
 
@@ -792,10 +1066,29 @@ export async function initSkj() {
         ) {
           throw new Error(`${RFD_REQUEST_PAGE_NAME}が存在しません。`);
         }
-        if (
-          hasRedirectDeletionRequest(requestPageContext.content, targetPageName)
-        ) {
-          throw new Error("同じ対象の削除依頼がすでに存在します。");
+        for (const item of redirectItems) {
+          if (
+            hasRedirectDeletionRequest(
+              requestPageContext.content,
+              item.source,
+              item.revisionId,
+            )
+          ) {
+            throw new Error(`「${item.source}」の削除依頼がすでに存在します。`);
+          }
+        }
+
+        const latestRedirectItems =
+          await resolveRedirectPageSelections(selections);
+        const changedItem = latestRedirectItems.find(
+          (item, index) =>
+            item.revisionId !== redirectItems[index]?.revisionId ||
+            item.target !== redirectItems[index]?.target,
+        );
+        if (changedItem) {
+          throw new Error(
+            `確認中に「${changedItem.source}」が変更されました。内容を確認してやり直してください。`,
+          );
         }
 
         const sectionHeading = getRedirectDeletionRequestSectionHeading(
@@ -804,7 +1097,7 @@ export async function initSkj() {
         const updatedContent = appendRedirectDeletionRequest(
           requestPageContext.content,
           sectionHeading,
-          getFinalContentRequest(),
+          getFinalContentRequest(latestRedirectItems),
         );
         progress
           .empty()
@@ -815,12 +1108,13 @@ export async function initSkj() {
           nocreate: 1,
           text: updatedContent,
           summary:
-            (
-              String($("#wks-skj-dialog-summary-submit").val() ?? "") ||
-              "リダイレクトの削除依頼"
-            )
-              .replaceAll("$d", RFD_REQUEST_PAGE_NAME)
-              .replaceAll("$p", targetPageName) + SUMMARY_AD,
+            expandRedirectDeletionSummaryPageNames(
+              (
+                String($("#wks-skj-dialog-summary-submit").val() ?? "") ||
+                "リダイレクトの削除依頼"
+              ).replaceAll("$d", RFD_REQUEST_PAGE_NAME),
+              selections,
+            ) + SUMMARY_AD,
           formatversion: "2",
           baserevid: requestPageContext.revisionId,
           starttimestamp: requestPageContext.startTimestamp,
@@ -1101,6 +1395,7 @@ export async function initSkj() {
                 )
                   .replaceAll("$d", getPageName())
                   .replaceAll("$p", mw.config.get("wgPageName")) + SUMMARY_AD,
+              discussiontoolsautosubscribe: "no",
               formatversion: "2",
               baserevid: logPageContext.revisionId,
               starttimestamp: logPageContext.startTimestamp,
@@ -1197,17 +1492,20 @@ export async function initSkj() {
           content: previewContent,
         });
         try {
+          const selections = getRedirectPageSelections();
+          const redirectItems = await resolveRedirectPageSelections(selections);
           const summary =
-            (
-              String($("#wks-skj-dialog-summary-submit").val() ?? "") ||
-              "リダイレクトの削除依頼"
-            )
-              .replaceAll("$d", RFD_REQUEST_PAGE_NAME)
-              .replaceAll("$p", targetPageName) + SUMMARY_AD;
+            expandRedirectDeletionSummaryPageNames(
+              (
+                String($("#wks-skj-dialog-summary-submit").val() ?? "") ||
+                "リダイレクトの削除依頼"
+              ).replaceAll("$d", RFD_REQUEST_PAGE_NAME),
+              selections,
+            ) + SUMMARY_AD;
           const parseResult = await new mw.Api().post({
             action: "parse",
             title: RFD_REQUEST_PAGE_NAME,
-            text: getFinalContentRequest(),
+            text: getFinalContentRequest(redirectItems),
             summary,
             prop: "text|modules|jsconfigvars",
             pst: true,
