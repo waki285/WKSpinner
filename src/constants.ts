@@ -75,6 +75,7 @@ export const HATNOTE_TEMPLATES = [
 export type Options = {
   disableMobile: boolean;
   prefLinkInToolbar: boolean;
+  watchlistUsersLinkInToolbar: boolean;
   useIndividualPortlet: boolean;
   useCodexModal: boolean;
   versionNotify: string;
@@ -144,6 +145,7 @@ export type Options = {
 export const DEFAULT_OPTIONS = {
   disableMobile: false,
   prefLinkInToolbar: true,
+  watchlistUsersLinkInToolbar: false,
   useIndividualPortlet: false,
   useCodexModal: false,
   versionNotify: "all",

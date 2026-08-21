@@ -163,6 +163,20 @@ async function init() {
     }
   }
 
+  if (getOptionProperty("watchlistUsersLinkInToolbar") === true) {
+    const link = mw.util.addPortletLink(
+      "p-personal",
+      mw.util.getUrl(WATCHLIST_USERS_PAGE_NAME),
+      "WL利用者投稿記録",
+      "pt-wks-watchlist-users",
+      "ウォッチしている利用者の投稿記録",
+    );
+    const watchlistLink = document.getElementById("pt-watchlist");
+    if (link && watchlistLink) {
+      watchlistLink.insertAdjacentElement("afterend", link);
+    }
+  }
+
   await loadLibrary();
 
   if (

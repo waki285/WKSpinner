@@ -76,6 +76,9 @@ export async function showConfigPage() {
   const options = {
     disableMobile: Vue.ref(getOptionProperty("disableMobile") === true),
     prefLinkInToolbar: Vue.ref(getOptionProperty("prefLinkInToolbar") === true),
+    watchlistUsersLinkInToolbar: Vue.ref(
+      getOptionProperty("watchlistUsersLinkInToolbar") === true,
+    ),
     useIndividualPortlet: Vue.ref(
       getOptionProperty("useIndividualPortlet") === true,
     ),
@@ -159,6 +162,7 @@ export async function showConfigPage() {
     const newOptions: Options = {
       disableMobile: options.disableMobile.value,
       prefLinkInToolbar: options.prefLinkInToolbar.value,
+      watchlistUsersLinkInToolbar: options.watchlistUsersLinkInToolbar.value,
       useIndividualPortlet: options.useIndividualPortlet.value,
       useCodexModal: options.useCodexModal.value,
       versionNotify: options.versionNotify.value,
@@ -345,6 +349,10 @@ export async function showConfigPage() {
               checkboxField(
                 options.prefLinkInToolbar,
                 "この設定ページへのリンクをツールバーに配置する",
+              ),
+              checkboxField(
+                options.watchlistUsersLinkInToolbar,
+                "個人ツールの「ウォッチリスト」の右に「WL利用者投稿記録」へのリンクを配置する",
               ),
               checkboxField(
                 options.useIndividualPortlet,
