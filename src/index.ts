@@ -1,6 +1,7 @@
 import {
   CONFIG_PAGE_NAME,
   DEBUG_PAGE_NAME,
+  DEV,
   OPTIONS_KEY,
   ORIG_PORTLET_ID,
   PORTLET_LABEL,
@@ -11,7 +12,8 @@ import {
   WATCHLIST_USERS_PAGE_NAME,
 } from "./constants";
 import { applyOptionMigrations } from "./option-migrations";
-import "./shared";
+import { registerSharedModules } from "./shared";
+import { shouldLoadWKSpinner } from "./startup";
 import {
   createPortletLink,
   getOptionProperty,
@@ -122,18 +124,6 @@ function setupPortletModule(name: string): void {
   // Swallow click until the module's init attaches the real handler.
   portlet.addEventListener("click", (e) => e.preventDefault());
   void runModule(name);
-}
-
-if (__WKSPINNER_BUNDLED_DEBUG__) {
-  mw.loader.addStyleTag(BUNDLED_STYLE);
-} else {
-  mw.loader.load(
-    mw.config.get("wgServer") +
-      mw.config.get("wgScript") +
-      "?action=raw&ctype=text/css&title=" +
-      mw.util.wikiUrlencode("利用者:鈴音雨/WKSpinner.css"),
-    "text/css",
-  );
 }
 
 async function init() {
@@ -349,9 +339,23 @@ async function versionNotify() {
   }
 }
 
-mw.loader
-  .using("jquery.ui")
-  .then(() => init())
-  .catch((e) => {
-    console.error(e);
-  });
+if (shouldLoadWKSpinner(window.location.search, DEV)) {
+  registerSharedModules();
+  if (__WKSPINNER_BUNDLED_DEBUG__) {
+    mw.loader.addStyleTag(BUNDLED_STYLE);
+  } else {
+    mw.loader.load(
+      mw.config.get("wgServer") +
+        mw.config.get("wgScript") +
+        "?action=raw&ctype=text/css&title=" +
+        mw.util.wikiUrlencode("利用者:鈴音雨/WKSpinner.css"),
+      "text/css",
+    );
+  }
+  mw.loader
+    .using("jquery.ui")
+    .then(() => init())
+    .catch((e) => {
+      console.error(e);
+    });
+}

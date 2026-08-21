@@ -13,8 +13,10 @@ import * as _skjValidation from "./skj-validation";
 
 const SHARED_KEY = Symbol.for("wkspinner.shared");
 
-(globalThis as Record<symbol, unknown>)[SHARED_KEY] = Object.freeze({
-  util: _util,
-  dialog: _dialog,
-  skjValidation: _skjValidation,
-});
+export function registerSharedModules() {
+  (globalThis as Record<symbol, unknown>)[SHARED_KEY] = Object.freeze({
+    util: _util,
+    dialog: _dialog,
+    skjValidation: _skjValidation,
+  });
+}
