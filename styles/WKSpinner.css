@@ -8,9 +8,14 @@
   gap: 0.5rem;
 }
 
+#wks-csd-dialog-preview-div,
+.wks-dialog-preview-div {
+  color: var(--color-base, CanvasText);
+  background-color: var(--background-color-base, Canvas);
+}
+
 #wks-csd-dialog-preview-div {
-  background: white;
-  border: 1px solid black;
+  border: 1px solid var(--border-color-base, CanvasText);
   padding: 0.5rem;
   overflow-y: scroll;
 }
@@ -73,9 +78,8 @@
 }
 
 .wks-dialog-preview-div {
-  background: white;
   padding: 0.5rem;
-  border: 2px dashed gray;
+  border: 2px dashed var(--border-color-base, CanvasText);
   max-height: 300px;
   overflow-y: scroll;
 }
