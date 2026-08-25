@@ -13,6 +13,12 @@ export type PageProtectionStatus = {
 
 export type ProtectionRequestMode = "protect" | "unprotect";
 
+export type ParsedRequestSection = {
+  index: string;
+  line: string;
+  fromtitle?: string;
+};
+
 const PROTECTION_TYPE_LABELS: Readonly<Record<string, string>> = {
   create: "作成",
   edit: "編集",
@@ -50,6 +56,26 @@ export function getDefaultProtectionRequestMode(
   status: PageProtectionStatus,
 ): ProtectionRequestMode {
   return hasActiveProtection(status) ? "unprotect" : "protect";
+}
+
+export function findRequestSection(
+  sections: readonly ParsedRequestSection[],
+  requestPageName: string,
+  sectionName: string,
+) {
+  const normalizedRequestPageName = requestPageName.replaceAll("_", " ");
+
+  return sections.find((section) => {
+    const isOwnSection =
+      section.fromtitle === undefined ||
+      section.fromtitle.replaceAll("_", " ") === normalizedRequestPageName;
+
+    return (
+      /^\d+$/.test(section.index) &&
+      isOwnSection &&
+      section.line.includes(sectionName)
+    );
+  });
 }
 
 export function formatPageProtectionStatus(status: PageProtectionStatus) {

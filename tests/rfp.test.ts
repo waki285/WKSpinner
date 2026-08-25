@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  findRequestSection,
   formatPageProtectionStatus,
   getDefaultProtectionRequestMode,
   hasActiveProtection,
@@ -14,6 +15,37 @@ const unprotected: PageProtectionStatus = {
 };
 
 describe("protection request helpers", () => {
+  it("selects the request page section instead of a transcluded section", () => {
+    const sections = [
+      {
+        index: "T-4",
+        line: "8月下旬",
+        fromtitle: "Wikipedia:保護依頼/見送り",
+      },
+      {
+        index: "5",
+        line: "8月下旬（21日から末日まで）",
+        fromtitle: "Wikipedia:保護依頼",
+      },
+    ];
+
+    expect(
+      findRequestSection(sections, "Wikipedia:保護依頼", "8月下旬"),
+    ).toEqual(sections[1]);
+  });
+
+  it("accepts a renumbered section belonging to the request page", () => {
+    const section = {
+      index: "6",
+      line: "8月下旬（21日から末日まで）",
+      fromtitle: "Wikipedia:保護依頼",
+    };
+
+    expect(findRequestSection([section], "Wikipedia:保護依頼", "8月下旬")).toBe(
+      section,
+    );
+  });
+
   it("defaults to a protection request for an unprotected page", () => {
     expect(hasActiveProtection(unprotected)).toBe(false);
     expect(getDefaultProtectionRequestMode(unprotected)).toBe("protect");

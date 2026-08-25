@@ -6,6 +6,7 @@ import {
 } from "@/constants";
 import { openDialog } from "@/dialog";
 import {
+  findRequestSection,
   formatPageProtectionStatus,
   getDefaultProtectionRequestMode,
   hasActiveProtection,
@@ -541,9 +542,10 @@ export async function initRFP() {
           prop: "sections",
           formatversion: "2",
         });
-        const section = parseResult.parse.sections.find(
-          ({ line }: { line: string }) =>
-            line.includes(getRequestSectionName()),
+        const section = findRequestSection(
+          parseResult.parse.sections,
+          pageName,
+          getRequestSectionName(),
         );
         if (!section) {
           throw new Error(`${requestMode.label}先の節が見つかりません。`);
